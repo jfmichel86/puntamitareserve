@@ -36,6 +36,14 @@ function fmtShort(ds: string) {
 }
 
 export default function SearchBar() {
+  // Mobile only: the full 3-field bar is presented as a single compact
+  // trigger pill over the hero photo, and only expands into a full-screen
+  // panel once tapped — desktop always shows the full inline bar and never
+  // touches this state (see .search-mobile-trigger / .search-bar--open in
+  // globals.css, gated entirely behind the @media (max-width:720px) block).
+  const [mobileOpen, setMobileOpen] = useState(false)
+  const closeMobile = () => { setMobileOpen(false); setOpen(null) }
+
   const [open, setOpen] = useState<Field>(null)
   const [guests, setGuests] = useState({ adults: 0, children: 0, infants: 0 })
   const [price, setPrice] = useState<string>('')
@@ -200,8 +208,32 @@ export default function SearchBar() {
   }
 
   return (
-    <div className="search-bar" onClick={(e) => { if (e.target === e.currentTarget) setOpen(null) }}>
-      {/* Dates */}
+    <>
+      {/* Mobile-only compact trigger — replaces the full bar over the hero
+          photo on phones; expands .search-bar into a full-screen panel.
+          Hidden entirely on desktop via CSS. */}
+      <button
+        type="button"
+        className="search-mobile-trigger"
+        onClick={() => setMobileOpen(true)}
+      >
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Reserve Your Escape
+      </button>
+
+      <div
+        className={`search-bar${mobileOpen ? ' search-bar--open' : ''}`}
+        onClick={(e) => { if (e.target === e.currentTarget) setOpen(null) }}
+      >
+        <button
+          type="button"
+          className="search-mobile-close"
+          onClick={closeMobile}
+          aria-label="Close search"
+        >
+          <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+        {/* Dates */}
       <div className={`sf${open === 'dates' ? ' is-open' : ''}`} id="sf-dates">
         <button className="sf-trigger" type="button" onClick={() => toggle('dates')}>
           <div className="sf-inner">
@@ -343,10 +375,12 @@ export default function SearchBar() {
       <a
         className="search-btn"
         href={searchHref()}
+        onClick={closeMobile}
       >
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         Search
       </a>
-    </div>
+      </div>
+    </>
   )
 }

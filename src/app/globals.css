@@ -385,6 +385,12 @@ body {
 .search-btn:hover { background: var(--gold-light); }
 .search-btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; }
 
+/* Mobile-only compact search trigger + close button — full styling lives in
+   the @media (max-width:720px) block below; hidden entirely on desktop so
+   these never affect the tablet/desktop bar. */
+.search-mobile-trigger { display: none; }
+.search-mobile-close { display: none; }
+
 /* ── Date picker ──────────────────────────────────────────── */
 /* .dates-panel is now rendered as a direct child of .search-bar (not nested inside
    the narrow #sf-dates field) so it can span almost the full bar width, inset 38px
@@ -683,14 +689,81 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
   .destinations-index { padding: 8px 24px 80px; }
   .dest-feature-list { gap: 48px; }
   .dest-feature-name { font-size: 26px; }
-  .search-bar { flex-direction: column; }
+  /* ── Compact mobile search: hero shows a single pill instead of the full
+     bar; tapping it opens the same fields as a full-screen sheet so nothing
+     about the booking logic changes, just how much room it gets. ── */
+  .search-mobile-trigger {
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+    width: calc(100% - 48px); max-width: 360px; margin: 0 auto;
+    background: rgba(9,21,32,.55); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255,255,255,.22); border-radius: 100px;
+    padding: 17px 26px; color: var(--text-on-dark);
+    font-family: var(--font-inter), sans-serif; font-weight: 500; font-size: 12px;
+    letter-spacing: .14em; text-transform: uppercase; cursor: pointer;
+    box-shadow: 0 12px 32px rgba(0,0,0,.28);
+  }
+  .search-mobile-trigger svg { width: 15px; height: 15px; stroke: var(--gold); fill: none; stroke-width: 2; stroke-linecap: round; flex-shrink: 0; }
+
+  .search-bar {
+    display: none; /* only shown once opened, as a full-screen sheet */
+    flex-direction: column;
+  }
+  .search-bar.search-bar--open {
+    display: flex; position: fixed; inset: 0; z-index: 900;
+    max-width: none; margin: 0; border-radius: 0; box-shadow: none;
+    overflow-y: auto; -webkit-overflow-scrolling: touch;
+    padding: 84px 0 40px; animation: fadeIn .25s ease both;
+  }
+  .search-mobile-close {
+    display: flex; align-items: center; justify-content: center;
+    position: fixed; top: 24px; right: 24px; z-index: 910;
+    width: 40px; height: 40px; border-radius: 50%;
+    background: var(--cream); border: 1px solid var(--sand); cursor: pointer;
+  }
+  .search-mobile-close svg { width: 16px; height: 16px; stroke: var(--charcoal); fill: none; stroke-width: 1.8; stroke-linecap: round; }
   .sf { flex: none; width: 100%; }
-  .sf-trigger { border-right: none; border-bottom: 1px solid var(--sand); border-radius: 0; }
-  .sf:first-child .sf-trigger { border-radius: 4px 4px 0 0; }
-  .search-btn { border-radius: 0 0 4px 4px; padding: 18px; justify-content: center; }
+  .sf-trigger { border-right: none; border-bottom: 1px solid var(--sand); border-radius: 0 !important; padding: 22px 24px; }
+  .search-bar--open .sf-panel {
+    position: static; box-shadow: none; border-top: none; border-radius: 0;
+    min-width: 0; width: 100%; padding: 4px 24px 20px; animation: none;
+  }
+  .search-bar--open .dates-panel {
+    position: static !important; left: auto !important; right: auto !important;
+    width: 100% !important; margin-top: 0 !important; box-shadow: none !important;
+  }
+  /* Two months side-by-side becomes unreadable on a phone-width screen —
+     stack them instead, same fix already used on the Contact page and the
+     wishlist "inquire about all" modal's calendars. */
+  .dp-months-row { grid-template-columns: 1fr; gap: 28px; }
+  .search-btn { border-radius: 4px; padding: 18px; justify-content: center; margin: 12px 24px 0; }
   .about-stats-row { grid-template-columns: 1fr 1fr; }
   .section-row { flex-direction: column; align-items: flex-start; }
   .dest-grid { grid-template-columns: 1fr; }
+
+  /* Collection badges ("Most Popular" etc.) are just gold outlined text on
+     desktop, relying on the dark photo-gradient behind them for contrast —
+     reads fine on the larger desktop images but disappears against busier,
+     more compressed mobile crops. Give them the same solid navy pill the
+     property card badges already use (.prop-badge) so they're legible
+     regardless of what photo is behind them. */
+  .cc-tag {
+    background: rgba(30,58,80,.62);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,.14);
+    color: var(--text-on-dark);
+  }
+
+  /* Floating WhatsApp + offer-badge: on phones the offer badge shrinks to
+     match the WhatsApp bubble's small round icon (its "10% off first stay"
+     label is dropped) instead of staying a wide text pill — same size,
+     same bottom-corner anchoring, much less likely to sit on top of
+     whatever content happens to be scrolled underneath it. */
+  .offer-badge {
+    width: 48px; height: 48px; padding: 0;
+    justify-content: center; border-radius: 50%;
+  }
+  .offer-badge span { display: none; }
+  .offer-badge svg { width: 20px; height: 20px; }
 }
 
 /* ── Page Header ──────────────────────────────────────────── */
