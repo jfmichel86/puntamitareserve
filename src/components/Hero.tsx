@@ -20,11 +20,10 @@ export default async function Hero() {
       <div className="hero-content">
         <p className="hero-eyebrow">Punta Mita, Mexico</p>
         <h1 className="hero-headline">
-          Mexican Reserve begins<br />in <em>Punta Mita</em>
+          Private luxury rentals<br />in <em>Punta Mita</em>
         </h1>
         <p className="hero-sub">
-          Beachfront estates, villas and condos — the deepest collection of Punta Mita rentals in one place, with
-          more of Mexico&rsquo;s finest destinations joining the Reserve over time.
+          Beachfront estates, villas and condos — the complete collection of Punta Mita rentals, in one place.
         </p>
 
         <SearchBar />

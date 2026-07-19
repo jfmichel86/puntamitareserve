@@ -171,6 +171,7 @@ export default function Nav() {
             ))}
           </div>
         </li>
+        <li><Link href="/experiences" className={pathname === '/experiences' ? 'active' : ''}>Experiences</Link></li>
         <li><Link href="/about" className={pathname === '/about' ? 'active' : ''}>About</Link></li>
       </ul>
 
@@ -236,6 +237,7 @@ export default function Nav() {
             ))}
           </div>
         )}
+        <Link href="/experiences" onClick={closeMenu}>Experiences</Link>
         <Link href="/about" onClick={closeMenu}>About</Link>
         {savedCount > 0 && (
           <Link href="/saved" onClick={closeMenu}>Wishlist ({savedCount})</Link>
