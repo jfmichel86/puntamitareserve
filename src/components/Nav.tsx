@@ -23,6 +23,20 @@ export default function Nav() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [alwaysDark])
 
+  // While the mobile menu is open: lock background scroll (same reasoning
+  // as the search sheet), and mark <body> so the floating WhatsApp/offer
+  // buttons — which sit outside the nav entirely, at a higher effective
+  // z-index than anything inside the nav's own dropdown — can be hidden via
+  // CSS instead of rendering on top of the drawer's own links.
+  useEffect(() => {
+    document.body.classList.toggle('nav-drawer-open', menuOpen)
+    document.body.style.overflow = menuOpen ? 'hidden' : ''
+    return () => {
+      document.body.classList.remove('nav-drawer-open')
+      document.body.style.overflow = ''
+    }
+  }, [menuOpen])
+
   useEffect(() => {
     const refreshSaved = () => {
       const count = Object.keys(localStorage).filter(

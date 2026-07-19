@@ -6,19 +6,19 @@ import Destination from '@/components/Destination'
 import Testimonials from '@/components/Testimonials'
 
 export const metadata: Metadata = {
-  title: 'Luxury Vacation Rentals in Punta Mita | Private Estates, Villas & Condos',
-  description: 'Luxury vacation rentals in Punta Mita — private estates, oceanfront villas and condos inside the gates. Book directly with local experts who know every property.',
+  title: 'Mexican Reserve | Luxury Villa Rentals in Punta Mita, Mexico',
+  description: 'Mexican Reserve curates Mexico’s finest luxury rentals, beginning in Punta Mita — private estates, oceanfront villas and condos inside the gates. Book directly with local experts who know every property.',
   alternates: { canonical: 'https://www.mexicanreserve.com/' },
   openGraph: {
-    title: 'Luxury Vacation Rentals in Punta Mita | Private Estates, Villas & Condos',
-    description: 'Luxury vacation rentals in Punta Mita — private estates, oceanfront villas and condos inside the gates. Book directly with local experts who know every property.',
+    title: 'Mexican Reserve | Luxury Villa Rentals in Punta Mita, Mexico',
+    description: 'Mexican Reserve curates Mexico’s finest luxury rentals, beginning in Punta Mita — private estates, oceanfront villas and condos inside the gates. Book directly with local experts who know every property.',
     url: 'https://www.mexicanreserve.com/',
     images: ['https://www.mexicanreserve.com/og-image-1.jpg'],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Luxury Vacation Rentals in Punta Mita | Private Estates, Villas & Condos',
-    description: 'Luxury vacation rentals in Punta Mita — private estates, oceanfront villas and condos inside the gates. Book directly with local experts.',
+    title: 'Mexican Reserve | Luxury Villa Rentals in Punta Mita, Mexico',
+    description: 'Mexican Reserve curates Mexico’s finest luxury rentals, beginning in Punta Mita — private estates, oceanfront villas and condos inside the gates. Book directly with local experts.',
   },
 }
 
@@ -26,7 +26,7 @@ const localBusinessSchema = {
   '@context': 'https://schema.org',
   '@type': 'LocalBusiness',
   name: 'Mexican Reserve',
-  description: 'Luxury vacation rentals in Punta Mita — private estates, oceanfront villas and condos inside the gates. Book directly with local experts.',
+  description: 'Mexican Reserve curates Mexico’s finest luxury rentals, beginning in Punta Mita — private estates, oceanfront villas and condos inside the gates. Book directly with local experts.',
   url: 'https://www.mexicanreserve.com',
   telephone: '+523313619889',
   email: 'rentals@mexicanreserve.com',
@@ -49,9 +49,9 @@ export default function Home() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessSchema) }}
       />
       <Hero />
-      <Collections />
-      <Featured />
       <Destination />
+      <Featured />
+      <Collections />
       <Testimonials />
     </>
   )

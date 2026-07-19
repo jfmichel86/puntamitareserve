@@ -1,6 +1,17 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState, useSyncExternalStore } from 'react'
+import { createPortal } from 'react-dom'
+
+// Standard React-recommended way to know "we're past hydration, it's safe
+// to touch document" without calling setState inside an effect (which
+// triggers an extra render the linter now flags) — the server snapshot is
+// false, the client snapshot is true, and React swaps them cleanly once
+// hydration finishes.
+const subscribeNoop = () => () => {}
+function useMounted() {
+  return useSyncExternalStore(subscribeNoop, () => true, () => false)
+}
 
 type Field = 'dates' | 'guests' | 'rate' | null
 type DateMode = 'calendar' | 'flexible'
@@ -38,11 +49,25 @@ function fmtShort(ds: string) {
 export default function SearchBar() {
   // Mobile only: the full 3-field bar is presented as a single compact
   // trigger pill over the hero photo, and only expands into a full-screen
-  // panel once tapped — desktop always shows the full inline bar and never
-  // touches this state (see .search-mobile-trigger / .search-bar--open in
-  // globals.css, gated entirely behind the @media (max-width:720px) block).
+  // sheet once tapped — desktop always shows the full inline bar and never
+  // touches this state. The sheet is rendered through a React portal
+  // straight into <body> (see `mounted` below) rather than staying nested
+  // inside the hero — the hero content sits in its own low z-index stacking
+  // context, which was silently trapping the "full-screen" sheet behind the
+  // site nav and the floating WhatsApp/offer buttons even though its own
+  // z-index was numerically higher.
   const [mobileOpen, setMobileOpen] = useState(false)
+  const mounted = useMounted()
   const closeMobile = () => { setMobileOpen(false); setOpen(null) }
+
+  // Lock the page behind the sheet from scrolling while it's open — without
+  // this, iOS lets the page underneath keep scrolling ("scroll chaining")
+  // once the sheet's own internal scroll area hits its top or bottom.
+  useEffect(() => {
+    if (!mobileOpen) return
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = '' }
+  }, [mobileOpen])
 
   const [open, setOpen] = useState<Field>(null)
   const [guests, setGuests] = useState({ adults: 0, children: 0, infants: 0 })
@@ -72,6 +97,12 @@ export default function SearchBar() {
   const clearDates = () => {
     setCheckIn(null); setCheckOut(null)
     setFlexDuration(null); setFlexMonths(new Set()); setFlexPage(0)
+  }
+
+  const clearAll = () => {
+    clearDates()
+    setGuests({ adults: 0, children: 0, infants: 0 })
+    setPrice('')
   }
 
   const guestsLabel = () => {
@@ -207,34 +238,15 @@ export default function SearchBar() {
     return `/villas${qs ? `?${qs}` : ''}`
   }
 
-  return (
+  // Shared between the desktop inline bar and the mobile full-screen sheet
+  // — written once, rendered in whichever of the two is currently visible,
+  // so both stay perfectly in sync with the exact same state and logic.
+  // (This is a plain function returning JSX, not a nested component, so
+  // calling it twice never causes React to remount/reset either instance.)
+  const renderFields = () => (
     <>
-      {/* Mobile-only compact trigger — replaces the full bar over the hero
-          photo on phones; expands .search-bar into a full-screen panel.
-          Hidden entirely on desktop via CSS. */}
-      <button
-        type="button"
-        className="search-mobile-trigger"
-        onClick={() => setMobileOpen(true)}
-      >
-        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        Reserve Your Escape
-      </button>
-
-      <div
-        className={`search-bar${mobileOpen ? ' search-bar--open' : ''}`}
-        onClick={(e) => { if (e.target === e.currentTarget) setOpen(null) }}
-      >
-        <button
-          type="button"
-          className="search-mobile-close"
-          onClick={closeMobile}
-          aria-label="Close search"
-        >
-          <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-        {/* Dates */}
-      <div className={`sf${open === 'dates' ? ' is-open' : ''}`} id="sf-dates">
+      {/* Dates */}
+      <div className={`sf sf-dates${open === 'dates' ? ' is-open' : ''}`}>
         <button className="sf-trigger" type="button" onClick={() => toggle('dates')}>
           <div className="sf-inner">
             {!datesLabel && <span className="sf-label">Check in &nbsp;→&nbsp; Check out</span>}
@@ -242,8 +254,7 @@ export default function SearchBar() {
           </div>
           <svg className="sf-chev" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
         </button>
-      </div>
-      {open === 'dates' && (
+        {open === 'dates' && (
           <div className="sf-panel dates-panel">
             <div className="dp-tabs">
               <div className="dp-toggle-group">
@@ -318,9 +329,10 @@ export default function SearchBar() {
             )}
           </div>
         )}
+      </div>
 
       {/* Guests */}
-      <div className={`sf${open === 'guests' ? ' is-open' : ''}`} id="sf-guests">
+      <div className={`sf sf-guests${open === 'guests' ? ' is-open' : ''}`}>
         <button className="sf-trigger" type="button" onClick={() => toggle('guests')}>
           <div className="sf-inner">
             {!guestsLabel() && <span className="sf-label">Guests</span>}
@@ -351,7 +363,7 @@ export default function SearchBar() {
       </div>
 
       {/* Nightly Rate */}
-      <div className={`sf${open === 'rate' ? ' is-open' : ''}`} id="sf-rate">
+      <div className={`sf sf-rate${open === 'rate' ? ' is-open' : ''}`}>
         <button className="sf-trigger" type="button" onClick={() => toggle('rate')}>
           <div className="sf-inner">
             {!priceLabel && <span className="sf-label">Nightly Rate</span>}
@@ -371,16 +383,54 @@ export default function SearchBar() {
           </div>
         )}
       </div>
+    </>
+  )
 
-      <a
-        className="search-btn"
-        href={searchHref()}
-        onClick={closeMobile}
-      >
-        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        Search
-      </a>
+  return (
+    <>
+      {/* Desktop / tablet: full inline bar, unchanged. Hidden on phones via
+          CSS (@media max-width:720px), replaced there by the compact
+          trigger + full-screen sheet below. */}
+      <div className="search-bar" onClick={(e) => { if (e.target === e.currentTarget) setOpen(null) }}>
+        {renderFields()}
+        <a className="search-btn" href={searchHref()}>
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          Search
+        </a>
       </div>
+
+      {/* Mobile compact trigger over the hero photo. */}
+      <button type="button" className="search-mobile-trigger" onClick={() => setMobileOpen(true)}>
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Reserve Your Escape
+      </button>
+
+      {/* Mobile full-screen sheet, portaled straight to <body> so it always
+          renders above the nav and the floating WhatsApp/offer buttons,
+          regardless of where in the page tree the trigger button lives. */}
+      {mounted && mobileOpen && createPortal(
+        <div className="search-sheet" onClick={(e) => { if (e.target === e.currentTarget) setOpen(null) }}>
+          <div className="search-sheet-header">
+            <button type="button" className="search-sheet-back" onClick={closeMobile} aria-label="Close search">
+              <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+            <span className="search-sheet-title">Reserve Your Stay</span>
+          </div>
+
+          <div className="search-sheet-body">
+            {renderFields()}
+          </div>
+
+          <div className="search-sheet-footer">
+            <button type="button" className="search-sheet-clear" onClick={clearAll}>Clear all</button>
+            <a className="search-sheet-search" href={searchHref()} onClick={closeMobile}>
+              <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              Search
+            </a>
+          </div>
+        </div>,
+        document.body
+      )}
     </>
   )
 }

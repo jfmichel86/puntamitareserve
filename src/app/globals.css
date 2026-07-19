@@ -356,8 +356,8 @@ body {
 .sf-trigger:hover { background: rgba(248,244,238,.85); }
 .sf-inner { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; }
 .sf-label { font-family: var(--font-inter), sans-serif; font-weight: 500; font-size: 9.5px; letter-spacing: .20em; text-transform: uppercase; color: var(--charcoal); white-space: nowrap; line-height: 1; }
-#sf-guests { flex: 1.4; }
-#sf-rate { flex: 1.1; }
+.search-bar .sf-guests { flex: 1.4; }
+.search-bar .sf-rate { flex: 1.1; }
 .sf-val { font-family: var(--font-inter), sans-serif; font-size: 13.5px; font-weight: 300; color: var(--charcoal); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; line-height: 1.4; }
 .sf-val:empty { display: none; }
 .sf-chev { width: 13px; height: 13px; stroke: var(--charcoal-light); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; margin-left: 8px; transition: transform .25s cubic-bezier(.16,1,.3,1), stroke .18s; }
@@ -385,11 +385,76 @@ body {
 .search-btn:hover { background: var(--gold-light); }
 .search-btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; }
 
-/* Mobile-only compact search trigger + close button — full styling lives in
-   the @media (max-width:720px) block below; hidden entirely on desktop so
-   these never affect the tablet/desktop bar. */
+/* Mobile-only compact search trigger + full-screen sheet — full styling
+   lives in the @media (max-width:720px) block below; hidden entirely on
+   desktop so these never affect the tablet/desktop bar. The sheet itself
+   (.search-sheet) is portaled straight into <body>, so its rules aren't
+   nested under .search-bar at all — see the dedicated block below. */
 .search-mobile-trigger { display: none; }
-.search-mobile-close { display: none; }
+
+/* Mobile full-screen search sheet — portaled straight into <body> (not a
+   descendant of the hero), so it sits in the root stacking context and can
+   safely use a z-index that beats the nav (400) and the floating
+   WhatsApp/offer buttons (500) with real headroom. Not gated behind the
+   @media (max-width:720px) block on purpose: the only way to open it is
+   .search-mobile-trigger, which is itself display:none above 720px, so it
+   can never actually appear on desktop even without a breakpoint guard —
+   and leaving it unguarded means it degrades gracefully if the window is
+   resized while open. */
+.search-sheet {
+  position: fixed; inset: 0; z-index: 1000;
+  background: var(--white); display: flex; flex-direction: column;
+  animation: fadeIn .2s ease both;
+}
+.search-sheet-header {
+  flex-shrink: 0; display: flex; align-items: center; gap: 16px;
+  padding: 18px 20px; border-bottom: 1px solid var(--sand);
+}
+.search-sheet-back {
+  flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%;
+  background: var(--cream); border: 1px solid var(--sand); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.search-sheet-back svg { width: 16px; height: 16px; stroke: var(--charcoal); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.search-sheet-title { font-family: var(--font-cormorant), serif; font-size: 19px; font-weight: 400; color: var(--deep-ocean); }
+.search-sheet-body { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 20px; }
+.search-sheet-footer {
+  flex-shrink: 0; display: flex; align-items: center; gap: 14px;
+  padding: 16px 20px calc(16px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--sand); background: var(--white);
+}
+.search-sheet-clear {
+  background: none; border: none; cursor: pointer; padding: 10px 2px;
+  font-family: var(--font-inter), sans-serif; font-size: 11.5px; font-weight: 500;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--charcoal); text-decoration: underline;
+  text-underline-offset: 3px; white-space: nowrap;
+}
+.search-sheet-search {
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: 10px;
+  background: var(--gold); color: var(--white); text-decoration: none;
+  padding: 16px; border-radius: 4px;
+  font-family: var(--font-inter), sans-serif; font-weight: 500; font-size: 11px;
+  letter-spacing: .2em; text-transform: uppercase;
+}
+.search-sheet-search svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; }
+
+/* Each field becomes its own bordered card inside the sheet (rather than
+   the desktop bar's edge-to-edge divided rows), with real spacing between
+   them — closer to a standard mobile booking-search pattern. */
+.search-sheet-body .sf {
+  border: 1px solid var(--sand); border-radius: 10px; margin-bottom: 14px; overflow: hidden;
+}
+.search-sheet-body .sf:last-child { margin-bottom: 0; }
+.search-sheet-body .sf-trigger { border: none; border-radius: 10px; padding: 20px; }
+.search-sheet-body .sf-panel {
+  position: static; box-shadow: none; border-top: 1px solid var(--sand); border-radius: 0;
+  min-width: 0; width: 100%; padding: 4px 20px 20px; animation: none;
+}
+.search-sheet-body .dates-panel {
+  position: static !important; left: auto !important; right: auto !important;
+  width: 100% !important; margin-top: 0 !important; box-shadow: none !important;
+  border-top: 1px solid var(--sand) !important; border-radius: 0 !important;
+}
 
 /* ── Date picker ──────────────────────────────────────────── */
 /* .dates-panel is now rendered as a direct child of .search-bar (not nested inside
@@ -704,39 +769,21 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
   }
   .search-mobile-trigger svg { width: 15px; height: 15px; stroke: var(--gold); fill: none; stroke-width: 2; stroke-linecap: round; flex-shrink: 0; }
 
-  .search-bar {
-    display: none; /* only shown once opened, as a full-screen sheet */
-    flex-direction: column;
-  }
-  .search-bar.search-bar--open {
-    display: flex; position: fixed; inset: 0; z-index: 900;
-    max-width: none; margin: 0; border-radius: 0; box-shadow: none;
-    overflow-y: auto; -webkit-overflow-scrolling: touch;
-    padding: 84px 0 40px; animation: fadeIn .25s ease both;
-  }
-  .search-mobile-close {
-    display: flex; align-items: center; justify-content: center;
-    position: fixed; top: 24px; right: 24px; z-index: 910;
-    width: 40px; height: 40px; border-radius: 50%;
-    background: var(--cream); border: 1px solid var(--sand); cursor: pointer;
-  }
-  .search-mobile-close svg { width: 16px; height: 16px; stroke: var(--charcoal); fill: none; stroke-width: 1.8; stroke-linecap: round; }
-  .sf { flex: none; width: 100%; }
-  .sf-trigger { border-right: none; border-bottom: 1px solid var(--sand); border-radius: 0 !important; padding: 22px 24px; }
-  .search-bar--open .sf-panel {
-    position: static; box-shadow: none; border-top: none; border-radius: 0;
-    min-width: 0; width: 100%; padding: 4px 24px 20px; animation: none;
-  }
-  .search-bar--open .dates-panel {
-    position: static !important; left: auto !important; right: auto !important;
-    width: 100% !important; margin-top: 0 !important; box-shadow: none !important;
-  }
+  .search-bar { display: none; } /* replaced entirely by .search-sheet on phones */
+
   /* Two months side-by-side becomes unreadable on a phone-width screen —
      stack them instead, same fix already used on the Contact page and the
      wishlist "inquire about all" modal's calendars. */
   .dp-months-row { grid-template-columns: 1fr; gap: 28px; }
-  .search-btn { border-radius: 4px; padding: 18px; justify-content: center; margin: 12px 24px 0; }
-  .about-stats-row { grid-template-columns: 1fr 1fr; }
+  /* A little more finger room on the calendar's prev/next controls, used
+     in the search sheet, Contact page, and wishlist inquiry modal alike. */
+  .dp-nav-btn { width: 36px; height: 36px; }
+  .dp-month-nav-btn { width: 36px; }
+  /* Was reverting to 2 columns here — narrower than the 960px breakpoint
+     just above it, which correctly uses 1. That squeezed each stat's long
+     label ("Homes personally visited before we recommend them...") into
+     roughly 100px of usable width on an actual phone, wrapping badly.
+     Single column stays correct all the way down. */
   .section-row { flex-direction: column; align-items: flex-start; }
   .dest-grid { grid-template-columns: 1fr; }
 
@@ -1278,7 +1325,10 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
 .newsletter-input {
   flex: 1; min-width: 0; background: var(--white); border: 1px solid rgba(30,58,80,.18);
   border-radius: 3px; padding: 15px 16px; font-family: var(--font-inter), sans-serif;
-  font-size: 14px; color: var(--charcoal); transition: border-color .2s;
+  /* 16px, not 14px — anything smaller makes iOS Safari auto-zoom the whole
+     page when this field is focused, on the exact form meant to capture
+     leads. */
+  font-size: 16px; color: var(--charcoal); transition: border-color .2s;
 }
 .newsletter-input::placeholder { color: rgba(77,77,79,.45); }
 .newsletter-input:focus { outline: none; border-color: var(--gold); }
@@ -1406,6 +1456,12 @@ footer { background: var(--deep-ocean); padding: 56px 64px 56px; }
 }
 .offer-badge svg { width: 18px; height: 18px; stroke: var(--deep-ocean); fill: none; stroke-width: 1.6; flex-shrink: 0; }
 
+/* Both floats sit outside the nav in the DOM at a higher effective z-index
+   than anything inside its dropdown — without this they'd render on top of
+   the open mobile menu's own links, especially the bottom-most ones
+   (Wishlist / WhatsApp / Inquire), blocking taps on them. */
+body.nav-drawer-open .wa, body.nav-drawer-open .offer-badge { display: none; }
+
 /* ── Responsive ───────────────────────────────────────────── */
 @media (max-width: 1100px) { .prop-grid { grid-template-columns: repeat(2,1fr); } }
 @media (max-width: 960px) {
@@ -1428,21 +1484,21 @@ footer { background: var(--deep-ocean); padding: 56px 64px 56px; }
   .nav-hamburger { display: flex; }
   .pg-header { padding: 132px 24px 40px; }
   .pg-title { font-size: 36px; }
-  /* On mobile, the filter bar scrolls horizontally instead of showing
-     dropdown panels that escape the row — matches the original site's
-     mobile-only overrides exactly (desktop keeps overflow: visible so
-     dropdowns can actually appear). */
-  .filter-bar { overflow: hidden; }
+  /* The inherited design scrolled this row horizontally and clipped
+     anything that opened below it — which meant every dropdown (Destination,
+     Guests, Bedrooms, Nightly Rate, Sort) was invisible the instant you
+     tapped it on a phone, with no way to actually use those filters. Wrapping
+     the chips onto multiple lines instead removes the need to clip anything,
+     so each dropdown can open normally, exactly like it already does on
+     desktop — same markup, same .ff-panel, no new code path. */
+  .filter-bar { overflow: visible; }
   .fb-inner {
-    padding: 0 16px; padding-right: 12px;
-    overflow-x: auto; scrollbar-width: none;
+    flex-wrap: wrap; height: auto; padding: 10px 16px; row-gap: 8px;
   }
-  .fb-inner::-webkit-scrollbar { display: none; }
   .ff-trigger { padding: 8px 12px; font-size: 10px; }
   .ff-chip { padding: 8px 12px; font-size: 10px; }
-  .fb-sep { margin: 0 8px; }
-  .ff:not(.ff-sort) { display: flex; }
-  .mf-btn { padding: 8px 12px; font-size: 10px; margin-left: 8px; }
+  .fb-sep { display: none; } /* separators suited a single scrolling row; redundant once chips wrap */
+  .mf-btn { padding: 8px 12px; font-size: 10px; }
   .mf-drawer { width: 100vw; }
   .results-bar { padding: 14px 24px 0; }
   .properties-section { padding: 20px 24px 80px; } /* extra bottom for floating btn */
@@ -1706,7 +1762,8 @@ body.an-visible { --sidebar-top: 140px; }
 .iq-label { font-family: var(--font-inter), sans-serif; font-size: 9px; font-weight: 400; letter-spacing: .18em; text-transform: uppercase; color: var(--charcoal-light); display: block; margin-bottom: 6px; }
 .iq-select {
   width: 100%; border: 1px solid var(--sand-dark); border-radius: 2px; padding: 10px 12px;
-  background: var(--white); font-family: var(--font-inter), sans-serif; font-size: 13px; font-weight: 300; color: var(--charcoal);
+  /* 16px avoids the iOS Safari auto-zoom-on-focus that a smaller size triggers. */
+  background: var(--white); font-family: var(--font-inter), sans-serif; font-size: 16px; font-weight: 300; color: var(--charcoal);
   cursor: pointer; appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238A8A8C' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
   background-repeat: no-repeat; background-position: right 10px center; transition: border-color .2s;
@@ -1810,7 +1867,14 @@ body.an-visible { --sidebar-top: 140px; }
   .services-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 720px) {
-  .anchor-nav { padding: 0 16px; overflow-x: auto; flex-wrap: nowrap; top: 0; }
+  /* top:92px (inherited from the base rule) is kept, not overridden — this
+     sub-nav sits just under the main nav bar, same as desktop. An earlier
+     "top: 0" here made it render directly underneath the fixed main nav,
+     completely covered and untappable, since the nav's height on this page
+     never shrinks (property-detail pages stay permanently "dark", so the
+     scroll-based padding-shrink that only applies to the homepage never
+     triggers). */
+  .anchor-nav { padding: 0 16px; overflow-x: auto; flex-wrap: nowrap; }
   .an-link { padding: 12px 12px 10px; font-size: 9.5px; }
   .breadcrumb { padding: 20px 24px 0; }
   .gallery { padding: 14px 24px 0; }
@@ -1954,7 +2018,9 @@ body.an-visible { --sidebar-top: 140px; }
 .ct-field label { font-family: var(--font-inter), sans-serif; font-size: 10.5px; font-weight: 400; color: var(--charcoal); letter-spacing: .02em; }
 .ct-field label .opt { font-weight: 300; color: var(--charcoal-light); margin-left: 4px; }
 .ct-input {
-  font-family: var(--font-inter), sans-serif; font-size: 13px; font-weight: 300;
+  /* 16px avoids the iOS Safari auto-zoom-on-focus a smaller size triggers —
+     matters most here since this is the main Inquire/contact form. */
+  font-family: var(--font-inter), sans-serif; font-size: 16px; font-weight: 300;
   color: var(--charcoal); background: var(--cream);
   border: 1px solid var(--sand-dark); border-radius: 2px; padding: 9px 13px; outline: none;
   transition: border-color .15s, background .15s; width: 100%; box-sizing: border-box;
