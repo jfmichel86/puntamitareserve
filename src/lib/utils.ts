@@ -2,9 +2,16 @@
 // Utility helpers — Mexican Reserve
 // ─────────────────────────────────────────────────────────────
 
+// A season prices one of two ways, per Sanity's "Pricing by Season" field:
+// either a single flat `nightlyRate` for the whole season, OR a `bedroomRates`
+// array when the property charges differently depending on how many
+// bedrooms are occupied (e.g. 6BR: $2,200 vs 7BR: $2,400) — in which case
+// `nightlyRate` is left empty on that season. Both are optional at the type
+// level for exactly that reason; code reading a season must check both.
 export type Season = {
   seasonName: string
-  nightlyRate: number
+  nightlyRate?: number
+  bedroomRates?: { bedrooms: number; nightlyRate: number }[]
   minimumStay: number
 }
 
@@ -277,10 +284,29 @@ export function totalGuests(p: Property): number {
   return (p.maxAdults || 0) + (p.childOnlyBeds || 0)
 }
 
+/** Every real nightly rate across every season, flattened into one list.
+ *  A season contributes its flat `nightlyRate` if set, or every tier's
+ *  `nightlyRate` from `bedroomRates` if it uses bedroom-tiered pricing
+ *  instead (see the Season type above) — a season can only have one or the
+ *  other, but both are checked since either can be what's actually filled in.
+ *  Single source of truth for "all the numbers a property actually charges,"
+ *  so startingRate() and the villa page's rate-variance check can't quietly
+ *  drift apart and handle tiered seasons differently (which is exactly what
+ *  happened before this function existed — one handled tiers, one didn't). */
+export function allSeasonRates(p: Property): number[] {
+  const rates: number[] = []
+  for (const s of p.seasons || []) {
+    if (s.nightlyRate) rates.push(s.nightlyRate)
+    for (const br of s.bedroomRates || []) {
+      if (br.nightlyRate) rates.push(br.nightlyRate)
+    }
+  }
+  return rates
+}
+
 /** Compute starting rate = lowest nightly rate across all seasons */
 export function startingRate(p: Property): number | null {
-  if (!p.seasons?.length) return null
-  const rates = p.seasons.map(s => s.nightlyRate).filter(Boolean)
+  const rates = allSeasonRates(p)
   return rates.length ? Math.min(...rates) : null
 }
 

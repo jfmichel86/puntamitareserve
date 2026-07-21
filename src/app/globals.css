@@ -457,9 +457,17 @@ body {
 }
 
 /* ── Date picker ──────────────────────────────────────────── */
-/* .dates-panel is now rendered as a direct child of .search-bar (not nested inside
-   the narrow #sf-dates field) so it can span almost the full bar width, inset 38px
-   each side — matching the live site's dpPositionPanel() behavior. */
+/* .dates-panel is meant to span almost the full search-bar width (inset 38px
+   each side), not just its own narrow field — but it's still nested inside
+   .sf-dates in the actual markup, and .sf-dates is `position: relative`
+   (inherited from the shared .sf rule every field uses), so the panel was
+   anchoring to that narrow field instead of the bar. Rather than restructure
+   the shared desktop/mobile markup, .sf-dates alone gives up being a
+   positioning context — its absolute-positioned child then anchors to
+   .search-bar instead (also `position: relative`), which is what the width
+   math below actually assumes. Guests/Rate keep the default .sf behavior:
+   their panels are meant to stay field-width, not escape to the full bar. */
+.sf-dates { position: static; }
 .dates-panel { position: absolute; top: 100%; left: 38px !important; right: 38px !important; width: auto !important; min-width: unset !important; padding: 0 !important; border-top: none !important; border-radius: 12px !important; margin-top: 10px !important; box-shadow: 0 8px 48px rgba(0,0,0,.18), 0 2px 16px rgba(0,0,0,.08) !important; z-index: 600; }
 .dp-cal-body { padding: 12px 28px 10px; }
 .dp-months-row { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
@@ -1821,6 +1829,11 @@ body.an-visible { --sidebar-top: 140px; }
 .rates-table td { font-family: var(--font-inter), sans-serif; font-size: 13px; font-weight: 300; color: var(--charcoal); padding: 12px 14px; border-bottom: 1px solid var(--sand); }
 .rates-table tr:last-child td { border-bottom: none; }
 .rates-table td:nth-child(2) { font-family: var(--font-cormorant), serif; font-size: 18px; color: var(--gold); font-weight: 400; }
+/* Bedroom-tiered seasons (e.g. 6BR vs 7BR pricing) stack multiple rates in
+   the same cell instead of one flat number — sized down slightly from the
+   single-rate 18px so two or three stacked lines don't overwhelm the row. */
+.rate-tiers { display: flex; flex-direction: column; gap: 3px; }
+.rate-tier { font-size: 15px; }
 .rates-note { list-style: none; padding-left: 0; font-family: var(--font-inter), sans-serif; font-size: 11px; font-weight: 300; color: var(--charcoal-light); line-height: 1.7; margin-top: 14px; }
 .rates-note li { margin-bottom: 2px; padding-left: 14px; position: relative; }
 .rates-note li::before { content: '–'; position: absolute; left: 0; color: var(--gold); }

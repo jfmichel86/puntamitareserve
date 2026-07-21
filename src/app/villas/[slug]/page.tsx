@@ -3,7 +3,7 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import { client, urlFor } from '@/lib/sanity'
 import { PROPERTY_BY_SLUG_QUERY, PROPERTY_SLUGS_QUERY } from '@/lib/queries'
-import { Property, startingRate, formatPrice, communityLabel, VIEW_LABELS } from '@/lib/utils'
+import { Property, startingRate, allSeasonRates, formatPrice, communityLabel, VIEW_LABELS } from '@/lib/utils'
 import {
   MEMBERSHIP_LABELS, BED_LABELS, LOC_LABEL, VIEW_H2_MAP,
   AMENITY_CATS, AMENITY_LABELS, STAFF_NAMES, STAFF_SERVICE_LABELS,
@@ -120,7 +120,10 @@ export default async function PropertyDetailPage({ params }: { params: Promise<P
   const seasons = prop.seasons || []
   const validStays = seasons.map((s) => s.minimumStay).filter((n) => n > 0)
   const minStayNights = validStays.length ? Math.min(...validStays) : 0
-  const rates = seasons.map((s) => s.nightlyRate || 0)
+  // allSeasonRates correctly includes bedroom-tiered rates, not just a flat
+  // nightlyRate — without it, a tiered season would contribute 0 here and
+  // falsely trigger (or skew) the rate-variance check below.
+  const rates = allSeasonRates(prop)
   const showScarcity = rates.length > 1 && Math.max(...rates) > Math.min(...rates) * 1.3
 
   // Location pills
@@ -323,7 +326,17 @@ export default async function PropertyDetailPage({ params }: { params: Promise<P
                   {seasons.map((s, i) => (
                     <tr key={i}>
                       <td>{s.seasonName || '—'}</td>
-                      <td>{formatPrice(s.nightlyRate)}</td>
+                      <td>
+                        {s.bedroomRates && s.bedroomRates.length > 0 ? (
+                          <div className="rate-tiers">
+                            {s.bedroomRates.map((br, j) => (
+                              <div className="rate-tier" key={j}>{br.bedrooms} BR — {formatPrice(br.nightlyRate)}</div>
+                            ))}
+                          </div>
+                        ) : (
+                          formatPrice(s.nightlyRate)
+                        )}
+                      </td>
                       <td>{s.minimumStay ? `${s.minimumStay} nights` : '—'}</td>
                     </tr>
                   ))}
