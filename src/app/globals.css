@@ -190,16 +190,6 @@ body {
 }
 .nav-cta:hover { background: var(--gold-light); transform: translateY(-1px); }
 .nav-cta::after { display: none !important; }
-.nav-whatsapp {
-  display: flex; align-items: center; gap: 7px; transition: opacity .22s; opacity: .7;
-  color: var(--text-on-dark); text-decoration: none;
-}
-.nav-whatsapp:hover { opacity: 1; }
-.nav-whatsapp svg { width: 15px; height: 15px; stroke: var(--gold); fill: none; stroke-width: 1.6; flex-shrink: 0; }
-.nav-whatsapp span {
-  font-family: var(--font-inter), sans-serif; font-size: 11px; font-weight: 300;
-  letter-spacing: .18em; text-transform: uppercase; color: var(--text-on-dark);
-}
 .nav-saved-link {
   display: flex; align-items: center; gap: 7px; transition: opacity .22s; opacity: .7;
   color: var(--text-on-dark); text-decoration: none;
@@ -1595,7 +1585,6 @@ body.on-saved-page .wa, body.on-saved-page .offer-badge { display: none; }
   .nav { padding-left: 24px; padding-right: 24px; flex-wrap: wrap; }
   .nav--scrolled { padding-left: 24px; padding-right: 24px; }
   .nav-links, .nav-cta { display: none; }
-  .nav-whatsapp { display: none; }
   /* .nav-saved-link stays hidden by default here, BUT Nav.tsx forces it
      visible with an inline style once something's actually in the wishlist
      (inline styles always win over this rule) — so when it does show, it

@@ -234,7 +234,8 @@ export default function VillasClient({ properties }: { properties: Property[] })
   if (filters.price) activeChips.push({ label: 'Price range', clear: () => setFilters((f) => ({ ...f, price: '' })) })
   if (filters.pool) activeChips.push({ label: 'Private pool', clear: () => setFilters((f) => ({ ...f, pool: false })) })
   if (filters.featured) activeChips.push({ label: 'Favorites', clear: () => setFilters((f) => ({ ...f, featured: false })) })
-  if (filters.type) activeChips.push({ label: filters.type === 'villa' ? 'Villa' : 'Condo', clear: () => setFilters((f) => ({ ...f, type: '' })) })
+  const typeLabel = filters.type === 'villa' ? 'Villa' : filters.type === 'condo' ? 'Condo' : 'Estate'
+  if (filters.type) activeChips.push({ label: typeLabel, clear: () => setFilters((f) => ({ ...f, type: '' })) })
   if (filters.locationType) activeChips.push({ label: LOC_TYPE_LABELS[filters.locationType], clear: () => setFilters((f) => ({ ...f, locationType: '' })) })
   filters.views.forEach((v) => activeChips.push({ label: VIEW_LABELS[v] || v, clear: () => toggleView(v) }))
   if (filters.collection) activeChips.push({ label: COLL_NAMES[filters.collection], clear: () => setFilters((f) => ({ ...f, collection: '' })) })
@@ -417,7 +418,7 @@ export default function VillasClient({ properties }: { properties: Property[] })
           <div className="mf-section">
             <div className="mf-section-title">Property Type</div>
             <div className="mf-type-chips">
-              {[['', 'All'], ['villa', 'Villa'], ['condo', 'Condo']].map(([v, l]) => (
+              {[['', 'All'], ['villa', 'Villa'], ['condo', 'Condo'], ['estate', 'Estate']].map(([v, l]) => (
                 <button key={v} className={`mf-type-chip${filters.type === v ? ' is-sel' : ''}`} onClick={() => setFilters((f) => ({ ...f, type: v }))}>
                   {l} <span className="opt-count">{cnt(countFor({ type: v }))}</span>
                 </button>

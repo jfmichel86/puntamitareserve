@@ -24,7 +24,7 @@ export type Property = {
   tagline?: string
   shortDescription?: string
   fullDescription?: unknown[]
-  propertyType: 'condo' | 'villa'
+  propertyType: 'condo' | 'villa' | 'estate'
   featured?: boolean
   collection?: string[]
   locationLabel: 'punta-mita' | 'punta-de-mita-area' | 'puerto-vallarta'
