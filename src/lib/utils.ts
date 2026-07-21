@@ -284,8 +284,13 @@ export function startingRate(p: Property): number | null {
   return rates.length ? Math.min(...rates) : null
 }
 
-/** Format price as $1,800 */
-export function formatPrice(n: number): string {
+/** Format price as $1,800. Guards against a missing rate (a season entered in
+ *  Sanity without its nightly rate filled in) — every other call site in the
+ *  codebase already checks for this before calling formatPrice, but the
+ *  villas/[slug] season table didn't, which crashed the entire production
+ *  build the moment one property (villa-kismet) had an incomplete season. */
+export function formatPrice(n: number | null | undefined): string {
+  if (n == null || Number.isNaN(n)) return '—'
   return '$' + n.toLocaleString('en-US')
 }
 
