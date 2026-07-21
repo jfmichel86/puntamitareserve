@@ -155,6 +155,56 @@ export const DEST_LABELS: Record<string, string> = {
   'puerto-vallarta': 'Puerto Vallarta',
 }
 
+// URL slug (used by /destinations/[slug] and DEST_LABELS above) -> the raw
+// value Sanity actually stores on both the property schema's locationLabel
+// field and the activity schema's destinations field. Only "punta-de-mita"
+// differs from its own slug. Centralized here since both /destinations/[slug]
+// and /experiences need the same mapping.
+export const LOCATION_LABEL_BY_SLUG: Record<string, Property['locationLabel']> = {
+  'punta-mita':      'punta-mita',
+  'punta-de-mita':   'punta-de-mita-area',
+  'puerto-vallarta': 'puerto-vallarta',
+}
+
+// Mirrors the category list in sanity-studio/schemas/activity.js — the
+// query only returns the raw value, so this maps it back to a display label.
+// Order here is also the display order for category filter chips.
+export const EXPERIENCE_CATEGORIES: [string, string][] = [
+  ['ocean-water', 'Ocean & Water'],
+  ['wellness-beach-lifestyle', 'Wellness & Beach Lifestyle'],
+  ['sports-adventure', 'Sports & Adventure'],
+  ['beach-clubs-day-clubs', 'Beach Clubs & Day Clubs'],
+  ['food-dining', 'Food & Dining'],
+  ['high-end-vip', 'High-End & VIP'],
+]
+export const EXPERIENCE_CATEGORY_LABEL: Record<string, string> = Object.fromEntries(EXPERIENCE_CATEGORIES)
+
+// One bullet under an Activity (e.g. "Sunset cruise aboard a catamaran").
+// destinationOverride is only set when this specific experience is more
+// limited than the activity as a whole — e.g. within "Private Yacht &
+// Sailing Charters" (offered broadly), only "Marietas Islands boat tour"
+// carries an override narrowing it to Punta de Mita + Puerto Vallarta.
+// A bullet with no override simply inherits the parent Activity's own
+// `destinations` field.
+export type ExperienceItem = {
+  text: string
+  destinationOverride?: string[]
+}
+
+// One "Concierge & Experiences" card — what Sanity calls an "activity"
+// document (e.g. "Private Yacht & Sailing Charters"). `destinations` is its
+// broadest scope; `experiences` are the specific bookable bullets under it,
+// each optionally narrowed further via ExperienceItem.destinationOverride.
+export type Activity = {
+  _id: string
+  title: string
+  category: string
+  description: string
+  photo?: PhotoRef
+  destinations?: string[]
+  experiences: ExperienceItem[]
+}
+
 export const LOC_TYPE_LABELS: Record<string, string> = {
   'oceanfront':  'Oceanfront',
   'beachfront':  'Beachfront',

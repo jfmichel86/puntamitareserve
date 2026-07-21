@@ -180,3 +180,44 @@ export const PROPERTIES_BY_DESTINATION_QUERY = `
     }
   }
 `
+
+// Destination pages: published "Concierge & Experiences" activities whose
+// broad `destinations` scope includes this destination (an activity can
+// apply to more than one, so this is an `in` match, not equality).
+// $destination is the raw value used sitewide: 'punta-mita' |
+// 'punta-de-mita-area' | 'puerto-vallarta' — the same values
+// PROPERTIES_BY_DESTINATION_QUERY uses. Kept deliberately flat (no category
+// sub-pages) per Francisco's call to keep this section flat for now.
+//
+// Each activity's `experiences` bullets come along with their optional
+// `destinationOverride` — the destination page does the actual per-bullet
+// filtering (a bullet with no override inherits the activity's own
+// destinations; one with an override only shows where that override says).
+export const ACTIVITIES_BY_DESTINATION_QUERY = `
+  *[_type == "activity" && status == "published" && $destination in destinations] | order(sortOrder asc, title asc) {
+    _id,
+    title,
+    category,
+    description,
+    photo,
+    "experiences": experiences[]{ text, destinationOverride }
+  }
+`
+
+// The full /experiences catalog page: every published activity across every
+// destination, filtered client-side by destination + category so switching
+// filters doesn't need a page reload. `destinations` is included here (unlike
+// the per-destination query above) since the client needs it to filter.
+// Each activity's `experiences` bullets come along with their optional
+// `destinationOverride`, same as ACTIVITIES_BY_DESTINATION_QUERY above.
+export const ALL_EXPERIENCES_QUERY = `
+  *[_type == "activity" && status == "published"] | order(sortOrder asc, title asc) {
+    _id,
+    title,
+    category,
+    description,
+    photo,
+    destinations,
+    "experiences": experiences[]{ text, destinationOverride }
+  }
+`

@@ -171,7 +171,6 @@ export default function Nav() {
             ))}
           </div>
         </li>
-        <li><Link href="/experiences" className={pathname === '/experiences' ? 'active' : ''}>Experiences</Link></li>
         <li><Link href="/about" className={pathname === '/about' ? 'active' : ''}>About</Link></li>
       </ul>
 
@@ -237,12 +236,14 @@ export default function Nav() {
             ))}
           </div>
         )}
-        <Link href="/experiences" onClick={closeMenu}>Experiences</Link>
         <Link href="/about" onClick={closeMenu}>About</Link>
         {savedCount > 0 && (
           <Link href="/saved" onClick={closeMenu}>Wishlist ({savedCount})</Link>
         )}
-        <a href="https://wa.me/523313619889" target="_blank" rel="noopener" onClick={closeMenu}>WhatsApp us</a>
+        {/* WhatsApp Us was redundant here — Inquire already leads to a
+            dedicated contact page that offers WhatsApp as one of its own
+            quick-contact options (see ContactForm.tsx's .ct-quick-icon.wa),
+            so this menu doesn't need to duplicate that entry point. */}
         <Link href="/contact" onClick={closeMenu} className="mobile-drawer-cta">Inquire</Link>
       </div>
     </nav>

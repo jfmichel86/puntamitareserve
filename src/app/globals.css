@@ -605,15 +605,22 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
    above — the header text gets only the room it needs, .dest-grid
    (flex:1) gets whatever's left, so there's always real padding at the
    bottom instead of the cards pushing past the screen. */
-#destination { background: var(--deep-ocean); position: relative; overflow: hidden; height: 94vh; min-height: 640px; display: flex; flex-direction: column; justify-content: center; }
-#destination::before { content: ''; position: absolute; top: -80px; right: -80px; width: 440px; height: 440px; border-radius: 50%; background: radial-gradient(circle, rgba(200,148,58,.07) 0%, transparent 65%); pointer-events: none; }
-#destination::after { content: ''; position: absolute; bottom: -60px; left: -60px; width: 360px; height: 360px; border-radius: 50%; background: radial-gradient(circle, rgba(104,126,148,.07) 0%, transparent 65%); pointer-events: none; }
+/* Sand, not the deep-ocean navy this used to be — Hero right above this
+   section is already dark, and two dark sections back to back made the
+   boundary between them disappear, reading as one long dark block instead
+   of two distinct sections. Sand is the token this palette already
+   designates for "alternating sections" (see the design tokens), so this
+   also sets up a clean dark → light → cream → white → cream rhythm all the
+   way down the homepage instead of two darks in a row. */
+#destination { background: var(--sand); position: relative; overflow: hidden; height: 94vh; min-height: 640px; display: flex; flex-direction: column; justify-content: center; }
+#destination::before { content: ''; position: absolute; top: -80px; right: -80px; width: 440px; height: 440px; border-radius: 50%; background: radial-gradient(circle, rgba(200,148,58,.10) 0%, transparent 65%); pointer-events: none; }
+#destination::after { content: ''; position: absolute; bottom: -60px; left: -60px; width: 360px; height: 360px; border-radius: 50%; background: radial-gradient(circle, rgba(104,126,148,.10) 0%, transparent 65%); pointer-events: none; }
+/* No more dark-specific text-color overrides here — .s-eye/.s-title/.s-body
+   already default to the correct colors for a light section (same ones
+   Featured, Collections, and Testimonials use), so this section now just
+   inherits them instead of fighting them. */
 .dest-showcase-hdr { flex-shrink: 0; max-width: 620px; margin: 0 auto; text-align: center; position: relative; z-index: 1; }
-.dest-showcase-hdr .s-eye { color: var(--gold); }
-.dest-showcase-hdr .s-div { margin: 0 auto 24px; background: var(--gold); }
-.dest-showcase-hdr .s-title { color: var(--text-on-dark); }
-.dest-showcase-hdr .s-title em { color: var(--mist); }
-.dest-showcase-hdr .s-body { color: rgba(239,246,251,.58); }
+.dest-showcase-hdr .s-div { margin: 0 auto 24px; }
 .about-cta { display: inline-flex; align-items: center; gap: 9px; font-family: var(--font-inter), sans-serif; font-size: 10.5px; letter-spacing: .18em; text-transform: uppercase; color: var(--deep-ocean); text-decoration: none; margin-top: 40px; border-bottom: 1px solid var(--deep-ocean); padding-bottom: 6px; transition: gap .2s, opacity .2s; }
 .about-cta:hover { gap: 15px; opacity: .65; }
 .about-cta svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; }
@@ -679,6 +686,98 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
 }
 .dest-feature-link:hover { gap: 13px; }
 .dest-feature-link svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2; }
+
+/* ── Experiences Catalog (/experiences) ───────────────────────
+   Every published experience across every destination, filterable by
+   destination + category. Card treatment mirrors .prop-card (white,
+   shadow, lift on hover) since both are photo-led catalog cards, but its
+   own classnames — same "shared classname, different pages" reasoning
+   as .exp-row above. Filter chips reuse .ff-chip's inactive/active
+   look (dim grey -> solid navy) so the interaction language matches the
+   villas listing page's filters. */
+.exp-catalog { padding: 40px 64px 72px; max-width: 1360px; margin: 0 auto; }
+.exp-filters { display: flex; flex-wrap: wrap; gap: 28px 48px; margin-bottom: 28px; }
+.exp-filter-group { display: flex; flex-direction: column; gap: 10px; }
+.exp-filter-label {
+  font-family: var(--font-inter), sans-serif; font-size: 10px; font-weight: 500;
+  letter-spacing: .18em; text-transform: uppercase; color: var(--charcoal-light);
+}
+.exp-chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.exp-chip {
+  font-family: var(--font-inter), sans-serif; font-size: 11px; font-weight: 400;
+  letter-spacing: .08em; text-transform: uppercase; color: var(--charcoal);
+  background: var(--cream); border: 1px solid var(--sand); border-radius: 100px;
+  padding: 8px 16px; cursor: pointer; opacity: .75; white-space: nowrap;
+  transition: background .2s, opacity .2s, color .2s, border-color .2s;
+}
+.exp-chip:hover { opacity: 1; border-color: var(--sand-dark); }
+.exp-chip.is-active { background: var(--deep-ocean); border-color: var(--deep-ocean); color: var(--text-on-dark); opacity: 1; }
+.exp-results-count {
+  font-family: var(--font-inter), sans-serif; font-size: 12px; font-weight: 300;
+  color: var(--charcoal-light); margin: 0 0 20px; padding-top: 20px; border-top: 1px solid var(--sand);
+}
+.exp-results-count strong { color: var(--charcoal); font-weight: 500; }
+
+.exp-card-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
+.exp-card {
+  background: var(--white); border-radius: 4px; overflow: hidden;
+  box-shadow: 0 2px 8px rgba(30,58,80,.07);
+  transition: transform .25s ease, box-shadow .25s ease;
+}
+.exp-card:hover { transform: translateY(-5px); box-shadow: 0 16px 48px rgba(30,58,80,.14); }
+.exp-card-photo { position: relative; aspect-ratio: 4/3; overflow: hidden; }
+.exp-card-bg { position: absolute; inset: 0; background-size: cover; background-position: center; }
+.exp-card-bg--placeholder {
+  display: flex; align-items: center; justify-content: center;
+  background: var(--sand); color: var(--charcoal-light);
+  font-family: var(--font-inter), sans-serif; font-size: 11px; letter-spacing: .08em; text-transform: uppercase;
+}
+.exp-card-badge {
+  position: absolute; top: 14px; left: 14px; z-index: 2;
+  font-family: var(--font-inter), sans-serif; font-size: 9px; font-weight: 400;
+  letter-spacing: .16em; text-transform: uppercase; color: var(--text-on-dark);
+  background: rgba(200,148,58,.88); border: 1px solid rgba(255,255,255,.2);
+  padding: 5px 10px; border-radius: 2px;
+}
+.exp-card-body { padding: 18px 20px 22px; }
+.exp-card-title {
+  font-family: var(--font-cormorant), serif; font-style: italic; font-weight: 400;
+  font-size: 21px; color: var(--deep-ocean); line-height: 1.2; margin: 0 0 10px;
+}
+.exp-card-desc {
+  font-family: var(--font-inter), sans-serif; font-size: 12.5px; font-weight: 300;
+  color: var(--charcoal); line-height: 1.7; margin: 0 0 14px;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+.exp-card-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.exp-card-tag {
+  font-family: var(--font-inter), sans-serif; font-size: 9.5px; font-weight: 400;
+  letter-spacing: .08em; text-transform: uppercase; color: var(--charcoal);
+  background: var(--sand); padding: 4px 10px; border-radius: 3px;
+}
+.exp-card-dest {
+  font-family: var(--font-inter), sans-serif; font-size: 10.5px; font-weight: 300;
+  font-style: italic; color: var(--charcoal-light); margin: 4px 0 0;
+}
+
+.exp-empty { text-align: center; padding: 64px 24px; }
+.exp-empty p { font-family: var(--font-inter), sans-serif; font-size: 12.5px; font-weight: 300; color: var(--charcoal-light); margin: 0 0 18px; }
+.exp-clear-btn {
+  font-family: var(--font-inter), sans-serif; font-size: 11px; font-weight: 400;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--charcoal);
+  background: none; border: 1px solid var(--sand-dark); border-radius: 100px;
+  padding: 9px 20px; cursor: pointer; transition: border-color .2s, color .2s;
+}
+.exp-clear-btn:hover { border-color: var(--gold); color: var(--gold); }
+
+@media (max-width: 1100px) {
+  .exp-card-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 720px) {
+  .exp-catalog { padding: 28px 20px 48px; }
+  .exp-filters { gap: 20px 32px; }
+  .exp-card-grid { grid-template-columns: 1fr; gap: 20px; }
+}
 
 /* ── Testimonials ─────────────────────────────────────────── */
 /* Cream, not sand — keeps this section visually distinct from the sand-toned
@@ -1462,6 +1561,14 @@ footer { background: var(--deep-ocean); padding: 56px 64px 56px; }
    (Wishlist / WhatsApp / Inquire), blocking taps on them. */
 body.nav-drawer-open .wa, body.nav-drawer-open .offer-badge { display: none; }
 
+/* Once the footer scrolls into view it already has its own WhatsApp/contact
+   info, and the wishlist page already has its own "Inquire about all" CTA
+   plus a WhatsApp icon on every card — the sitewide floats are redundant
+   clutter in both places (flagged directly: they were sitting on top of the
+   first wishlist card's photo). */
+body.footer-in-view .wa, body.footer-in-view .offer-badge,
+body.on-saved-page .wa, body.on-saved-page .offer-badge { display: none; }
+
 /* ── Responsive ───────────────────────────────────────────── */
 @media (max-width: 1100px) { .prop-grid { grid-template-columns: repeat(2,1fr); } }
 @media (max-width: 960px) {
@@ -1480,7 +1587,14 @@ body.nav-drawer-open .wa, body.nav-drawer-open .offer-badge { display: none; }
   .nav { padding-left: 24px; padding-right: 24px; flex-wrap: wrap; }
   .nav--scrolled { padding-left: 24px; padding-right: 24px; }
   .nav-links, .nav-cta { display: none; }
-  .nav-saved-link, .nav-whatsapp { display: none; }
+  .nav-whatsapp { display: none; }
+  /* .nav-saved-link stays hidden by default here, BUT Nav.tsx forces it
+     visible with an inline style once something's actually in the wishlist
+     (inline styles always win over this rule) — so when it does show, it
+     needs its own breathing room: the hamburger's margin-left:auto absorbs
+     all the row's free space, leaving nothing for the logo and this link to
+     sit apart, so they were rendering flush against each other. */
+  .nav-saved-link { display: none; margin-left: 16px; }
   .nav-hamburger { display: flex; }
   .pg-header { padding: 132px 24px 40px; }
   .pg-title { font-size: 36px; }
@@ -1513,7 +1627,11 @@ body.nav-drawer-open .wa, body.nav-drawer-open .offer-badge { display: none; }
   .newsletter-row { flex-direction: column; }
   .newsletter-btn { width: 100%; padding: 14px 0; }
   footer { padding: 36px 24px 36px; }
-  .footer-top { grid-template-columns: 1fr; gap: 36px; }
+  /* Was 1 column here — each group (Properties/Company/Destinations) is
+     just a handful of short links, so a single column left most of the
+     screen width empty on an actual phone. 2 columns uses the space and
+     matches the 960px breakpoint just above it. */
+  .footer-top { grid-template-columns: 1fr 1fr; gap: 32px 24px; }
   .footer-bottom { flex-direction: column; gap: 16px; text-align: center; }
   .fl-filters-btn { padding: 12px 22px; font-size: 10.5px; bottom: 20px; }
 }
@@ -2342,7 +2460,13 @@ textarea.ct-input { resize: vertical; min-height: 88px; line-height: 1.65; }
   #sv-shared-banner  { padding: 12px 24px; }
   #sv-main           { padding: 32px 24px 60px; }
   #sv-actions        { flex-direction: column; align-items: stretch; width: 100%; }
-  .sv-btn            { justify-content: center; }
+  /* "Inquire about all" and "Compare" are direct children of #sv-actions, so
+     align-items:stretch above already gives them the full width. "Share
+     wishlist" is the odd one out — it's wrapped in an extra positioning
+     <div> (needed to anchor its dropdown menu), and that wrapper stretches
+     to full width but the button inside it doesn't inherit that width on
+     its own, so it was rendering noticeably narrower than its two siblings. */
+  .sv-btn            { justify-content: center; width: 100%; }
   .sv-compare-link   { justify-content: center; }
 }
 
@@ -2563,23 +2687,3 @@ textarea.ct-input { resize: vertical; min-height: 88px; line-height: 1.65; }
   .dest-facts-grid.facts-grid { grid-template-columns: 1fr; }
 }
 
-/* ── Experiences & Concierge page ── */
-.exp-wrap { max-width: 1180px; margin: 0 auto; padding: 8px 64px 100px; }
-.exp-intro { max-width: 640px; margin: 0 auto 56px; text-align: center; font-family: var(--font-inter), sans-serif; font-size: 15px; font-weight: 300; color: var(--charcoal); line-height: 1.8; }
-.exp-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; margin-bottom: 48px; }
-.exp-card { background: var(--white); border: 1px solid var(--sand); border-radius: 4px; padding: 32px 28px; text-align: center; display: flex; flex-direction: column; align-items: center; }
-.exp-icon-circle { width: 60px; height: 60px; border-radius: 50%; border: 1.5px solid var(--sand-dark); display: flex; align-items: center; justify-content: center; margin-bottom: 20px; flex-shrink: 0; }
-.exp-icon-circle svg { width: 26px; height: 26px; stroke: var(--gold); fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
-.exp-card-title { font-family: var(--font-cormorant), serif; font-style: italic; font-weight: 400; font-size: 22px; color: var(--deep-ocean); margin-bottom: 12px; }
-.exp-card-desc { font-family: var(--font-inter), sans-serif; font-size: 13.5px; font-weight: 300; color: var(--charcoal); line-height: 1.75; margin-bottom: 18px; }
-.exp-card-tags { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
-.exp-also { max-width: 780px; margin: 0 auto 56px; text-align: center; padding: 32px; background: var(--sand); border-radius: 4px; }
-.exp-also-title { font-family: var(--font-inter), sans-serif; font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--gold); margin: 0 0 10px; }
-.exp-also-text { font-family: var(--font-inter), sans-serif; font-size: 13.5px; font-weight: 300; color: var(--charcoal); line-height: 1.75; margin: 0; }
-@media (max-width: 960px) {
-  .exp-grid { grid-template-columns: 1fr 1fr; }
-}
-@media (max-width: 720px) {
-  .exp-wrap { padding: 8px 24px 72px; }
-  .exp-grid { grid-template-columns: 1fr; gap: 20px; }
-}

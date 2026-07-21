@@ -2,22 +2,15 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { client, urlFor } from '@/lib/sanity'
-import { PROPERTIES_BY_DESTINATION_QUERY } from '@/lib/queries'
-import { Property, communityLabel } from '@/lib/utils'
+import { PROPERTIES_BY_DESTINATION_QUERY, ACTIVITIES_BY_DESTINATION_QUERY } from '@/lib/queries'
+import { Property, communityLabel, Activity, LOCATION_LABEL_BY_SLUG } from '@/lib/utils'
 import PropertyCard from '@/components/PropertyCard'
 import BeachClubShowcase from '@/components/BeachClubShowcase'
+import ExperienceCard from '@/components/ExperienceCard'
 
 export const revalidate = 60
 
 type Params = { slug: string }
-
-// The URL slug (matches the villas listing page's Destination filter values)
-// maps to the raw Sanity locationLabel value used on the property document.
-const LOCATION_LABEL_BY_SLUG: Record<string, Property['locationLabel']> = {
-  'punta-mita':      'punta-mita',
-  'punta-de-mita':   'punta-de-mita-area',
-  'puerto-vallarta': 'puerto-vallarta',
-}
 
 type Destination = {
   slug: string
@@ -340,6 +333,10 @@ async function getProperties(locationLabel: Property['locationLabel']): Promise<
   return client.fetch(PROPERTIES_BY_DESTINATION_QUERY, { locationLabel })
 }
 
+async function getExperiences(destination: string): Promise<Activity[]> {
+  return client.fetch(ACTIVITIES_BY_DESTINATION_QUERY, { destination })
+}
+
 export async function generateStaticParams() {
   return Object.keys(DESTINATIONS).map((slug) => ({ slug }))
 }
@@ -385,7 +382,10 @@ export default async function DestinationPage({ params }: { params: Promise<Para
   }
 
   const locationLabel = LOCATION_LABEL_BY_SLUG[slug]
-  const properties = await getProperties(locationLabel)
+  const [properties, experiences] = await Promise.all([
+    getProperties(locationLabel),
+    getExperiences(locationLabel),
+  ])
   // This is a full-width page hero, same visual role as the homepage hero —
   // matching that same quality(92) standard rather than leaving it unset.
   const heroUrl = properties[0]?.heroImage?.asset?._ref
@@ -415,6 +415,11 @@ export default async function DestinationPage({ params }: { params: Promise<Para
   // column (see below), so cards get the same width as every other section
   // on the page instead of a one-off wide breakout.
   const PROPERTIES_PREVIEW_LIMIT = 6
+  // Same "teaser, not the full list" reasoning as PROPERTIES_PREVIEW_LIMIT
+  // above — 20-30+ experiences don't work cramped into an on-page section,
+  // so this shows a handful with a link to the full, filterable /experiences
+  // catalog (pre-filtered to this destination) for the rest.
+  const EXPERIENCES_TEASER_LIMIT = 6
   const propertiesBody = properties.length > 0 ? (
     <>
       <div className="properties-grid" style={{ marginBottom: 24 }}>
@@ -591,6 +596,29 @@ export default async function DestinationPage({ params }: { params: Promise<Para
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {experiences.length > 0 && (
+          <div className="detail-section">
+            <span className="sec-label">
+              {dest.redesigned
+                ? (findVillaTiles.length > 0 ? '04' : '03')
+                : (properties.length > 0 ? '03' : '02')}
+            </span>
+            <h2 className="sec-title">Concierge &amp; Experiences</h2>
+            <p className="dest-section-intro">Arranged for guests staying in {dest.title} — a preview of what your concierge can book.</p>
+            <div className="exp-card-grid">
+              {experiences.slice(0, EXPERIENCES_TEASER_LIMIT).map((e) => (
+                <ExperienceCard key={e._id} experience={e} activeDestination={locationLabel} />
+              ))}
+            </div>
+            {experiences.length > EXPERIENCES_TEASER_LIMIT && (
+              <Link href={`/experiences?destination=${dest.slug}`} className="legal-cta" style={{ marginTop: 24 }}>
+                Explore all {experiences.length} {dest.title} experiences
+                <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></svg>
+              </Link>
+            )}
           </div>
         )}
 
