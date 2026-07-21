@@ -1579,6 +1579,14 @@ body.on-saved-page .wa, body.on-saved-page .offer-badge { display: none; }
   .newsletter-headline { font-size: 32px; }
   footer { padding: 44px 40px 44px; }
   .footer-top { grid-template-columns: 1fr 1fr; gap: 40px; }
+  /* The brand block (2-line "Mexican Reserve" wordmark + tagline) is much
+     taller than a link column's short "Properties"/"Company" label, so
+     side-by-side in a 2-col grid it made the adjacent column's links start
+     awkwardly high, next to the wordmark instead of the tagline. Full-width
+     as its own row above the link grid reads cleaner and more editorial —
+     a brand statement, then a tidy grid of links below it. */
+  .footer-top > div:first-child { grid-column: 1 / -1; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,.07); margin-bottom: 4px; }
+  .ft-tagline { max-width: 420px; }
   .help-cta { padding: 48px 40px; flex-direction: column; align-items: flex-start; gap: 28px; }
 }
 @media (max-width: 720px) {
@@ -1729,6 +1737,21 @@ body.an-visible { --sidebar-top: 140px; }
 .lb-thumb { width: 168px; height: 109px; border-radius: 4px; flex-shrink: 0; overflow: hidden; cursor: pointer; opacity: .4; border: 2px solid transparent; transition: opacity .2s, border-color .2s; }
 .lb-thumb.active { opacity: 1; border-color: var(--gold); }
 .lb-thumb-bg { position: relative; width: 100%; height: 100%; }
+@media (max-width: 720px) {
+  /* .lb-frame's 56px side gutters exist so the desktop arrows have their
+     own clear space beside the photo — on a phone that ate almost a third
+     of the screen width, leaving the photo tiny with the arrows stranded
+     in empty dark space instead of near it. Photo now runs nearly edge-to-
+     edge and the arrows sit directly on top of its left/right edges, like
+     a native photo viewer — with a darker circle so they stay legible over
+     a bright photo instead of the subtle desktop tint. */
+  .lb-frame { padding: 0 10px; }
+  .lb-img { max-height: 62vh; }
+  .lb-nav { width: 38px; height: 38px; background: rgba(7,20,28,.5); }
+  .lb-nav:hover { background: rgba(7,20,28,.7); }
+  .lb-prev { left: 18px; }
+  .lb-next { right: 18px; }
+}
 
 /* ── Property header ── */
 .prop-header { padding: 0 0 4px; }
@@ -1749,8 +1772,13 @@ body.an-visible { --sidebar-top: 140px; }
 .spec-item { display: flex; align-items: center; gap: 6px; font-family: var(--font-inter), sans-serif; font-size: 12.5px; font-weight: 300; color: var(--charcoal); }
 .spec-item svg { width: 16px; height: 16px; stroke: var(--ocean); fill: none; stroke-width: 1.7; flex-shrink: 0; }
 .spec-item + .spec-item::before, .spec-rating::before { content: '·'; margin: 0 14px; color: var(--sand-dark); font-size: 10px; }
-.spec-rating { display: flex; align-items: center; gap: 4px; font-family: var(--font-inter), sans-serif; font-size: 12.5px; font-weight: 400; color: var(--charcoal); }
-.spec-rating svg { width: 12px; height: 12px; fill: var(--gold); stroke: none; }
+/* Font-weight/icon size matched to .spec-item on purpose — this used to run
+   400-weight text behind a 12px icon next to .spec-item's 300-weight text
+   and 16px icons, so it read as a different, slightly mismatched typeface
+   even though both use the same font. Gold fill is kept as the one
+   intentional accent (it's a trust badge, not just another spec). */
+.spec-rating { display: flex; align-items: center; gap: 4px; font-family: var(--font-inter), sans-serif; font-size: 12.5px; font-weight: 300; color: var(--charcoal); }
+.spec-rating svg { width: 16px; height: 16px; fill: var(--gold); stroke: none; }
 
 /* ── Two-column layout ── */
 .detail-wrap { display: grid; grid-template-columns: 1fr 360px; gap: 48px; padding: 28px 64px 80px; }
@@ -1996,8 +2024,17 @@ body.an-visible { --sidebar-top: 140px; }
      triggers). */
   .anchor-nav { padding: 0 16px; overflow-x: auto; flex-wrap: nowrap; }
   .an-link { padding: 12px 12px 10px; font-size: 9.5px; }
-  .breadcrumb { padding: 20px 24px 0; }
+  /* Was 20px — .breadcrumb is what clears the fixed nav on this page (the
+     nav is a constant 92px tall here, it never shrinks like the homepage's
+     does), so 20px left the breadcrumb, and the gallery photo right after
+     it, rendering mostly underneath the opaque nav bar: no breathing room,
+     and the top of the hero photo was hidden behind the nav instead of
+     cropped by design. 92px nav + 16px real breathing room, same formula
+     used for .pg-header elsewhere. */
+  .breadcrumb { padding: 108px 24px 0; }
   .gallery { padding: 14px 24px 0; }
+  .spec-rating { flex-basis: 100%; margin-top: 2px; }
+  .spec-rating::before { content: none; }
   /* Single column now, so the 2:1 whole-grid ratio (which only resolves to
      3:2 per cell across the 3fr:1fr desktop column split) no longer
      applies — go straight to 3:2 on the one cell that's actually shown. */
@@ -2226,6 +2263,18 @@ textarea.ct-input { resize: vertical; min-height: 88px; line-height: 1.65; }
   .ct-row-3, .ct-row-2 { grid-template-columns: 1fr; }
   .ct-date-panel { min-width: 100%; }
   .ct-date-panel .dp-months-row { grid-template-columns: 1fr; }
+  /* Flexible-mode tabs, squeezed on a phone width: a single row of 6 equal-
+     width month tiles left each one too narrow to read comfortably, and the
+     4 duration pills wrapped unevenly (3 then 1). Both switch to a proper
+     grid instead — 3x2 for months (still paginated 6 at a time via the same
+     arrows), 2x2 for durations — so every tile/pill is a consistent, legible
+     tap target. */
+  .ct-date-panel .dp-month-nav-row { align-items: stretch; }
+  .ct-date-panel .dp-month-nav-btn { height: auto; }
+  .ct-date-panel .dp-month-tiles { flex-wrap: wrap; }
+  .ct-date-panel .dp-month-tile { flex: 0 0 calc((100% - 12px) / 3); }
+  .ct-date-panel .dp-pills { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .ct-date-panel .dp-pill { text-align: center; padding: 10px 12px; }
 }
 
 /* ── Saved Villas page ────────────────────────────────────── */

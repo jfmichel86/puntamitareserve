@@ -27,8 +27,8 @@ export default function WelcomeOfferTermsPage() {
           <span className="sec-label">01</span>
           <h2 className="sec-title">The Offer</h2>
           <p className="legal-body-text">
-            New newsletter subscribers receive 10% off their first stay booked directly with Luxury Rentals Punta
-            Mita. The offer is available to first-time guests only and applies to the total accommodation cost of
+            New newsletter subscribers receive 10% off their first stay booked directly with Mexican Reserve.
+            The offer is available to first-time guests only and applies to the total accommodation cost of
             one reservation.
           </p>
         </div>

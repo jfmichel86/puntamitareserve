@@ -19,9 +19,9 @@ export default function ContactPage() {
       <section id="ct-main">
         <aside className="ct-sidebar">
           <div className="ct-concierge">
-            <div className="ct-concierge-avatar"><span>LR</span></div>
+            <div className="ct-concierge-avatar"><span>MR</span></div>
             <div>
-              <p className="ct-concierge-name">Luxury Rentals</p>
+              <p className="ct-concierge-name">Mexican Reserve</p>
               <p className="ct-concierge-role">Your dedicated rental agent</p>
             </div>
           </div>
