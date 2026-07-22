@@ -136,6 +136,24 @@ export default function VillasClient({ properties }: { properties: Property[] })
     return () => obs.disconnect()
   }, [])
 
+  // .filter-bar's sticky top was a hardcoded 92px in CSS, matching the main
+  // nav's usual height — but that height isn't actually constant (it grows
+  // when the wishlist count is showing, wraps on some widths), so on any
+  // screen where the real nav differed from 92px, this bar stuck either too
+  // low (a gap of page content showing above it, under the nav) or partly
+  // hidden under the nav. Same fix as AnchorNav.tsx: measure the real nav
+  // height and keep this bar pinned to it exactly, on every screen.
+  useEffect(() => {
+    const navEl = document.querySelector('.nav') as HTMLElement | null
+    const barEl = filterBarRef.current
+    if (!navEl || !barEl) return
+    const sync = () => { barEl.style.top = `${navEl.getBoundingClientRect().height}px` }
+    sync()
+    const ro = new ResizeObserver(sync)
+    ro.observe(navEl)
+    return () => ro.disconnect()
+  }, [])
+
   const toggle = (key: string) => setOpenPanel((p) => (p === key ? null : key))
   const closeAll = () => setOpenPanel(null)
 

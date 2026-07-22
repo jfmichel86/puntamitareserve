@@ -66,22 +66,44 @@ body {
   box-shadow: 0 1px 0 rgba(255,255,255,.05);
 }
 .nav-logo { text-decoration: none; display: flex; align-items: center; gap: 14px; }
-.nav-logo-text { display: flex; flex-direction: column; gap: 2px; line-height: 1; }
-.nav-logo-text .top {
-  display: flex; align-items: center; gap: 7px;
+
+/* ---- Shared brand wordmark — the ONE definition used everywhere the logo
+   appears (Nav, Footer, and anywhere added later). Never re-style this
+   per-placement; wrap it in a parent selector instead (see .footer-top
+   .brand-logo below) if a specific spot needs extra spacing around it. ---- */
+.brand-logo { display: flex; flex-direction: column; align-items: center; line-height: 1; }
+.brand-logo-top {
+  display: flex; align-items: center; gap: 6px;
   font-family: var(--font-cormorant), serif; font-weight: 300;
-  font-size: 9.5px; letter-spacing: .30em; text-transform: uppercase;
-  color: var(--text-on-dark); opacity: .65;
+  font-size: 7.5px; letter-spacing: .34em; text-transform: uppercase;
+  color: var(--text-on-dark); opacity: .65; margin-bottom: 5px;
 }
-.nav-logo-text .top::before,
-.nav-logo-text .top::after {
-  content: ''; width: 10px; height: 1px; background: var(--gold); opacity: .6; flex-shrink: 0;
+.brand-logo-top::before,
+.brand-logo-top::after {
+  content: ''; width: 9px; height: 1px; background: var(--gold); opacity: .6; flex-shrink: 0;
 }
-.nav-logo-text .bottom {
+.brand-logo-bottom {
   font-family: var(--font-cormorant), serif; font-weight: 600;
-  font-size: 19px; letter-spacing: .05em; text-transform: uppercase;
+  font-size: 20px; letter-spacing: .05em; text-transform: uppercase;
   color: var(--text-on-dark);
 }
+.brand-logo-rule {
+  width: 22px; height: 1px; background: var(--gold); opacity: .6; margin-top: 7px;
+}
+
+/* "lg" variant — the exact same proportions as the base lockup above,
+   scaled up ~1.4x as one unit. Used where the logo should carry more
+   presence (currently just the footer). If the base ratios ever change,
+   these numbers should scale with them, not be tuned independently. */
+.brand-logo--lg .brand-logo-top {
+  gap: 9px; font-size: 11px; margin-bottom: 7px;
+}
+.brand-logo--lg .brand-logo-top::before,
+.brand-logo--lg .brand-logo-top::after {
+  width: 13px;
+}
+.brand-logo--lg .brand-logo-bottom { font-size: 28px; }
+.brand-logo--lg .brand-logo-rule { width: 32px; margin-top: 10px; }
 .nav-links { display: flex; gap: 40px; list-style: none; align-items: center; }
 .nav-links a {
   font-family: var(--font-inter), sans-serif; font-weight: 300;
@@ -1461,15 +1483,10 @@ footer { background: var(--deep-ocean); padding: 56px 64px 56px; }
   gap: 40px; padding-bottom: 56px;
   border-bottom: 1px solid rgba(255,255,255,.07); margin-bottom: 36px;
 }
-.ft-brand-name {
-  font-family: var(--font-cormorant), serif; font-weight: 300;
-  font-size: 9.5px; letter-spacing: .34em; text-transform: uppercase;
-  color: var(--text-on-dark); opacity: .65; margin-bottom: 4px;
-}
-.ft-brand-sub {
-  font-family: var(--font-cormorant), serif; font-weight: 600; font-size: 22px;
-  text-transform: uppercase; color: var(--text-on-dark); margin-bottom: 20px; letter-spacing: .05em;
-}
+/* Footer needs a bit of space before the tagline below — spacing only,
+   never alignment or sizing. The logo itself renders identically to the
+   header everywhere it's used. */
+.footer-top .brand-logo { margin-bottom: 20px; }
 .ft-tagline {
   font-family: var(--font-inter), sans-serif; font-size: 12px; font-weight: 300;
   color: rgba(239,246,251,.38); line-height: 1.78; max-width: 260px;

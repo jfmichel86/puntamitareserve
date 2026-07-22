@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import Logo from './Logo'
 
 export default function Nav() {
   const pathname = usePathname()
@@ -107,10 +108,7 @@ export default function Nav() {
   return (
     <nav className={`nav${isDark ? ' nav--dark' : ''}${scrolled ? ' nav--scrolled' : ''}`}>
       <Link href="/" className="nav-logo" onClick={closeMenu}>
-        <div className="nav-logo-text">
-          <span className="top">Mexican</span>
-          <span className="bottom">Reserve</span>
-        </div>
+        <Logo />
       </Link>
 
       <ul className="nav-links">
