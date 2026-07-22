@@ -12,6 +12,7 @@ export const MEMBERSHIP_LABELS: Record<string, string> = {
 export const BED_LABELS: Record<string, string> = {
   king: 'King bed',
   queen: 'Queen bed',
+  full: 'Full bed',
   twin: 'Twin bed',
   single: 'Single bed',
   double: 'Double bed',
@@ -46,7 +47,7 @@ export const AMENITY_LABELS: Record<string, string> = {
   bar: 'Bar', 'coffee-maker': 'Coffee Maker', 'wine-cellar': 'Wine Cellar',
   'coffee-grinder': 'Coffee Grinder', nespresso: 'Nespresso Machine',
   // Entertainment & Health
-  'basketball-court': 'Basketball Court', 'bluray-dvd': 'Blu-Ray & DVD Player',
+  'basketball-court': 'Basketball Court',
   'bocce-ball-court': 'Bocce Ball Court', 'bowling-alley': 'Bowling Alley',
   'cards-poker-table': 'Cards / Poker Table', 'cards-table': 'Cards Table',
   'cinema-room': 'Cinema Room', foosball: 'Foosball', games: 'Games',
@@ -72,6 +73,9 @@ export const AMENITY_LABELS: Record<string, string> = {
   'sun-loungers': 'Sun Loungers', 'volleyball-pool': 'Volleyball Pool', 'wet-bar': 'Wet Bar',
   // Office
   'computer-monitor': 'Computer Monitor', desk: 'Desk', 'desk-chair': 'Desk Chair', printer: 'Printer',
+  // Community Amenities
+  'communal-heated-pool': 'Communal Heated Pool', 'shared-gym': 'Shared Gym',
+  'community-ping-pong': 'Ping Pong Table', 'community-foosball': 'Foosball Table',
   // Accessibility
   elevator: 'Elevator', 'ground-floor-bedroom': 'Ground Floor Bedroom',
   'wheelchair-accessible': 'Wheelchair Accessible',
@@ -85,6 +89,13 @@ export const STAFF_NAMES: Record<string, string> = {
   waiter: 'Waiter / Server', bartender: 'Bartender',
 }
 
+// Kept in sync with the checkbox values defined per-role in
+// sanity-studio/components/StaffServicesInput.jsx — that file is the source
+// of truth for which raw values actually exist. table-meal-service,
+// cocktail-preparation, bar-service, table-service, beverage-service and
+// guest-attention (Waiter and Butler/Bartender roles) were missing here,
+// which is why those roles were rendering their raw, hyphenated Sanity
+// values instead of real words.
 export const STAFF_SERVICE_LABELS: Record<string, string> = {
   'daily-cleaning': 'Daily Cleaning',
   laundry: 'Laundry',
@@ -102,6 +113,12 @@ export const STAFF_SERVICE_LABELS: Record<string, string> = {
   'kitchen-assistance': 'Kitchen Assistance',
   'all-meals': 'All Meals',
   'custom-menus': 'Custom Menus',
+  'table-service': 'Table Service',
+  'beverage-service': 'Beverage Service',
+  'guest-attention': 'Personalized Guest Attention',
+  'table-meal-service': 'Meal & Beverage Table Service',
+  'cocktail-preparation': 'Cocktail Preparation',
+  'bar-service': 'Bar Service',
 }
 
 export type AmenityCat = { label: string; icon: React.ReactNode; keys: string[] }
@@ -120,7 +137,7 @@ export const AMENITY_CATS: AmenityCat[] = [
   {
     label: 'Entertainment & Health',
     icon: <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>,
-    keys: ['basketball-court', 'bluray-dvd', 'bocce-ball-court', 'bowling-alley', 'cards-poker-table', 'cards-table', 'cinema-room', 'foosball', 'games', 'golf-simulator', 'gym', 'golf-clubs', 'media-room', 'petanque', 'piano', 'pickleball-court', 'ping-pong', 'pool-table', 'putting-green', 'satellite-cable-tv', 'scrabble-table', 'shuffleboard', 'smart-tv', 'sonos', 'sound-system', 'tennis-court', 'video-games', 'yoga-room'],
+    keys: ['basketball-court', 'bocce-ball-court', 'bowling-alley', 'cards-poker-table', 'cards-table', 'cinema-room', 'foosball', 'games', 'golf-simulator', 'gym', 'golf-clubs', 'media-room', 'petanque', 'piano', 'pickleball-court', 'ping-pong', 'pool-table', 'putting-green', 'satellite-cable-tv', 'scrabble-table', 'shuffleboard', 'smart-tv', 'sonos', 'sound-system', 'tennis-court', 'video-games', 'yoga-room'],
   },
   {
     label: 'Outdoor Features',
@@ -138,11 +155,104 @@ export const AMENITY_CATS: AmenityCat[] = [
     keys: ['computer-monitor', 'desk', 'desk-chair', 'printer'],
   },
   {
+    label: 'Community Amenities',
+    icon: <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
+    keys: ['communal-heated-pool', 'shared-gym', 'community-ping-pong', 'community-foosball'],
+  },
+  {
     label: 'Accessibility',
     icon: <svg viewBox="0 0 24 24"><circle cx="12" cy="4" r="2"/><path d="M12 8v4"/><path d="M8 21l4-8 4 8"/><path d="M6 13h12"/></svg>,
     keys: ['elevator', 'ground-floor-bedroom', 'wheelchair-accessible'],
   },
 ]
+
+// Amenity "highlight" priority — used by AmenitiesSection to surface a
+// short row of standout amenities above the full categorized checklist,
+// so a genuinely impressive villa doesn't get buried under 40+ checkmarks.
+// Per Francisco (2026-07-21, refined 2026-07-21): every amenity in
+// Entertainment & Health and Pool & Spa Facilities is ranked together in
+// ONE combined list — not category-by-category — purely by how difficult
+// or expensive the amenity is to actually have: dedicated square footage +
+// build cost + rarity, NOT how fun it sounds or which category it happens
+// to sit in. That's why a Private Spa, Sauna, and Infrared Room (all Pool &
+// Spa) rank above a Smart TV, Satellite & Cable TV, or Ping Pong Table (all
+// Entertainment & Health) — a real spa is a bigger investment than a TV,
+// regardless of category. Nothing outside these two categories qualifies —
+// see pickAmenityHighlights() below for what happens when a property
+// doesn't have enough of these to fill the row.
+export const AMENITY_HIGHLIGHTS_PRIORITY: string[] = [
+  'tennis-court',
+  'bowling-alley',
+  'golf-simulator',
+  'cinema-room',
+  'heated-infinity-pool',
+  'private-spa',
+  'steam-room',
+  'sauna',
+  'infrared-room',
+  'basketball-court',
+  'pickleball-court',
+  'putting-green',
+  'gym',
+  'media-room',
+  'volleyball-pool',
+  'cold-water-tub',
+  'wet-bar',
+  'bocce-ball-court',
+  'petanque',
+  'yoga-room',
+  'piano',
+  'electric-massage-bed',
+  'heated-pool',
+  'hot-tub',
+  'jacuzzi',
+  'alfresco-dining',
+  'palapa-roof',
+  'firepit',
+  'bbq-grill',
+  'sun-loungers',
+  'pool-table',
+  'shuffleboard',
+  'cards-poker-table',
+  'cards-table',
+  'scrabble-table',
+  'foosball',
+  'ping-pong',
+  'games',
+  'video-games',
+  'smart-tv',
+  'satellite-cable-tv',
+  'sonos',
+  'sound-system',
+  'golf-clubs',
+]
+
+function catKeys(label: string): string[] {
+  return AMENITY_CATS.find((c) => c.label === label)?.keys || []
+}
+
+// Builds the amenity highlight row for one property. Every item from
+// Entertainment & Health and Pool & Spa Facilities the property has gets
+// picked in the single cost/rarity order above, capped at `max`. Per
+// Francisco: every property must show at least `min` amenities if at all
+// possible — a condo or small villa may not have enough of those two
+// categories to reach that floor, so as a last resort (never used just to
+// pad past `min`) Community Amenities is tapped instead of Accessibility,
+// since shared/community features are a closer match to what this row is
+// for than accessibility features are.
+export function pickAmenityHighlights(propertyAmenities: string[], max = 6, min = 3): string[] {
+  const has = new Set(propertyAmenities)
+  const picked: string[] = []
+  const addFrom = (keys: string[], limit: number) => {
+    for (const k of keys) {
+      if (picked.length >= limit) return
+      if (has.has(k) && !picked.includes(k)) picked.push(k)
+    }
+  }
+  addFrom(AMENITY_HIGHLIGHTS_PRIORITY, max)
+  if (picked.length < min) addFrom(catKeys('Community Amenities'), min)
+  return picked
+}
 
 // Bed-type icons — front-view. viewBox 0 0 24 24, className "bed-svg" applied by caller.
 export const BED_SVGS: Record<string, React.ReactNode> = {

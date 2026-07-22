@@ -310,6 +310,26 @@ export function startingRate(p: Property): number | null {
   return rates.length ? Math.min(...rates) : null
 }
 
+/** Find one specific season by name (case-insensitive, e.g. "Christmas") and
+ *  return its lowest rate — the flat nightlyRate if set, or the lowest tier
+ *  in bedroomRates if it's priced per bedroom-count instead. Returns null if
+ *  this property doesn't have a season by that name, or that season has no
+ *  rate entered at all. Used by the wishlist comparison table's season
+ *  picker, so a client deciding on a specific week sees that week's real
+ *  rate instead of always the Low Season floor. */
+export function rateForSeason(p: Property, seasonName: string): number | null {
+  const season = p.seasons?.find(
+    (s) => s.seasonName?.toLowerCase() === seasonName.toLowerCase()
+  )
+  if (!season) return null
+  const rates: number[] = []
+  if (season.nightlyRate) rates.push(season.nightlyRate)
+  for (const br of season.bedroomRates || []) {
+    if (br.nightlyRate) rates.push(br.nightlyRate)
+  }
+  return rates.length ? Math.min(...rates) : null
+}
+
 /** Format price as $1,800. Guards against a missing rate (a season entered in
  *  Sanity without its nightly rate filled in) — every other call site in the
  *  codebase already checks for this before calling formatPrice, but the

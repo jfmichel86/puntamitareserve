@@ -40,8 +40,8 @@ export default async function Destination() {
       <div className="dest-showcase-hdr">
         <p className="s-eye">Where we operate</p>
         <div className="s-div" />
-        <h2 className="s-title">Three destinations, <em>one local team</em></h2>
-        <p className="s-body">From the private peninsula we&rsquo;re named for to the historic streets of Puerto Vallarta — every property is minutes from world-class beaches, golf, and dining, and every stay is supported by the same local team.</p>
+        <h2 className="s-title">One local team, <em>every destination</em></h2>
+        <p className="s-body">Today, that&rsquo;s Punta Mita, Punta de Mita and Puerto Vallarta — with more of Mexico on the way. Every property is personally vetted and managed by the same Mexican Reserve team, so the same standard of service follows you, wherever you stay.</p>
       </div>
 
       <div className="dest-grid">

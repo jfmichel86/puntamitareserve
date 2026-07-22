@@ -619,6 +619,11 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
    inherits them instead of fighting them. */
 .dest-showcase-hdr { flex-shrink: 0; max-width: 620px; margin: 0 auto; text-align: center; position: relative; z-index: 1; }
 .dest-showcase-hdr .s-div { margin: 0 auto 24px; }
+/* Same reasoning as .dest-why-support: the eyebrow/title above stay
+   centered (short, headline-weight), but this multi-line paragraph reads
+   better left-aligned — centered text loses the fixed left margin that
+   makes several lines of running copy easy to scan. */
+.dest-showcase-hdr .s-body { text-align: left; max-width: 480px; margin: 0 auto; }
 .about-cta { display: inline-flex; align-items: center; gap: 9px; font-family: var(--font-inter), sans-serif; font-size: 10.5px; letter-spacing: .18em; text-transform: uppercase; color: var(--deep-ocean); text-decoration: none; margin-top: 40px; border-bottom: 1px solid var(--deep-ocean); padding-bottom: 6px; transition: gap .2s, opacity .2s; }
 .about-cta:hover { gap: 15px; opacity: .65; }
 .about-cta svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; }
@@ -1672,6 +1677,16 @@ body.on-saved-page .wa, body.on-saved-page .offer-badge { display: none; }
 .an-link:hover { color: var(--deep-ocean); }
 .an-link.active { color: var(--deep-ocean); border-bottom-color: var(--gold); }
 body.an-visible { --sidebar-top: 140px; }
+/* AnchorNav.tsx scrolls each section into view with plain scrollIntoView()
+   — no offset — which aligns the section's top edge with the very top of
+   the viewport. But the top of the viewport on this page is never actually
+   clear: the 92px main nav plus this ~40px anchor-nav sit fixed on top of
+   it, so the section's own heading landed hidden behind them and the tab
+   appeared to jump into the middle of the section's content instead of its
+   start. scroll-margin-top makes scrollIntoView (and any # link) stop far
+   enough down to clear both bars, with a little real breathing room too —
+   same fixed-nav-clearance math used for .pg-header and .breadcrumb. */
+#overview, #rooms, #amenities, #staff, #rates, #location { scroll-margin-top: 150px; }
 
 /* ── Gallery mosaic ──
    aspect-ratio (not a fixed pixel height) is what makes this scale
@@ -1725,7 +1740,19 @@ body.an-visible { --sidebar-top: 140px; }
    2000x1333), so object-fit:cover never actually needs to crop anything —
    the box shape and the photo shape are already the same. */
 .lb-img { position: relative; width: 100%; max-height: 70vh; aspect-ratio: 3/2; border-radius: 2px; overflow: hidden; }
-.lb-nav { position: absolute; top: 50%; transform: translateY(-50%); width: 42px; height: 42px; border-radius: 50%; background: rgba(255,255,255,.12); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #fff; transition: background .2s; }
+/* backdrop-filter + a soft white ring keep this circle visible as a distinct
+   "glass" disc regardless of what's directly behind it — plain rgba(255,255,
+   255,.12) was fine over a mid-tone photo, but nearly disappeared over dark
+   areas (shaded pergolas, night shots) since it was dark-on-dark with
+   nothing to mark its edge. */
+.lb-nav {
+  position: absolute; top: 50%; transform: translateY(-50%); width: 42px; height: 42px; border-radius: 50%;
+  background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.4);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  cursor: pointer; display: flex; align-items: center; justify-content: center; color: #fff;
+  box-shadow: 0 2px 10px rgba(0,0,0,.25);
+  transition: background .2s;
+}
 .lb-nav:hover { background: rgba(255,255,255,.22); }
 .lb-nav svg { width: 17px; height: 17px; stroke: currentColor; fill: none; stroke-width: 2; }
 .lb-prev { left: 8px; } .lb-next { right: 8px; }
@@ -1824,6 +1851,14 @@ body.an-visible { --sidebar-top: 140px; }
 .bed-item { display: inline-flex; align-items: center; }
 .bed-sep { margin: 0 10px; color: var(--sand-dark); font-size: 10px; }
 
+/* Amenity highlights — white cards, matches bedroom-card style */
+.am-highlight-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
+.am-highlight-item { background: var(--white); border: 1px solid var(--sand); border-radius: 2px; padding: 14px 16px; display: flex; align-items: center; gap: 10px; }
+.am-highlight-item svg { width: 14px; height: 14px; stroke: var(--gold); fill: none; stroke-width: 2.2; flex-shrink: 0; }
+.am-highlight-label { font-family: var(--font-inter), sans-serif; font-size: 13px; font-weight: 400; color: var(--charcoal); }
+@media (max-width: 600px) { .am-highlight-grid { grid-template-columns: repeat(2, 1fr); } }
+.am-full-list { margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--sand); }
+
 /* Amenities by category */
 .amenity-category { margin-bottom: 28px; }
 .amenity-category:last-child { margin-bottom: 0; }
@@ -1841,6 +1876,12 @@ body.an-visible { --sidebar-top: 140px; }
 .service-desc { font-family: var(--font-inter), sans-serif; font-size: 11.5px; font-weight: 300; color: var(--charcoal-light); line-height: 1.5; }
 
 /* Rates table */
+/* Every other card on this page (.fact-card, .bedroom-card, .service-card)
+   sits in a white card on the page's cream background — this table was the
+   one exception, a bare table left directly on the cream, which read as
+   flatter/plainer than the sections around it instead of matching the
+   page's established "white card on cream" language. */
+.rates-table-wrap { background: var(--white); border: 1px solid var(--sand); border-radius: 2px; overflow: hidden; }
 .rates-table { width: 100%; border-collapse: collapse; }
 .rates-table th { font-family: var(--font-inter), sans-serif; font-size: 9px; font-weight: 400; letter-spacing: .22em; text-transform: uppercase; color: var(--charcoal-light); text-align: left; padding: 10px 14px; background: var(--sand); border-bottom: 1px solid var(--sand-dark); }
 .rates-table td { font-family: var(--font-inter), sans-serif; font-size: 13px; font-weight: 300; color: var(--charcoal); padding: 12px 14px; border-bottom: 1px solid var(--sand); }
@@ -1887,8 +1928,11 @@ body.an-visible { --sidebar-top: 140px; }
 
 /* ── Sidebar ── */
 .sidebar-sticky { position: sticky; top: var(--sidebar-top); display: flex; flex-direction: column; gap: 14px; transition: top .3s ease; }
-.iq-card { background: var(--white); border-radius: 4px; box-shadow: 0 4px 28px rgba(30,58,80,.10), 0 1px 6px rgba(30,58,80,.05); overflow: hidden; }
-.iq-head { background: var(--deep-ocean); padding: 22px 26px; }
+.iq-card { background: var(--white); border-radius: 4px; box-shadow: 0 4px 28px rgba(30,58,80,.10), 0 1px 6px rgba(30,58,80,.05); }
+/* No overflow:hidden here (removed) — the dates/guests dropdown panels
+   below need to render outside the card's box. .iq-head gets its own
+   top-corner radius instead, so it still matches the card's rounded shape. */
+.iq-head { background: var(--deep-ocean); padding: 22px 26px; border-radius: 4px 4px 0 0; }
 .iq-from { font-family: var(--font-inter), sans-serif; font-size: 9px; font-weight: 300; letter-spacing: .18em; text-transform: uppercase; color: rgba(239,246,251,.40); margin-bottom: 4px; }
 .iq-price { display: flex; align-items: baseline; gap: 5px; }
 .iq-amount { font-family: var(--font-cormorant), serif; font-size: 38px; font-weight: 300; color: var(--gold); line-height: 1; }
@@ -1896,27 +1940,69 @@ body.an-visible { --sidebar-top: 140px; }
 .iq-min-stay { font-family: var(--font-inter), sans-serif; font-size: 10px; font-weight: 300; color: rgba(239,246,251,.42); letter-spacing: .06em; margin-top: 5px; }
 
 .iq-body { padding: 22px 26px; }
-.iq-dates { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
-.iq-date { border: 1px solid var(--sand-dark); border-radius: 2px; padding: 10px 12px; cursor: pointer; background: var(--white); transition: border-color .2s; position: relative; }
-.iq-date:hover { border-color: var(--ocean); }
-.iq-date input[type="date"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
-.iq-date-lbl { font-family: var(--font-inter), sans-serif; font-size: 9px; font-weight: 400; letter-spacing: .16em; text-transform: uppercase; color: var(--charcoal-light); display: block; margin-bottom: 3px; }
-.iq-date-val { font-family: var(--font-inter), sans-serif; font-size: 13px; font-weight: 300; color: var(--charcoal); }
-.iq-date-val.ph { color: var(--charcoal-light); font-style: italic; }
 
 .iq-nights-est { font-family: var(--font-inter), sans-serif; font-size: 11px; font-weight: 400; color: var(--gold); letter-spacing: .04em; margin-bottom: 10px; padding: 7px 10px; background: rgba(200,148,58,.07); border-radius: 2px; }
 
-.iq-field { margin-bottom: 12px; }
+.iq-field { margin-bottom: 12px; position: relative; }
 .iq-label { font-family: var(--font-inter), sans-serif; font-size: 9px; font-weight: 400; letter-spacing: .18em; text-transform: uppercase; color: var(--charcoal-light); display: block; margin-bottom: 6px; }
-.iq-select {
-  width: 100%; border: 1px solid var(--sand-dark); border-radius: 2px; padding: 10px 12px;
-  /* 16px avoids the iOS Safari auto-zoom-on-focus that a smaller size triggers. */
-  background: var(--white); font-family: var(--font-inter), sans-serif; font-size: 16px; font-weight: 300; color: var(--charcoal);
-  cursor: pointer; appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238A8A8C' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
-  background-repeat: no-repeat; background-position: right 10px center; transition: border-color .2s;
+
+/* Dates + Guests triggers — same trigger-button-opens-a-panel component as
+   the homepage search bar (.sf-trigger) and the Contact page (.ct-dd-
+   trigger), just re-skinned to sit inside the narrower sidebar card. This
+   replaced two things that didn't match the rest of the site: an invisible
+   native <input type="date"> (unreliable clicks, esp. in Safari) and a
+   native <select> for guests (browser-drawn list, can't be restyled). */
+.iq-dd-trigger {
+  display: flex; align-items: center; justify-content: space-between; width: 100%;
+  border: 1px solid var(--sand-dark); border-radius: 2px; padding: 10px 12px;
+  background: var(--white); cursor: pointer; transition: border-color .2s;
+  font: inherit; text-align: left;
 }
-.iq-select:focus { outline: none; border-color: var(--ocean); }
+.iq-dd-trigger:hover, .iq-dd-trigger.is-open { border-color: var(--ocean); }
+.iq-dd-val { font-family: var(--font-inter), sans-serif; font-size: 13px; font-weight: 300; color: var(--charcoal); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.iq-dd-val.ph { color: var(--charcoal-light); font-style: italic; }
+.iq-dd-arrow { width: 12px; height: 12px; stroke: var(--charcoal-light); fill: none; stroke-width: 2; flex-shrink: 0; transition: transform .22s; }
+.iq-dd-trigger.is-open .iq-dd-arrow { transform: rotate(180deg); stroke: var(--ocean); }
+
+.iq-dd-panel {
+  position: absolute; top: calc(100% + 8px);
+  background: var(--white); border: 1px solid var(--sand); border-radius: 4px;
+  box-shadow: 0 12px 40px rgba(30,58,80,.16); z-index: 400;
+  animation: ctFadeIn .18s ease both;
+}
+/* Right-aligned (grows leftward into the main content column) rather than
+   left-aligned like the field itself — the sidebar sits in a fixed 360px
+   right-hand column (see .detail-wrap), so a wide two-month calendar
+   anchored to the field's left edge would run off the right edge of the
+   browser window. Anchoring to the field's right edge instead keeps it
+   safely on-screen regardless of window width. */
+.iq-date-panel { right: 0; width: 520px; max-width: calc(100vw - 48px); padding: 16px 18px 14px; }
+.iq-date-panel .dp-tabs { padding: 0 0 14px; border-bottom: none; }
+.iq-date-panel .dp-toggle-group { border-radius: 100px; }
+.iq-date-panel .dp-tab { padding: 7px 24px; }
+.iq-date-panel .dp-cal-body, .iq-date-panel .dp-flex-body { padding: 0; }
+.iq-date-panel .dp-months-row { gap: 18px; }
+.iq-date-panel .dp-day { border-radius: 2px; }
+.iq-date-panel .dp-day-start { border-radius: 2px 0 0 2px; }
+.iq-date-panel .dp-day-end { border-radius: 0 2px 2px 0; }
+.iq-date-panel .dp-flex-row { border-top: none; margin-top: 0; }
+.iq-date-panel .dp-flex-pill { padding: 5px 12px; }
+.iq-date-panel .dp-panel-footer { margin-top: 4px; }
+.iq-date-panel .dp-clear-btn { font-size: 10px; text-underline-offset: 3px; }
+.iq-date-panel .dp-done-btn { font-size: 10px; padding: 2px 0; }
+.iq-date-panel .dp-flex-q { font-size: 12.5px; margin: 0 0 10px; }
+.iq-date-panel .dp-pills { margin-bottom: 18px; }
+.iq-date-panel .dp-pill { font-size: 13px; padding: 9px 20px; }
+.iq-date-panel .dp-month-nav-btn { height: 50px; }
+.iq-date-panel .dp-month-tiles { max-height: none; overflow: hidden; margin-bottom: 0; }
+.iq-date-panel .dp-month-tile { flex: 1; min-width: 0; height: auto; padding: 9px 4px; font-size: 11px; line-height: 1.35; border-width: 1.5px; }
+
+.iq-guest-panel { right: 0; width: 280px; padding: 0; }
+
+.iq-dd-opt { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; font-family: var(--font-inter), sans-serif; font-size: 13px; font-weight: 300; color: var(--charcoal); cursor: pointer; transition: background .15s; }
+.iq-dd-opt:hover { background: var(--cream); }
+.iq-dd-opt.is-sel { color: var(--deep-ocean); font-weight: 500; }
+.iq-dd-opt.is-sel::after { content: ''; display: block; width: 5px; height: 5px; border-radius: 50%; background: var(--gold); flex-shrink: 0; }
 
 .iq-divider { height: 1px; background: var(--sand); margin: 16px 0; }
 
@@ -2024,6 +2110,13 @@ body.an-visible { --sidebar-top: 140px; }
      triggers). */
   .anchor-nav { padding: 0 16px; overflow-x: auto; flex-wrap: nowrap; }
   .an-link { padding: 12px 12px 10px; font-size: 9.5px; }
+  /* Location is last in SECTIONS (AnchorNav.tsx) — dropped from the mobile
+     tab row on purpose (Francisco's call, 2026-07-22): 6 tabs in a horizontal
+     scroll row felt like one too many on a phone, and the map/location
+     section reads fine as something you scroll into rather than jump to.
+     The section itself (and its id="location" anchor) is untouched — this
+     only hides its tab. */
+  .an-link:last-child { display: none; }
   /* Was 20px — .breadcrumb is what clears the fixed nav on this page (the
      nav is a constant 92px tall here, it never shrinks like the homepage's
      does), so 20px left the breadcrumb, and the gallery photo right after
@@ -2033,6 +2126,16 @@ body.an-visible { --sidebar-top: 140px; }
      used for .pg-header elsewhere. */
   .breadcrumb { padding: 108px 24px 0; }
   .gallery { padding: 14px 24px 0; }
+  /* Sidebar dates panel: full-width, single-month calendar on phones —
+     same treatment as .ct-date-panel on the Contact page at this width. */
+  .iq-date-panel, .iq-guest-panel { left: 0; right: 0; width: 100%; }
+  .iq-date-panel .dp-months-row { grid-template-columns: 1fr; }
+  .iq-date-panel .dp-month-nav-row { align-items: stretch; }
+  .iq-date-panel .dp-month-nav-btn { height: auto; }
+  .iq-date-panel .dp-month-tiles { flex-wrap: wrap; }
+  .iq-date-panel .dp-month-tile { flex: 0 0 calc((100% - 12px) / 3); }
+  .iq-date-panel .dp-pills { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .iq-date-panel .dp-pill { text-align: center; padding: 10px 12px; }
   .spec-rating { flex-basis: 100%; margin-top: 2px; }
   .spec-rating::before { content: none; }
   /* Single column now, so the 2:1 whole-grid ratio (which only resolves to
@@ -2415,6 +2518,56 @@ textarea.ct-input { resize: vertical; min-height: 88px; line-height: 1.65; }
 .sv-cmp-inner { padding-top: 0; }
 .sv-cmp-eyebrow { font-family: var(--font-inter), sans-serif; font-size: 10px; font-weight: 400; letter-spacing: .22em; text-transform: uppercase; color: var(--charcoal-light); margin: 0 0 10px; }
 .sv-cmp-inner .sec-title { margin-bottom: 28px; }
+/* Title/eyebrow sit on the left, the season picker bottom-aligns to them on
+   the right — the row itself carries the space down to the photos/table
+   that .sec-title normally provides on its own, since flex-aligning the two
+   sides means .sec-title can't keep its own margin without throwing them
+   out of alignment. */
+.sv-cmp-heading-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; flex-wrap: wrap; margin-bottom: 28px; }
+.sv-cmp-heading-row .sec-title { margin-bottom: 0; }
+
+/* Custom season dropdown for the comparison table — mirrors the search
+   bar's field-trigger/panel/option look (.sf-trigger/.sf-panel/.sf-opt in
+   the Date picker section above) rather than reusing those classes, since
+   this control lives on a different page and styling it separately avoids
+   the two drifting into each other later (see the project's own "shared
+   classname, different pages" rule). */
+.sv-season-select { position: relative; }
+.sv-season-trigger {
+  display: flex; align-items: center; gap: 10px; background: var(--white);
+  border: 1.5px solid var(--sand-dark); border-radius: 6px; padding: 9px 16px;
+  cursor: pointer; transition: border-color .15s;
+}
+.sv-season-trigger:hover { border-color: var(--charcoal-light); }
+.sv-season-select.is-open .sv-season-trigger { border-color: var(--deep-ocean); }
+.sv-season-label {
+  font-family: var(--font-inter), sans-serif; font-size: 10px; font-weight: 500;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--charcoal-light); white-space: nowrap;
+}
+.sv-season-val {
+  font-family: var(--font-inter), sans-serif; font-size: 12.5px; font-weight: 400; color: var(--charcoal); white-space: nowrap;
+}
+.sv-season-chev {
+  width: 12px; height: 12px; stroke: var(--charcoal-light); fill: none; stroke-width: 1.8;
+  stroke-linecap: round; stroke-linejoin: round; transition: transform .25s cubic-bezier(.16,1,.3,1), stroke .18s;
+}
+.sv-season-select.is-open .sv-season-chev { transform: rotate(180deg); stroke: var(--deep-ocean); }
+.sv-season-panel {
+  position: absolute; top: 100%; right: 0; margin-top: 8px; min-width: 190px;
+  background: var(--white); border-radius: 0 0 8px 8px; overflow: hidden;
+  box-shadow: 0 20px 52px rgba(30,58,80,.16), 0 4px 14px rgba(30,58,80,.08);
+  border-top: 2px solid var(--gold); padding: 6px 0; z-index: 600;
+  animation: dropDown .20s cubic-bezier(.16,1,.3,1) both;
+}
+.sv-season-opt {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 10px 16px; font-family: var(--font-inter), sans-serif; font-size: 13px; font-weight: 300;
+  color: var(--charcoal); cursor: pointer; transition: background .13s, color .13s; white-space: nowrap;
+}
+.sv-season-opt:hover { background: var(--cream); }
+.sv-season-opt.is-sel { color: var(--deep-ocean); font-weight: 400; }
+.sv-season-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gold); flex-shrink: 0; opacity: 0; transition: opacity .15s; }
+.sv-season-opt.is-sel .sv-season-dot { opacity: 1; }
 .sv-cmp-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .sv-cmp-table { width: 100%; border-collapse: collapse; font-family: var(--font-inter), sans-serif; }
 .sv-cmp-table th, .sv-cmp-table td { vertical-align: middle; }
@@ -2610,7 +2763,15 @@ textarea.ct-input { resize: vertical; min-height: 88px; line-height: 1.65; }
 .dest-why-eyebrow { font-family: var(--font-inter), sans-serif; font-size: 11px; font-weight: 400; letter-spacing: .3em; text-transform: uppercase; color: var(--ocean); margin-bottom: 18px; }
 .dest-why-headline { font-family: var(--font-cormorant), serif; font-weight: 300; font-size: 28px; line-height: 1.35; color: var(--deep-ocean); max-width: 520px; margin: 0 0 18px; }
 .dest-why-rule { width: 36px; height: 1px; background: var(--gold); margin-bottom: 18px; }
-.dest-why-support { font-family: var(--font-inter), sans-serif; font-weight: 300; font-size: 13.5px; line-height: 1.8; color: var(--charcoal); max-width: 520px; margin: 0; }
+/* Left-aligned on purpose, unlike its centered headline above — a short
+   1-2 line headline reads fine centered, but this runs 3-4 lines, and
+   centered text that long loses its left margin as a scan line, which
+   makes longer copy harder to read, not more elegant. Editorial print (the
+   look this site is going for) centers short pull-quotes but sets running
+   body copy ragged-right for exactly this reason. The block itself stays
+   centered on the page via max-width + auto margins — only the text inside
+   it switches to left-aligned. */
+.dest-why-support { font-family: var(--font-inter), sans-serif; font-weight: 300; font-size: 13.5px; line-height: 1.8; color: var(--charcoal); max-width: 520px; margin: 0 auto; text-align: left; }
 
 .dest-numbers { background: var(--deep-ocean); margin: 0 calc(50% - 50vw) 48px; padding: 40px 24px; }
 .dest-numbers-grid { max-width: 812px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); }
@@ -2639,8 +2800,9 @@ textarea.ct-input { resize: vertical; min-height: 88px; line-height: 1.65; }
 
 .dest-cinematic-stack { display: flex; flex-direction: column; gap: 12px; }
 .dest-cinematic-band {
-  position: relative; height: 260px; border-radius: 2px; overflow: hidden;
-  background: var(--sand); display: flex; align-items: flex-end;
+  position: relative; height: 475px; border-radius: 2px; overflow: hidden;
+  background: var(--sand); background-size: cover; background-position: center;
+  display: flex; align-items: flex-end;
 }
 .dest-cinematic-band::before {
   content: ''; position: absolute; inset: 0;
@@ -2667,8 +2829,19 @@ textarea.ct-input { resize: vertical; min-height: 88px; line-height: 1.65; }
 .dest-showcase-tab:hover { color: var(--deep-ocean); }
 .dest-showcase-tab.is-active { color: var(--deep-ocean); font-style: italic; border-bottom-color: var(--gold); }
 .dest-showcase-panel { border: 1px solid var(--sand); border-top: none; border-radius: 0 0 2px 2px; background: var(--white); overflow: hidden; }
-.dest-showcase-photo { height: 320px; background: var(--sand); display: flex; align-items: center; justify-content: center; }
+.dest-showcase-photo { aspect-ratio: 16 / 9; background: var(--sand); overflow: hidden; }
 .dest-showcase-photo-label { font-family: var(--font-inter), sans-serif; font-size: 12px; color: var(--charcoal-light); }
+
+/* Beach club photo mosaic — a 16:9 frame split evenly into a 2x2 grid, so
+   each of the 4 tiles is itself 16:9 and all 4 are exactly the same size.
+   All 4 always render, filled or empty, so the layout looks the same
+   before and after real photography goes in. */
+.dest-showcase-mosaic { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 4px; width: 100%; height: 100%; }
+.dest-showcase-mosaic-item {
+  background: var(--sand); background-size: cover; background-position: center;
+  display: flex; align-items: center; justify-content: center;
+}
+.dest-showcase-mosaic-label { font-family: var(--font-inter), sans-serif; font-size: 11px; color: var(--charcoal-light); }
 .dest-showcase-body { padding: 26px 30px 30px; }
 .dest-showcase-vibe { font-family: var(--font-cormorant), serif; font-weight: 400; font-size: 21px; color: var(--deep-ocean); margin: 0 0 14px; }
 .dest-showcase-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
@@ -2682,7 +2855,7 @@ textarea.ct-input { resize: vertical; min-height: 88px; line-height: 1.65; }
 
 .dest-photo-break {
   position: relative; margin: 0 calc(50% - 50vw) 48px; padding: 0 32px;
-  min-height: 260px; background: var(--ocean-mid); background-size: cover; background-position: center;
+  min-height: 425px; background: var(--ocean-mid); background-size: cover; background-position: center;
   display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
 }
 .dest-photo-break-label {
@@ -2714,6 +2887,14 @@ textarea.ct-input { resize: vertical; min-height: 88px; line-height: 1.65; }
   .dest-soon { padding: 120px 24px 100px; }
   .dest-soon-tagline { font-size: 17px; }
   #dest-hero { padding: 132px 24px 40px; }
+  /* Desktop's gradient goes dark-on-the-left, light-on-the-right — it works
+     there because the text sits in a distinct left column next to open
+     photo on the right. On one narrow mobile column there's no such split;
+     the text runs nearly full-width, so part of every line ended up in the
+     gradient's lighter zone and read poorly against a bright photo. A
+     flatter, uniformly dark scrim keeps the text legible no matter which
+     photo is behind it or how the text happens to wrap. */
+  #dest-hero::before { background: linear-gradient(180deg, rgba(10,24,32,.62) 0%, rgba(10,24,32,.8) 100%); }
   .dest-wrap { padding: 40px 24px 72px; }
   .dest-facts-grid.facts-grid { grid-template-columns: 1fr 1fr; }
   .guide-grid { grid-template-columns: 1fr; }
@@ -2722,13 +2903,22 @@ textarea.ct-input { resize: vertical; min-height: 88px; line-height: 1.65; }
   .dest-numbers-item { border-left: none; padding: 0; }
   .dest-numbers-item:not(:first-child) { padding-top: 20px; border-top: 1px solid rgba(200,148,58,.3); }
   .dest-find-grid { grid-template-columns: 1fr; }
-  .dest-photo-break { min-height: 200px; padding: 0 24px; }
+  .dest-photo-break { min-height: 325px; padding: 0 24px; }
   .dest-photo-break-caption { font-size: 17px; }
-  .dest-cinematic-band { height: 220px; }
+  /* A 350px band with the same full-length description as desktop meant
+     the text block (and the gradient behind it) ate a much bigger share of
+     a shorter box — on longer descriptions it covered most of the photo/
+     placeholder instead of just anchoring a caption at the bottom. Line-
+     clamping the description keeps the text block's height predictable
+     regardless of copy length, and a taller band + earlier-fading gradient
+     give the photo more room to actually show. */
+  .dest-cinematic-band { height: 400px; }
+  .dest-cinematic-band::before { background: linear-gradient(0deg, rgba(30,58,80,.9) 0%, rgba(30,58,80,.4) 38%, rgba(30,58,80,0) 60%); }
   .dest-cinematic-title { font-size: 20px; }
+  .dest-cinematic-desc { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
   .dest-showcase-tabs { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .dest-showcase-tab { white-space: nowrap; margin-right: 18px; }
-  .dest-showcase-photo { height: 220px; }
+  .dest-showcase-mosaic { gap: 3px; }
   .dest-showcase-body { padding: 20px 20px 24px; }
   .dest-showcase-vibe { font-size: 18px; }
   .dest-amenity-row { flex-direction: column; gap: 4px; }

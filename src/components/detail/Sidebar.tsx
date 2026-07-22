@@ -1,16 +1,40 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { formatPrice } from '@/lib/utils'
 
 const WA_NUMBER = '523313619889'
 const CONTACT_EMAIL = 'rentals@mexicanreserve.com'
 
-const GUEST_OPTIONS = ['1–2 guests', '3–4 guests', '5–6 guests', '7–8 guests', '9–10 guests', '11–12 guests']
+type PanelOpen = 'dates' | 'guests' | null
+type DateMode = 'calendar' | 'flexible'
 
-function fmtDateLabel(iso: string) {
-  const d = new Date(iso + 'T12:00:00')
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+// Same options/consts as the homepage search bar (SearchBar.tsx) and the
+// Contact page (ContactForm.tsx) — this widget now mirrors those two
+// exactly instead of its own simplified version, so guests get one
+// consistent booking experience site-wide.
+const FLEX_OPTS: [string, string][] = [
+  ['exact', 'Exact dates'],
+  ['1', '±1 day'],
+  ['2', '±2 days'],
+  ['3', '±3 days'],
+  ['7', '±7 days'],
+]
+const DURATIONS = ['3 nights', '1 week', '2 weeks', '1 month']
+const FLEX_TOTAL_MONTHS = 12
+const FLEX_PER_PAGE = 6
+const FLEX_MAX_PAGE = Math.ceil(FLEX_TOTAL_MONTHS / FLEX_PER_PAGE) - 1
+
+function fmt(y: number, m: number, d: number) {
+  return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+}
+function fmtShort(ds: string) {
+  const [y, m, d] = ds.split('-').map(Number)
+  return new Date(y, m - 1, d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+}
+function fmtLong(ds: string) {
+  const [y, m, d] = ds.split('-').map(Number)
+  return new Date(y, m - 1, d).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
 }
 
 export default function Sidebar({
@@ -24,9 +48,23 @@ export default function Sidebar({
   minStayNights: number
   showScarcity: boolean
 }) {
+  const [openPanel, setOpenPanel] = useState<PanelOpen>(null)
+  const wrapRef = useRef<HTMLDivElement>(null)
+
+  // Dates
+  const [mode, setMode] = useState<DateMode>('calendar')
   const [checkIn, setCheckIn] = useState('')
   const [checkOut, setCheckOut] = useState('')
-  const [guests, setGuests] = useState('')
+  const [viewYear, setViewYear] = useState(new Date().getFullYear())
+  const [viewMonth, setViewMonth] = useState(new Date().getMonth())
+  const [flexibility, setFlexibility] = useState('exact')
+  const [flexDuration, setFlexDuration] = useState<string | null>(null)
+  const [flexMonths, setFlexMonths] = useState<Set<string>>(new Set())
+  const [flexPage, setFlexPage] = useState(0)
+
+  // Guests
+  const [guests, setGuests] = useState({ adults: 0, children: 0, infants: 0 })
+
   // Cheap to recompute per render — avoids a state+effect just for "today".
   const today = new Date().toISOString().split('T')[0]
 
@@ -43,19 +81,156 @@ export default function Sidebar({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const nights = checkIn && checkOut && checkOut > checkIn
+  // Close whichever panel is open on an outside click — same convention
+  // used by the wishlist season picker (SavedClient.tsx).
+  useEffect(() => {
+    if (!openPanel) return
+    const onDown = (e: MouseEvent) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpenPanel(null)
+    }
+    document.addEventListener('mousedown', onDown)
+    return () => document.removeEventListener('mousedown', onDown)
+  }, [openPanel])
+
+  const closeAll = () => setOpenPanel(null)
+  const toggle = (p: Exclude<PanelOpen, null>) => setOpenPanel((cur) => (cur === p ? null : p))
+
+  const clearDates = () => { setCheckIn(''); setCheckOut(''); setFlexibility('exact') }
+  const clearFlex = () => { setFlexDuration(null); setFlexMonths(new Set()) }
+
+  const toggleFlexMonth = (key: string) => {
+    setFlexMonths((prev) => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+  }
+
+  const dayClick = (ds: string) => {
+    if (!checkIn || checkOut || ds < checkIn) {
+      setCheckIn(ds); setCheckOut('')
+    } else if (ds === checkIn) {
+      setCheckIn(''); setCheckOut('')
+    } else {
+      setCheckOut(ds)
+      setTimeout(closeAll, 300)
+    }
+  }
+
+  const navMonth = (dir: 1 | -1) => {
+    let m = viewMonth + dir, y = viewYear
+    if (m < 0) { m = 11; y -= 1 }
+    if (m > 11) { m = 0; y += 1 }
+    setViewMonth(m); setViewYear(y)
+  }
+
+  const step = (type: 'adults' | 'children' | 'infants', d: number) => {
+    setGuests((g) => ({ ...g, [type]: Math.max(0, g[type] + d) }))
+  }
+  const clearGuests = () => setGuests({ adults: 0, children: 0, infants: 0 })
+
+  const guestsLabel = () => {
+    const parts: string[] = []
+    if (guests.adults) parts.push(`${guests.adults} adult${guests.adults > 1 ? 's' : ''}`)
+    if (guests.children) parts.push(`${guests.children} child${guests.children > 1 ? 'ren' : ''}`)
+    if (guests.infants) parts.push(`${guests.infants} infant${guests.infants > 1 ? 's' : ''}`)
+    return parts.join(', ')
+  }
+
+  const datesLabel = () => {
+    if (mode === 'flexible') {
+      const parts: string[] = []
+      if (flexDuration) parts.push(flexDuration)
+      if (flexMonths.size > 0) {
+        parts.push([...flexMonths].sort().map((k) => {
+          const [y, m] = k.split('-').map(Number)
+          return new Date(y, m - 1, 1).toLocaleString('en-US', { month: 'long' }) + ' ' + y
+        }).join(', '))
+      }
+      return parts.join(' · ')
+    }
+    if (checkIn && checkOut) return `${fmtShort(checkIn)} – ${fmtShort(checkOut)}`
+    if (checkIn) return `${fmtShort(checkIn)} → select check-out`
+    return ''
+  }
+
+  const renderMonth = (y: number, m: number, showPrev: boolean, showNext: boolean) => {
+    const todayD = new Date(); todayD.setHours(0, 0, 0, 0)
+    const firstDay = new Date(y, m, 1)
+    const daysInMonth = new Date(y, m + 1, 0).getDate()
+    const startDow = firstDay.getDay()
+    const monthLabel = firstDay.toLocaleString('en-US', { month: 'long' }) + ' ' + y
+    const cells = []
+    for (let i = 0; i < startDow; i++) cells.push(<div key={`e${i}`} className="dp-day dp-day-empty" />)
+    for (let d = 1; d <= daysInMonth; d++) {
+      const date = new Date(y, m, d); date.setHours(0, 0, 0, 0)
+      const ds = fmt(y, m, d)
+      const isPast = date < todayD
+      const isToday = date.getTime() === todayD.getTime()
+      const isStart = checkIn === ds
+      const isEnd = checkOut === ds
+      const inRange = !!(checkIn && checkOut && ds > checkIn && ds < checkOut)
+      let cls = 'dp-day'
+      if (isPast) cls += ' dp-day-past'
+      if (isToday && !isStart && !isEnd) cls += ' dp-day-today'
+      if (isStart) cls += ' dp-day-start'
+      if (isEnd) cls += ' dp-day-end'
+      if (inRange) cls += ' dp-day-in-range'
+      cells.push(<div key={d} className={cls} onClick={!isPast ? () => dayClick(ds) : undefined}>{d}</div>)
+    }
+    return (
+      <div>
+        <div className="dp-month-header">
+          {showPrev ? (
+            <button className="dp-nav-btn" type="button" onClick={() => navMonth(-1)}>
+              <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6" /></svg>
+            </button>
+          ) : <div style={{ width: 28 }} />}
+          <div className="dp-month-title">{monthLabel}</div>
+          {showNext ? (
+            <button className="dp-nav-btn" type="button" onClick={() => navMonth(1)}>
+              <svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18" /></svg>
+            </button>
+          ) : <div style={{ width: 28 }} />}
+        </div>
+        <div className="dp-day-names">
+          {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((n) => <div className="dp-day-name" key={n}>{n}</div>)}
+        </div>
+        <div className="dp-days-grid">{cells}</div>
+      </div>
+    )
+  }
+
+  const nextMonth = viewMonth === 11 ? { y: viewYear + 1, m: 0 } : { y: viewYear, m: viewMonth + 1 }
+
+  const renderFlexMonths = () => {
+    const todayRef = new Date()
+    const start = flexPage * FLEX_PER_PAGE
+    const tiles = []
+    for (let i = start; i < Math.min(start + FLEX_PER_PAGE, FLEX_TOTAL_MONTHS); i++) {
+      const d = new Date(todayRef.getFullYear(), todayRef.getMonth() + i, 1)
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+      tiles.push(
+        <button key={key} type="button" className={`dp-month-tile${flexMonths.has(key) ? ' dp-active' : ''}`} onClick={() => toggleFlexMonth(key)}>
+          {d.toLocaleString('en-US', { month: 'short' })}<br />{d.getFullYear()}
+        </button>
+      )
+    }
+    return tiles
+  }
+
+  const nights = mode === 'calendar' && checkIn && checkOut && checkOut > checkIn
     ? Math.round((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / 86400000)
     : 0
 
-  const hasDates = !!(checkIn && checkOut)
-  const ciLabel = checkIn ? fmtDateLabel(checkIn) : ''
-  const coLabel = checkOut ? fmtDateLabel(checkOut) : ''
-
   const buildMessage = () => {
+    const dl = datesLabel()
+    const gl = guestsLabel()
     const parts: string[] = [`Hi, I'm interested in ${propertyTitle}.`]
-    if (hasDates) parts.push(`Check-in: ${ciLabel}, Check-out: ${coLabel}.`)
-    if (guests) parts.push(`Guests: ${guests}.`)
-    if (!hasDates && !guests) parts.push('Could you please share availability and rates?')
+    if (dl) parts.push(`Dates: ${dl}.`)
+    if (gl) parts.push(`Guests: ${gl}.`)
+    if (!dl && !gl) parts.push('Could you please share availability and rates?')
     else parts.push('Can you confirm availability?')
     return parts.join(' ')
   }
@@ -65,8 +240,9 @@ export default function Sidebar({
   const emailHref = (() => {
     const subject = `Availability Inquiry — ${propertyTitle}`
     let body = `Hi,\n\nI am interested in ${propertyTitle}.`
-    if (hasDates) body += `\n\nCheck-in: ${ciLabel}\nCheck-out: ${coLabel}`
-    if (guests) body += `\nGuests: ${guests}`
+    if (mode === 'calendar' && checkIn && checkOut) body += `\n\nCheck-in: ${fmtLong(checkIn)}\nCheck-out: ${fmtLong(checkOut)}`
+    else if (datesLabel()) body += `\n\nDates: ${datesLabel()}`
+    if (guestsLabel()) body += `\nGuests: ${guestsLabel()}`
     body += '\n\nCould you please confirm availability and share the final rate?\n\nThank you'
     return `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
   })()
@@ -82,47 +258,104 @@ export default function Sidebar({
           </div>
           {minStayNights > 0 && <div className="iq-min-stay">{minStayNights}-night minimum stay</div>}
         </div>
-        <div className="iq-body">
-          <div className="iq-dates">
-            <div className="iq-date">
-              <span className="iq-date-lbl">Check-in</span>
-              <span className={`iq-date-val${checkIn ? '' : ' ph'}`}>{checkIn ? ciLabel : 'Add date'}</span>
-              <input
-                type="date"
-                aria-label="Check-in date"
-                min={today}
-                value={checkIn}
-                onChange={(e) => {
-                  setCheckIn(e.target.value)
-                  if (checkOut && checkOut <= e.target.value) setCheckOut('')
-                }}
-              />
-            </div>
-            <div className="iq-date">
-              <span className="iq-date-lbl">Check-out</span>
-              <span className={`iq-date-val${checkOut ? '' : ' ph'}`}>{checkOut ? coLabel : 'Add date'}</span>
-              <input
-                type="date"
-                aria-label="Check-out date"
-                min={checkIn || today}
-                value={checkOut}
-                onChange={(e) => setCheckOut(e.target.value)}
-              />
-            </div>
+        <div className="iq-body" ref={wrapRef}>
+          <div className="iq-field">
+            <span className="iq-label">Travel dates</span>
+            <button type="button" className={`iq-dd-trigger${openPanel === 'dates' ? ' is-open' : ''}`} onClick={() => toggle('dates')}>
+              <span className={`iq-dd-val${datesLabel() ? '' : ' ph'}`}>{datesLabel() || 'Select dates'}</span>
+              <svg className="iq-dd-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9" /></svg>
+            </button>
+            {openPanel === 'dates' && (
+              <div className="iq-dd-panel iq-date-panel">
+                <div className="dp-tabs">
+                  <div className="dp-toggle-group">
+                    <button className={`dp-tab${mode === 'calendar' ? ' dp-active' : ''}`} type="button" onClick={() => setMode('calendar')}>Calendar</button>
+                    <button className={`dp-tab${mode === 'flexible' ? ' dp-active' : ''}`} type="button" onClick={() => setMode('flexible')}>Flexible</button>
+                  </div>
+                </div>
+
+                {mode === 'calendar' && (
+                  <div className="dp-cal-body dp-active">
+                    <div className="dp-months-row">
+                      {renderMonth(viewYear, viewMonth, true, false)}
+                      {renderMonth(nextMonth.y, nextMonth.m, false, true)}
+                    </div>
+                    <div className="dp-flex-row">
+                      {FLEX_OPTS.map(([v, l]) => (
+                        <button key={v} type="button" className={`dp-flex-pill${flexibility === v ? ' dp-active' : ''}`} onClick={() => setFlexibility(v)}>{l}</button>
+                      ))}
+                    </div>
+                    <div className="dp-panel-footer">
+                      <button className="dp-clear-btn" type="button" onClick={clearDates}>Clear dates</button>
+                      <button className="dp-done-btn" type="button" onClick={closeAll}>Done</button>
+                    </div>
+                  </div>
+                )}
+
+                {mode === 'flexible' && (
+                  <div className="dp-flex-body dp-active">
+                    <p className="dp-flex-q">How long do you want to stay?</p>
+                    <div className="dp-pills">
+                      {DURATIONS.map((dur) => (
+                        <button key={dur} type="button" className={`dp-pill${flexDuration === dur ? ' dp-active' : ''}`} onClick={() => setFlexDuration(flexDuration === dur ? null : dur)}>{dur}</button>
+                      ))}
+                    </div>
+                    <p className="dp-flex-q">When do you want to come?</p>
+                    <div className="dp-month-nav-row">
+                      <button className={`dp-month-nav-btn${flexPage === 0 ? ' dp-hidden' : ''}`} type="button" onClick={() => setFlexPage((p) => Math.max(0, p - 1))}>
+                        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6" /></svg>
+                      </button>
+                      <div className="dp-month-tiles">{renderFlexMonths()}</div>
+                      <button className={`dp-month-nav-btn${flexPage >= FLEX_MAX_PAGE ? ' dp-hidden' : ''}`} type="button" onClick={() => setFlexPage((p) => Math.min(FLEX_MAX_PAGE, p + 1))}>
+                        <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6" /></svg>
+                      </button>
+                    </div>
+                    <div className="dp-panel-footer">
+                      <button className="dp-clear-btn" type="button" onClick={clearFlex}>Clear</button>
+                      <button className="dp-done-btn" type="button" onClick={closeAll}>Done</button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
+
           {nights > 0 && (
             <div className="iq-nights-est" style={{ display: 'block' }}>
               {nights} night{nights !== 1 ? 's' : ''}
               {minRate ? ` · est. ${formatPrice(nights * minRate)}` : ''}
             </div>
           )}
+
           <div className="iq-field">
-            <label className="iq-label" htmlFor="guestsSel">Guests</label>
-            <select id="guestsSel" className="iq-select" value={guests} onChange={(e) => setGuests(e.target.value)}>
-              <option value="">Select guests</option>
-              {GUEST_OPTIONS.map((g) => <option key={g} value={g}>{g}</option>)}
-            </select>
+            <span className="iq-label">Guests</span>
+            <button type="button" className={`iq-dd-trigger${openPanel === 'guests' ? ' is-open' : ''}`} onClick={() => toggle('guests')}>
+              <span className={`iq-dd-val${guestsLabel() ? '' : ' ph'}`}>{guestsLabel() || 'Select guests'}</span>
+              <svg className="iq-dd-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9" /></svg>
+            </button>
+            {openPanel === 'guests' && (
+              <div className="iq-dd-panel iq-guest-panel">
+                {([['adults', 'Adults', 'Ages 13+'], ['children', 'Children', 'Ages 2–13'], ['infants', 'Infants', 'Ages 0–1']] as const).map(([key, label, age]) => (
+                  <div className="g-row" key={key}>
+                    <div className="g-info">
+                      <div className="g-type">{label}</div>
+                      <div className="g-age">{age}</div>
+                    </div>
+                    <div className="g-counter">
+                      <button className="ctr-btn" type="button" disabled={guests[key] === 0} onClick={() => step(key, -1)}>&#8722;</button>
+                      <span className="ctr-val">{guests[key]}</span>
+                      <button className="ctr-btn" type="button" onClick={() => step(key, 1)}>+</button>
+                    </div>
+                  </div>
+                ))}
+                <div className="g-done-row">
+                  <button className="g-clear-btn" type="button" onClick={clearGuests}>Clear</button>
+                  <button className="g-done-btn" type="button" onClick={closeAll}>Done</button>
+                </div>
+              </div>
+            )}
           </div>
+
           <div className="iq-divider" />
           {showScarcity && (
             <div className="scarcity-signal" style={{ display: 'flex' }}>

@@ -6,7 +6,7 @@ import { PROPERTY_BY_SLUG_QUERY, PROPERTY_SLUGS_QUERY } from '@/lib/queries'
 import { Property, startingRate, allSeasonRates, formatPrice, communityLabel, VIEW_LABELS } from '@/lib/utils'
 import {
   MEMBERSHIP_LABELS, BED_LABELS, LOC_LABEL, VIEW_H2_MAP,
-  AMENITY_CATS, AMENITY_LABELS, STAFF_NAMES, STAFF_SERVICE_LABELS,
+  AMENITY_CATS, AMENITY_LABELS, pickAmenityHighlights, STAFF_NAMES, STAFF_SERVICE_LABELS,
 } from '@/lib/propertyDetailData'
 import { renderPortableText } from '@/lib/portableText'
 import Gallery from '@/components/detail/Gallery'
@@ -15,6 +15,7 @@ import Sidebar from '@/components/detail/Sidebar'
 import MobileCtaBar from '@/components/detail/MobileCtaBar'
 import PolicyAccordion from '@/components/detail/PolicyAccordion'
 import DescriptionExpand from '@/components/detail/DescriptionExpand'
+import AmenitiesSection from '@/components/detail/AmenitiesSection'
 import SimilarProperties from '@/components/detail/SimilarProperties'
 
 export const revalidate = 60
@@ -246,24 +247,52 @@ export default async function PropertyDetailPage({ params }: { params: Promise<P
               <span className="sec-label">Sleeping arrangements</span>
               <h2 className="sec-title">Bedroom configuration</h2>
               <div className="bedroom-grid">
-                {(prop.bedConfiguration as { name: string; beds?: { bedType: string; count: number }[] }[]).map((room, i) => (
-                  <div className="bedroom-card" key={i}>
-                    <div className="bedroom-num">{i + 1}</div>
-                    <div className="bedroom-info">
-                      <div className="bedroom-name">{room.name}</div>
-                      {room.beds?.length ? (
-                        <div className="bedroom-beds">
-                          {room.beds.map((b, bi) => (
-                            <span key={bi}>
-                              {bi > 0 && <span className="bed-sep">·</span>}
-                              <span className="bed-item">{b.count} {BED_LABELS[b.bedType] || b.bedType}</span>
-                            </span>
-                          ))}
-                        </div>
-                      ) : null}
+                {(prop.bedConfiguration as {
+                  name: string
+                  beds?: { bedType: string; count: number }[]
+                  enSuite?: boolean
+                  bathAmenities?: string[]
+                }[]).map((room, i) => {
+                  // Build bed string: "1 King bed · 2 Queen bed"
+                  const bedStr = room.beds?.length
+                    ? room.beds.map(b => `${b.count} ${BED_LABELS[b.bedType] || b.bedType}`).join(' · ')
+                    : null
+
+                  // Build bathroom string: "ensuite bathroom with hot tub and outdoor shower"
+                  const BATH_LABELS: Record<string, string> = {
+                    'hot-tub':        'hot tub',
+                    'jacuzzi':        'jacuzzi',
+                    'outdoor-shower': 'outdoor shower',
+                    'double-shower':  'double shower',
+                  }
+                  let bathStr: string | null = null
+                  if (room.enSuite) {
+                    const ams = (room.bathAmenities || []).map(a => BATH_LABELS[a] || a)
+                    if (ams.length === 0) {
+                      bathStr = 'Ensuite bathroom'
+                    } else if (ams.length === 1) {
+                      bathStr = `Ensuite bathroom with ${ams[0]}`
+                    } else {
+                      bathStr = `Ensuite bathroom with ${ams.slice(0, -1).join(', ')} and ${ams[ams.length - 1]}`
+                    }
+                  }
+
+                  return (
+                    <div className="bedroom-card" key={i}>
+                      <div className="bedroom-num">{i + 1}</div>
+                      <div className="bedroom-info">
+                        <div className="bedroom-name">{room.name}</div>
+                        {(bedStr || bathStr) ? (
+                          <div className="bedroom-beds">
+                            {bedStr && <span className="bed-item">{bedStr}</span>}
+                            {bedStr && bathStr && <span className="bed-sep">,</span>}
+                            {bathStr && <span className="bed-item">{bathStr}</span>}
+                          </div>
+                        ) : null}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
           ) : null}
@@ -272,26 +301,16 @@ export default async function PropertyDetailPage({ params }: { params: Promise<P
             <div className="detail-section reveal" id="amenities">
               <span className="sec-label">What this place offers</span>
               <h2 className="sec-title">Amenities</h2>
-              <div>
-                {AMENITY_CATS.map((cat) => {
+              <AmenitiesSection
+                categories={AMENITY_CATS.map((cat) => {
                   const amenSet = new Set(prop.amenities)
-                  const items = cat.keys.filter((k) => amenSet.has(k))
-                  if (!items.length) return null
-                  return (
-                    <div className="amenity-category" key={cat.label}>
-                      <div className="amenity-cat-title">{cat.icon}{cat.label}</div>
-                      <div className="amenity-list">
-                        {items.map((k) => (
-                          <div className="am-item" key={k}>
-                            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-                            {AMENITY_LABELS[k] || k}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
+                  const items = cat.keys.filter((k) => amenSet.has(k)).map((k) => ({ key: k, label: AMENITY_LABELS[k] || k }))
+                  return { label: cat.label, icon: cat.icon, items }
+                }).filter((cat) => cat.items.length > 0)}
+                highlights={pickAmenityHighlights(prop.amenities, 6, 3)
+                  .map((k) => ({ key: k, label: AMENITY_LABELS[k] || k }))}
+                totalCount={prop.amenities.length}
+              />
             </div>
           ) : null}
 
@@ -318,30 +337,32 @@ export default async function PropertyDetailPage({ params }: { params: Promise<P
             <div className="detail-section reveal" id="rates">
               <span className="sec-label">Pricing</span>
               <h2 className="sec-title">Rates</h2>
-              <table className="rates-table">
-                <thead>
-                  <tr><th>Season</th><th>Rate / night (USD)</th><th>Min. stay</th></tr>
-                </thead>
-                <tbody>
-                  {seasons.map((s, i) => (
-                    <tr key={i}>
-                      <td>{s.seasonName || '—'}</td>
-                      <td>
-                        {s.bedroomRates && s.bedroomRates.length > 0 ? (
-                          <div className="rate-tiers">
-                            {s.bedroomRates.map((br, j) => (
-                              <div className="rate-tier" key={j}>{br.bedrooms} BR — {formatPrice(br.nightlyRate)}</div>
-                            ))}
-                          </div>
-                        ) : (
-                          formatPrice(s.nightlyRate)
-                        )}
-                      </td>
-                      <td>{s.minimumStay ? `${s.minimumStay} nights` : '—'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <div className="rates-table-wrap">
+                <table className="rates-table">
+                  <thead>
+                    <tr><th>Season</th><th>Rate / night (USD)</th><th>Min. stay</th></tr>
+                  </thead>
+                  <tbody>
+                    {seasons.map((s, i) => (
+                      <tr key={i}>
+                        <td>{s.seasonName || '—'}</td>
+                        <td>
+                          {s.bedroomRates && s.bedroomRates.length > 0 ? (
+                            <div className="rate-tiers">
+                              {s.bedroomRates.map((br, j) => (
+                                <div className="rate-tier" key={j}>{br.bedrooms} BR — {formatPrice(br.nightlyRate)}</div>
+                              ))}
+                            </div>
+                          ) : (
+                            formatPrice(s.nightlyRate)
+                          )}
+                        </td>
+                        <td>{s.minimumStay ? `${s.minimumStay} nights` : '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
               <ul className="rates-note">
                 <li>Taxes: 16% VAT + 5% tourism tax may apply</li>
                 <li>Service fee may apply</li>
@@ -369,7 +390,7 @@ export default async function PropertyDetailPage({ params }: { params: Promise<P
 
           <div className="detail-section reveal" id="location">
             <span className="sec-label">Where you&rsquo;ll be</span>
-            <h2 className="sec-title">Destination</h2>
+            <h2 className="sec-title">Location</h2>
             <div className="location-map">
               <iframe title="Property location" src={mapSrc} loading="lazy" referrerPolicy="no-referrer-when-downgrade" />
             </div>

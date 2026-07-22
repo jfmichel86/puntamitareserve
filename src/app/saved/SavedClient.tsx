@@ -6,9 +6,15 @@ import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { urlFor } from '@/lib/sanity'
 import PropertyCard from '@/components/PropertyCard'
-import { Property, startingRate, formatPrice } from '@/lib/utils'
+import { Property, rateForSeason, formatPrice } from '@/lib/utils'
 
 const CONTACT_EMAIL = 'rentals@mexicanreserve.com'
+
+// Canonical order for the comparison table's season picker — matches the
+// 6 seasons pre-loaded on every property in Sanity. Any custom season name
+// (added via "+ Add season") still shows up, just appended alphabetically
+// after these, since there's no fixed place for it in the calendar year.
+const SEASON_ORDER = ['Low Season', 'High Season', 'Thanksgiving', 'Easter', 'Christmas', 'New Year']
 
 const VIEW_KEYS_C: Record<string, string> = {
   'ocean-view': 'Ocean View',
@@ -122,6 +128,48 @@ export default function SavedClient({ properties }: { properties: Property[] }) 
 
   const showEmpty = mounted && orderedProps.length === 0
   const showActions = !showEmpty
+
+  // Every season name that shows up on any property currently in the
+  // comparison table, in calendar order (the 6 standard seasons first, then
+  // anything custom, alphabetically). Recomputes whenever the table's
+  // property list changes, so removing a property can't leave a stale
+  // season selected that nothing in the table actually has.
+  const availableSeasons = useMemo(() => {
+    const names = new Set<string>()
+    orderedProps.forEach((p) => (p.seasons || []).forEach((s) => {
+      if (s.seasonName) names.add(s.seasonName)
+    }))
+    const known = SEASON_ORDER.filter((n) => names.has(n))
+    const extra = [...names].filter((n) => !SEASON_ORDER.includes(n)).sort()
+    return [...known, ...extra]
+  }, [orderedProps])
+
+  const [selectedSeason, setSelectedSeason] = useState('Low Season')
+  // Keep the picker pointed at a season that's actually available — e.g. if
+  // "Christmas" was selected but every property with Christmas pricing gets
+  // removed from the table, fall back to the first season that's still real
+  // rather than silently showing "—" for every property. Adjusted during
+  // render (React's recommended pattern, same one Nav.tsx uses for closing
+  // dropdowns on route change) rather than an effect, since this is
+  // synchronizing state to a prop-driven list, not talking to anything
+  // outside React.
+  if (availableSeasons.length > 0 && !availableSeasons.includes(selectedSeason)) {
+    setSelectedSeason(availableSeasons[0])
+  }
+
+  // Custom season dropdown (styled to match the site instead of a bare
+  // native <select>) — same click-outside-to-close pattern Nav.tsx uses for
+  // its Properties/Destinations menus.
+  const [seasonOpen, setSeasonOpen] = useState(false)
+  const seasonRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!seasonOpen) return
+    const handleClickOutside = (e: MouseEvent) => {
+      if (seasonRef.current && !seasonRef.current.contains(e.target as Node)) setSeasonOpen(false)
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [seasonOpen])
 
   // Same unsave mechanism PropertyCard's heart button uses (remove the
   // localStorage flag, fire the shared 'saved-changed' event) — the
@@ -405,9 +453,12 @@ export default function SavedClient({ properties }: { properties: Property[] }) 
 
     const n = orderedProps.length
     const subject = `Property Wishlist Inquiry — ${n} ${n === 1 ? 'property' : 'properties'}`
-    let body = `Hi,\n\nI'm interested in the following properties for these dates ${dateStr} and would love to receive more information on availability and pricing. We are ${guestStr}:\n\n`
+    let body = `Hi,\n\nI'm interested in the following properties for these dates ${dateStr} and would love to receive more information on availability and pricing (rates below reflect ${selectedSeason}). We are ${guestStr}:\n\n`
     orderedProps.forEach((p) => {
-      const rate = startingRate(p)
+      // Quotes whichever season is selected in the comparison table above,
+      // not always the Low Season floor — so the email matches what was
+      // actually being compared when this button was clicked.
+      const rate = rateForSeason(p, selectedSeason)
       body += `• ${p.title} — ${p.bedrooms} ${p.bedrooms === 1 ? 'bedroom' : 'bedrooms'}`
       if (rate) body += `, from ${formatPrice(rate)}/night`
       body += '\n'
@@ -538,8 +589,35 @@ export default function SavedClient({ properties }: { properties: Property[] }) 
             <span className="sv-cmp-divider-badge">Scroll to compare</span>
           </div>
           <div className="sv-cmp-inner">
-            <p className="sv-cmp-eyebrow">Comparison</p>
-            <h2 className="sec-title">See your wishlist side by side</h2>
+            <div className="sv-cmp-heading-row">
+              <div>
+                <p className="sv-cmp-eyebrow">Comparison</p>
+                <h2 className="sec-title">See your wishlist side by side</h2>
+              </div>
+              {availableSeasons.length > 1 && (
+                <div className={`sv-season-select${seasonOpen ? ' is-open' : ''}`} ref={seasonRef}>
+                  <button type="button" className="sv-season-trigger" onClick={() => setSeasonOpen((o) => !o)}>
+                    <span className="sv-season-label">Rate shown for</span>
+                    <span className="sv-season-val">{selectedSeason}</span>
+                    <svg className="sv-season-chev" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9" /></svg>
+                  </button>
+                  {seasonOpen && (
+                    <div className="sv-season-panel">
+                      {availableSeasons.map((s) => (
+                        <div
+                          key={s}
+                          className={`sv-season-opt${s === selectedSeason ? ' is-sel' : ''}`}
+                          onClick={() => { setSelectedSeason(s); setSeasonOpen(false) }}
+                        >
+                          {s}
+                          <span className="sv-season-dot" />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
             <div className="sv-cmp-scroll">
               <table className="sv-cmp-table">
                 <thead>
@@ -576,7 +654,7 @@ export default function SavedClient({ properties }: { properties: Property[] }) 
                   <tr>
                     <td className="sv-cmp-lbl">Nightly rate</td>
                     {orderedProps.map((p) => {
-                      const r = startingRate(p)
+                      const r = rateForSeason(p, selectedSeason)
                       return <td className="sv-cmp-val" key={p.slug}>{r ? <span className="is-price">From <strong>{formatPrice(r)}</strong>&thinsp;/&thinsp;night</span> : no()}</td>
                     })}
                   </tr>

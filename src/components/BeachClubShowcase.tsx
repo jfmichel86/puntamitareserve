@@ -7,6 +7,11 @@ type ClubItem = {
   vibe: string
   tags: string[]
   text: string
+  // Up to 4 photos, always rendered as a fixed 2x2 grid — a 16:9 outer
+  // frame split evenly into 4 equal 16:9 tiles. Any slot without a photo
+  // yet shows its own "Photo placeholder" label, so the layout looks the
+  // same before and after real photography goes in.
+  images?: string[]
 }
 
 // Interactive tab selector for the Beach Clubs group on the (redesigned)
@@ -36,8 +41,23 @@ export default function BeachClubShowcase({ items }: { items: ClubItem[] }) {
       </div>
 
       <div className="dest-showcase-panel">
+        {/* 16:9 outer frame, split into a fixed 2x2 grid of 4 equal 16:9
+            tiles. All 4 always render, filled or empty. */}
         <div className="dest-showcase-photo">
-          <span className="dest-showcase-photo-label">Photo placeholder — {club.title}</span>
+          <div className="dest-showcase-mosaic">
+            {[0, 1, 2, 3].map((i) => {
+              const src = club.images?.[i]
+              return (
+                <div
+                  key={i}
+                  className="dest-showcase-mosaic-item"
+                  style={src ? { backgroundImage: `url('${src}')` } : undefined}
+                >
+                  {!src && <span className="dest-showcase-mosaic-label">Photo placeholder</span>}
+                </div>
+              )
+            })}
+          </div>
         </div>
         <div className="dest-showcase-body">
           <p className="dest-showcase-vibe">{club.vibe}</p>

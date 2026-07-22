@@ -52,7 +52,24 @@ type Destination = {
   insideGroups?: {
     label: string
     layout: 'cinematic' | 'showcase' | 'list'
-    items: { title: string; text: string; stat?: string; vibe?: string; tags?: string[] }[]
+    // imageUrl/images are left unset until real photography exists for that
+    // specific item — renders the existing placeholder. Set per-item, not
+    // per-group, since a group like Beach Clubs will get real photos one at
+    // a time as they become available.
+    //   imageUrl        — single full-bleed photo, used by cinematic bands
+    //                      (Golf Courses). imagePosition overrides the
+    //                      default "center" background-position — most of
+    //                      our source photos are wide landscape shots with a
+    //                      lot of empty sky at the top, so the interesting
+    //                      part (the green, the clubhouse) needs to be told
+    //                      explicitly where it sits, or a center crop lands
+    //                      on nothing attractive.
+    //   images           — 1-3 photos, used by showcase panels (Beach
+    //                      Clubs) as a small square mosaic instead of one
+    //                      wide panorama. Our beach club source photos are
+    //                      lower-resolution lifestyle shots that read much
+    //                      better small and square than stretched full-width.
+    items: { title: string; text: string; stat?: string; vibe?: string; tags?: string[]; imageUrl?: string; imagePosition?: string; images?: string[] }[]
     note?: string
   }[]
   // The section title/intro above insideGroups — "Inside the Gates" only
@@ -75,7 +92,7 @@ type Destination = {
   // Full-bleed editorial image break (redesigned pages only), for visual
   // pacing between Inside the Gates and Find the Right Villa. imageUrl is
   // left unset until real photography exists — renders a placeholder panel.
-  photoBreak?: { caption: string; imageUrl?: string }
+  photoBreak?: { caption: string; imageUrl?: string; imagePosition?: string }
   facts: { label: string; value: string; sub: string }[]
   emptyNote: string
   // When true, the page renders a standalone "Coming Soon" teaser instead
@@ -105,8 +122,8 @@ const DESTINATIONS: Record<string, Destination> = {
         label: 'Golf Courses',
         layout: 'cinematic',
         items: [
-          { title: 'Pacífico', text: 'Jack Nicklaus’s original signature course at Punta Mita, home to the Tail of the Whale — the world’s only natural island green, reached by land at low tide and by amphibious cart at high tide.' },
-          { title: 'Bahía', text: 'A 7,035-yard, par-72 signature course with five ocean-side holes, including panoramic views of Banderas Bay and the Puerto Vallarta skyline from the 15th.', stat: '7,035 yds · Par 72' },
+          { title: 'Pacífico', text: 'Jack Nicklaus’s original signature course at Punta Mita, home to the Tail of the Whale — the world’s only natural island green, reached by land at low tide and by amphibious cart at high tide.', imageUrl: '/images/destinations/punta-mita/golf-pacifico.jpg', imagePosition: 'center 88%' },
+          { title: 'Bahía', text: 'A 7,035-yard, par-72 signature course with five ocean-side holes, including panoramic views of Banderas Bay and the Puerto Vallarta skyline from the 15th.', stat: '7,035 yds · Par 72', imageUrl: '/images/destinations/punta-mita/golf-bahia.jpg', imagePosition: 'center 78%' },
         ],
       },
       {
@@ -144,7 +161,7 @@ const DESTINATIONS: Record<string, Destination> = {
             text: 'The kitchen keeps it simple and coastal — fresh fish tostadas, spicy pork tacos, and a rotating lineup of homemade salsas, alongside fresh juices, cold beer, and tequila and mezcal cocktails. The peninsula’s newest beach club, set at La Lancha Beach with views of the Islas Marietas, and a favorite sunset spot for private events.',
           },
         ],
-        note: 'Included with every villa’s membership. A one-time Club Punta Mita access fee applies per guest, per stay (children under 5 are free) — contact us for current rates.',
+        note: 'A one-time Club Punta Mita access fee applies per guest, per stay (children under 5 are free) — contact us for current rates.',
       },
       {
         label: 'Amenities',
@@ -159,6 +176,8 @@ const DESTINATIONS: Record<string, Destination> = {
     ],
     photoBreak: {
       caption: 'The world’s only natural island green — reached by land at low tide, by amphibious cart at high tide.',
+      imageUrl: '/images/destinations/punta-mita/golf-sunset.jpg',
+      imagePosition: 'center 60%',
     },
     facts: [
       { label: 'Getting Here', value: '45 min', sub: 'From Puerto Vallarta International Airport (PVR), via the coastal toll road.' },
@@ -500,8 +519,15 @@ export default async function DestinationPage({ params }: { params: Promise<Para
                     {g.layout === 'cinematic' && (
                       <div className="dest-cinematic-stack">
                         {g.items.map((e) => (
-                          <div key={e.title} className="dest-cinematic-band">
-                            <span className="dest-cinematic-photo-label">Photo placeholder</span>
+                          <div
+                            key={e.title}
+                            className="dest-cinematic-band"
+                            style={e.imageUrl ? {
+                              backgroundImage: `url('${e.imageUrl}')`,
+                              backgroundPosition: e.imagePosition || 'center',
+                            } : undefined}
+                          >
+                            {!e.imageUrl && <span className="dest-cinematic-photo-label">Photo placeholder</span>}
                             {e.stat && <span className="dest-cinematic-stat">{e.stat}</span>}
                             <div className="dest-cinematic-text">
                               <h3 className="dest-cinematic-title">{e.title}</h3>
@@ -519,6 +545,7 @@ export default async function DestinationPage({ params }: { params: Promise<Para
                           vibe: e.vibe || '',
                           tags: e.tags || [],
                           text: e.text,
+                          images: e.images || (e.imageUrl ? [e.imageUrl] : []),
                         }))}
                       />
                     )}
@@ -552,7 +579,10 @@ export default async function DestinationPage({ params }: { params: Promise<Para
             {dest.photoBreak && (
               <div
                 className="dest-photo-break"
-                style={dest.photoBreak.imageUrl ? { backgroundImage: `url('${dest.photoBreak.imageUrl}')` } : undefined}
+                style={dest.photoBreak.imageUrl ? {
+                  backgroundImage: `url('${dest.photoBreak.imageUrl}')`,
+                  backgroundPosition: dest.photoBreak.imagePosition || 'center',
+                } : undefined}
               >
                 {!dest.photoBreak.imageUrl && <span className="dest-photo-break-label">Photo placeholder</span>}
                 <p className="dest-photo-break-caption">{dest.photoBreak.caption}</p>
