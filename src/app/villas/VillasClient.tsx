@@ -14,8 +14,16 @@ interface FilterState {
   destination: string
   guests: { adults: number; children: number; infants: number }
   beds: number
+  // Optional upper bound paired with `beds` — 0 means no cap. Only ever set
+  // via URL (the "Intimate Properties" destination-page tile links with
+  // both beds=2&bedsMax=4); picking a Bedrooms option manually always
+  // clears it, since the dropdown itself has no UI for entering a max.
+  bedsMax: number
   price: string
   pool: boolean
+  // 4+ staff roles (housekeeper, chef, butler, concierge, etc.) — mirrors
+  // the "Fully Staffed" tile on the redesigned destination pages.
+  staff: boolean
   type: string
   locationType: string
   views: string[]
@@ -29,8 +37,10 @@ const DEFAULT_FILTERS: FilterState = {
   destination: '',
   guests: { adults: 0, children: 0, infants: 0 },
   beds: 0,
+  bedsMax: 0,
   price: '',
   pool: false,
+  staff: false,
   type: '',
   locationType: '',
   views: [],
@@ -39,6 +49,9 @@ const DEFAULT_FILTERS: FilterState = {
   featured: false,
   sort: 'popular',
 }
+
+// Matches the threshold used by the destination page's "Fully Staffed" tile.
+const FULLY_STAFFED_MIN = 4
 
 const PRICE_RANGES: Record<string, [number, number]> = {
   '0-1000':    [0, 1000],
@@ -65,10 +78,12 @@ type CountOverrides = Partial<{
   destination: string
   community: string
   beds: number
+  bedsMax: number
   price: string
   type: string
   collection: string
   pool: boolean
+  staff: boolean
   locationType: string
   views: string[]
   featured: boolean
@@ -84,7 +99,9 @@ function filtersFromParams(searchParams: URLSearchParams): FilterState {
     collection: searchParams.get('collection') || '',
     price: searchParams.get('price') || '',
     beds: Number(searchParams.get('beds')) || 0,
+    bedsMax: Number(searchParams.get('bedsMax')) || 0,
     pool: searchParams.get('pool') === '1',
+    staff: searchParams.get('staff') === '1',
     featured: searchParams.get('featured') === '1',
     views: searchParams.getAll('view'),
     guests: {
@@ -170,10 +187,12 @@ export default function VillasClient({ properties }: { properties: Property[] })
     const destVal     = overrides.destination   !== undefined ? overrides.destination   : filters.destination
     const commVal     = overrides.community     !== undefined ? overrides.community     : filters.community
     const bedsVal     = overrides.beds          !== undefined ? overrides.beds          : filters.beds
+    const bedsMaxVal  = overrides.bedsMax       !== undefined ? overrides.bedsMax       : filters.bedsMax
     const priceVal    = overrides.price         !== undefined ? overrides.price         : filters.price
     const typeVal     = overrides.type          !== undefined ? overrides.type          : filters.type
     const collVal     = overrides.collection    !== undefined ? overrides.collection    : filters.collection
     const poolVal     = overrides.pool          !== undefined ? overrides.pool          : filters.pool
+    const staffVal    = overrides.staff         !== undefined ? overrides.staff         : filters.staff
     const locTypeVal  = overrides.locationType  !== undefined ? overrides.locationType  : filters.locationType
     const effViews    = overrides.views         !== undefined ? overrides.views         : filters.views
     const featuredVal = overrides.featured      !== undefined ? overrides.featured      : filters.featured
@@ -188,11 +207,13 @@ export default function VillasClient({ properties }: { properties: Property[] })
         (!commVal || p.communityPuntaMita === commVal || p.communityPuntaDeMita === commVal) &&
         (guestCapacityCount === 0 || g >= guestCapacityCount) &&
         (bedsVal === 0 || p.bedrooms >= bedsVal) &&
+        (bedsMaxVal === 0 || p.bedrooms <= bedsMaxVal) &&
         (!range || (r >= range[0] && r <= range[1])) &&
         (!typeVal || p.propertyType === typeVal) &&
         (effViews.length === 0 || effViews.some((v) => (p.viewsAndPool || []).includes(v))) &&
         (!collVal || (p.collection || []).includes(collVal)) &&
         (!poolVal || hasPool(p)) &&
+        (!staffVal || (p.staffServices?.length || 0) >= FULLY_STAFFED_MIN) &&
         (!featuredVal || !!p.featured) &&
         (!ltEffective || (p.viewsAndPool || []).includes(ltEffective))
       )
@@ -241,16 +262,20 @@ export default function VillasClient({ properties }: { properties: Property[] })
   const clearAll = () => { setFilters(DEFAULT_FILTERS); closeAll(); setVisibleCount(PAGE_SIZE) }
 
   const hasActiveFilters =
-    filters.destination || totalGuestCount > 0 || filters.beds || filters.price || filters.pool ||
+    filters.destination || totalGuestCount > 0 || filters.beds || filters.price || filters.pool || filters.staff ||
     filters.type || filters.locationType || filters.views.length > 0 || filters.collection || filters.community ||
     filters.featured
 
   const activeChips: { label: string; clear: () => void }[] = []
   if (filters.destination) activeChips.push({ label: DEST_LABELS[filters.destination], clear: () => setFilters((f) => ({ ...f, destination: '' })) })
   if (totalGuestCount > 0) activeChips.push({ label: `${totalGuestCount} guests`, clear: () => setFilters((f) => ({ ...f, guests: DEFAULT_FILTERS.guests })) })
-  if (filters.beds) activeChips.push({ label: `${filters.beds}+ bedrooms`, clear: () => setFilters((f) => ({ ...f, beds: 0 })) })
+  if (filters.beds) activeChips.push({
+    label: filters.bedsMax ? `${filters.beds}-${filters.bedsMax} bedrooms` : `${filters.beds}+ bedrooms`,
+    clear: () => setFilters((f) => ({ ...f, beds: 0, bedsMax: 0 })),
+  })
   if (filters.price) activeChips.push({ label: 'Price range', clear: () => setFilters((f) => ({ ...f, price: '' })) })
   if (filters.pool) activeChips.push({ label: 'Private pool', clear: () => setFilters((f) => ({ ...f, pool: false })) })
+  if (filters.staff) activeChips.push({ label: 'Fully staffed', clear: () => setFilters((f) => ({ ...f, staff: false })) })
   if (filters.featured) activeChips.push({ label: 'Favorites', clear: () => setFilters((f) => ({ ...f, featured: false })) })
   const typeLabel = filters.type === 'villa' ? 'Villa' : filters.type === 'condo' ? 'Condo' : 'Estate'
   if (filters.type) activeChips.push({ label: typeLabel, clear: () => setFilters((f) => ({ ...f, type: '' })) })
@@ -332,13 +357,21 @@ export default function VillasClient({ properties }: { properties: Property[] })
           {/* Bedrooms */}
           <div className={`ff ff-beds${filters.beds ? ' is-active' : ''}${openPanel === 'beds' ? ' is-open' : ''}`}>
             <button className="ff-trigger" onClick={() => toggle('beds')}>
-              <span className="ff-val">{filters.beds ? `${filters.beds}+ bedrooms` : 'Bedrooms'}</span>
+              <span className="ff-val">
+                {filters.beds
+                  ? (filters.bedsMax ? `${filters.beds}-${filters.bedsMax} bedrooms` : `${filters.beds}+ bedrooms`)
+                  : 'Bedrooms'}
+              </span>
               <span className="ff-dot" />
               <svg className="ff-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
             </button>
             <div className="ff-panel">
               {[0, 1, 2, 3, 4, 5, 6].map((v) => (
-                <div key={v} className={`ff-opt${filters.beds === v ? ' is-sel' : ''}`} onClick={() => { setFilters((f) => ({ ...f, beds: v })); closeAll() }}>
+                <div
+                  key={v}
+                  className={`ff-opt${filters.beds === v && !filters.bedsMax ? ' is-sel' : ''}`}
+                  onClick={() => { setFilters((f) => ({ ...f, beds: v, bedsMax: 0 })); closeAll() }}
+                >
                   {v === 0 ? 'Any bedrooms' : `${v}+ bedrooms`}
                 </div>
               ))}
@@ -376,6 +409,13 @@ export default function VillasClient({ properties }: { properties: Property[] })
           <button className={`ff-chip${filters.pool ? ' is-active' : ''}`} onClick={() => setFilters((f) => ({ ...f, pool: !f.pool }))}>
             <svg viewBox="0 0 24 24"><path d="M4 12c1.5-2 3-3 5-1s3.5 3 5 1 3-3 5-1M4 18c1.5-2 3-3 5-1s3.5 3 5 1 3-3 5-1M12 4v4M9 5l3-1 3 1"/></svg>
             Pool
+          </button>
+
+          {/* Staffed chip — 4+ staff roles, same threshold as the
+              destination page's "Fully Staffed" tile */}
+          <button className={`ff-chip${filters.staff ? ' is-active' : ''}`} onClick={() => setFilters((f) => ({ ...f, staff: !f.staff }))}>
+            <svg viewBox="0 0 24 24"><circle cx="9" cy="7" r="3"/><circle cx="17" cy="8" r="2.5"/><path d="M3 20v-1a6 6 0 0112 0v1M14 20v-1a4.5 4.5 0 016.5-4"/></svg>
+            Staffed
           </button>
 
           <div className="fb-sep" />

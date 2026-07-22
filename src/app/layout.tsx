@@ -28,11 +28,30 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
+  // Lets any page below use a relative image path and still resolve to a
+  // real absolute URL in the rendered meta tags — most pages here use full
+  // https:// URLs already, but this is the safety net for ones that don't.
+  metadataBase: new URL('https://www.mexicanreserve.com'),
   title: {
     default: 'Mexican Reserve | Private Villas & Condos in Punta Mita',
     template: '%s | Mexican Reserve',
   },
   description: 'Private luxury vacation rentals in Punta Mita, Mexico. Villas, condos, and estates with pools, ocean views, and concierge service.',
+  // Sitewide fallback link-preview photo. Any page that doesn't set its own
+  // `openGraph` (about, contact, FAQ, legal pages, etc.) inherits this
+  // automatically, so a link shared via WhatsApp/iMessage/Slack/email always
+  // shows a real branded photo instead of falling back to the small logo
+  // mark — which is what was happening on every page that had no openGraph
+  // block at all. Pages with a more relevant photo (a villa, a destination)
+  // set their own `openGraph.images` and that takes priority over this.
+  openGraph: {
+    siteName: 'Mexican Reserve',
+    type: 'website',
+    images: ['https://www.mexicanreserve.com/og-image-1.jpg'],
+  },
+  twitter: {
+    card: 'summary_large_image',
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

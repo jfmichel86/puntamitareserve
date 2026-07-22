@@ -3,13 +3,28 @@ import Link from 'next/link'
 import { client, urlFor } from '@/lib/sanity'
 import { DESTINATION_SHOWCASE_QUERY } from '@/lib/queries'
 
-export const metadata: Metadata = {
-  title: 'Destinations',
-  description: 'Punta Mita, the Punta de Mita area, and Puerto Vallarta — every Mexican Reserve destination, one local team.',
-}
-
 type HeroOnly = { heroImage?: { asset?: { _ref: string }; hotspot?: { x: number; y: number } } }
 type ShowcaseResult = { puntaMita: HeroOnly | null; puntaDeMita: HeroOnly | null; puertoVallarta: HeroOnly | null }
+
+export async function generateMetadata(): Promise<Metadata> {
+  const title = 'Destinations'
+  const description = 'Punta Mita, the Punta de Mita area, and Puerto Vallarta — every Mexican Reserve destination, one local team.'
+  // Punta Mita is the flagship destination, so its photo (same one this
+  // page's own showcase row leads with) stands in for the group.
+  const photos = await client.fetch<ShowcaseResult>(DESTINATION_SHOWCASE_QUERY)
+  // Falls back to the sitewide default photo (set in layout.tsx) rather than
+  // no image, on the unlikely chance Punta Mita has no hero photo set.
+  const ogImage = photos.puntaMita?.heroImage?.asset?._ref
+    ? urlFor(photos.puntaMita.heroImage).width(1200).height(630).quality(85).url()
+    : 'https://www.mexicanreserve.com/og-image-1.jpg'
+
+  return {
+    title,
+    description,
+    openGraph: { title, description, images: [ogImage] },
+    twitter: { card: 'summary_large_image', title, description },
+  }
+}
 
 // Same three destinations as Destination.tsx (homepage) and Nav.tsx — this
 // small list is duplicated across all three rather than shared, matching

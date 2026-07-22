@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { client, urlFor } from '@/lib/sanity'
 import { PROPERTIES_BY_DESTINATION_QUERY, ACTIVITIES_BY_DESTINATION_QUERY } from '@/lib/queries'
-import { Property, communityLabel, Activity, LOCATION_LABEL_BY_SLUG } from '@/lib/utils'
+import { Property, communityLabel, startingRate, Activity, LOCATION_LABEL_BY_SLUG } from '@/lib/utils'
 import PropertyCard from '@/components/PropertyCard'
 import BeachClubShowcase from '@/components/BeachClubShowcase'
 import ExperienceCard from '@/components/ExperienceCard'
@@ -356,15 +356,16 @@ const FIND_VILLA_TILES: FindVillaTileConfig[] = [
     match: (p) => (p.viewsAndPool || []).some((v) => v === 'oceanfront' || v === 'beachfront'),
   },
   {
-    key: 'pool',
-    title: 'Private Pool',
-    text: 'A pool for your group alone — nothing shared.',
-    query: 'pool=1',
-    match: (p) => (p.viewsAndPool || []).includes('private-pool'),
+    key: 'ocean-views',
+    title: 'Ocean Views',
+    text: 'A water view from the property — not necessarily right on the sand.',
+    query: 'view=ocean-view',
+    match: (p) => (p.viewsAndPool || []).includes('ocean-view'),
   },
+  // Deliberately avoids "Villas" in the title — this includes condos too.
   {
     key: 'golf',
-    title: 'Golf Course Villas',
+    title: 'Golf Course Properties',
     text: 'Steps from the fairway on Pacífico or Bahía.',
     query: 'view=golf-course-view&view=golf-course',
     match: (p) => (p.viewsAndPool || []).some((v) => v === 'golf-course-view' || v === 'golf-course'),
@@ -376,6 +377,36 @@ const FIND_VILLA_TILES: FindVillaTileConfig[] = [
     query: 'beds=6',
     match: (p) => p.bedrooms >= 6,
   },
+  // Also avoids "Villas" for the same reason as Golf Course Properties.
+  {
+    key: 'intimate',
+    title: 'Intimate Properties (2–4 Bedrooms)',
+    text: 'Sized right for a couple, a small family, or a close group of friends.',
+    query: 'beds=2&bedsMax=4',
+    match: (p) => p.bedrooms >= 2 && p.bedrooms <= 4,
+  },
+  {
+    key: 'staffed',
+    title: 'Fully Staffed',
+    text: 'Four or more dedicated staff — housekeeping, a private chef, and more.',
+    query: 'staff=1',
+    match: (p) => (p.staffServices?.length || 0) >= 4,
+  },
+]
+
+// Same bucket boundaries as PRICE_RANGES in villas/VillasClient.tsx — kept
+// in sync manually so the "Lower Nightly Rates" tile's "View all" link
+// points at a real price filter the listing page understands. Computed
+// per-destination (see `findVillaTiles` below) rather than a static
+// FIND_VILLA_TILES entry, since "cheapest" only means something relative to
+// what's actually available here — a fixed dollar figure would either be
+// empty or meaningless as inventory and pricing change.
+const PRICE_BUCKETS: [string, number, number][] = [
+  ['0-1000', 0, 1000],
+  ['1001-2500', 1001, 2500],
+  ['2501-5000', 2501, 5000],
+  ['5001-8000', 5001, 8000],
+  ['8001+', 8001, Infinity],
 ]
 
 async function getProperties(locationLabel: Property['locationLabel']): Promise<Property[]> {
@@ -394,9 +425,29 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   const { slug } = await params
   const dest = DESTINATIONS[slug]
   if (!dest) return {}
+
+  const title = dest.comingSoon ? `${dest.title} — Coming Soon` : `${dest.title} Guide`
+  const description = dest.heroSub
+
+  // Same photo the page itself uses for its hero background (the first
+  // matching property's hero image) — without this, link previews (iMessage,
+  // WhatsApp, Slack, etc.) had no og:image to find at all and fell back to
+  // the site's small favicon/logo mark instead of a real destination photo.
+  // Mirrors the pattern already used on villas/[slug]/page.tsx.
+  const locationLabel = LOCATION_LABEL_BY_SLUG[slug]
+  const properties = locationLabel ? await getProperties(locationLabel) : []
+  // Falls back to the sitewide default photo (set in layout.tsx) rather than
+  // no image — matters most for "Coming Soon" destinations, which by
+  // definition have no properties yet to pull a photo from.
+  const ogImage = properties[0]?.heroImage?.asset?._ref
+    ? urlFor(properties[0].heroImage!).width(1200).height(630).quality(85).url()
+    : 'https://www.mexicanreserve.com/og-image-1.jpg'
+
   return {
-    title: dest.comingSoon ? `${dest.title} — Coming Soon` : `${dest.title} Guide`,
-    description: dest.heroSub,
+    title,
+    description,
+    openGraph: { title, description, images: [ogImage] },
+    twitter: { card: 'summary_large_image', title, description },
   }
 }
 
@@ -444,14 +495,39 @@ export default async function DestinationPage({ params }: { params: Promise<Para
   // Only computed for redesigned pages — each tile's community list and
   // count come straight from this destination's already-fetched properties,
   // so a tile with zero matches simply doesn't render.
+  const communitiesFor = (matches: Property[]) =>
+    Array.from(new Set(matches.map((p) => communityLabel(p)).filter(Boolean))).sort().slice(0, 4)
+
+  // "Lower Nightly Rates" — the cheapest price bucket (see PRICE_BUCKETS
+  // above) that actually has a property in it for this destination. Built
+  // separately from FIND_VILLA_TILES rather than as a static entry, since
+  // which bucket counts as "cheapest" depends on this destination's real
+  // rates, not a fixed dollar figure.
+  const lowerRatesBucket = PRICE_BUCKETS.find(([, lo, hi]) =>
+    properties.some((p) => { const r = startingRate(p); return r != null && r >= lo && r <= hi })
+  )
+  const lowerRatesMatches = lowerRatesBucket
+    ? properties.filter((p) => {
+        const r = startingRate(p)
+        return r != null && r >= lowerRatesBucket[1] && r <= lowerRatesBucket[2]
+      })
+    : []
+
   const findVillaTiles = dest.redesigned
-    ? FIND_VILLA_TILES.map((t) => {
-        const matches = properties.filter(t.match)
-        const communities = Array.from(new Set(matches.map((p) => communityLabel(p)).filter(Boolean)))
-          .sort()
-          .slice(0, 4)
-        return { ...t, count: matches.length, communities }
-      }).filter((t) => t.count > 0)
+    ? [
+        ...FIND_VILLA_TILES.map((t) => {
+          const matches = properties.filter(t.match)
+          return { ...t, count: matches.length, communities: communitiesFor(matches) }
+        }),
+        ...(lowerRatesBucket ? [{
+          key: 'lower-rates',
+          title: 'Lower Nightly Rates',
+          text: 'Our most accessible nightly rates in this collection.',
+          query: `price=${lowerRatesBucket[0]}`,
+          count: lowerRatesMatches.length,
+          communities: communitiesFor(lowerRatesMatches),
+        }] : []),
+      ].filter((t) => t.count > 0)
     : []
 
   // Shared between the two places this can render: early (non-redesigned
@@ -626,7 +702,7 @@ export default async function DestinationPage({ params }: { params: Promise<Para
                 <p className="dest-section-intro">{dest.findVillaIntro}</p>
                 <div className="dest-find-grid">
                   {findVillaTiles.map((t) => (
-                    <Link key={t.key} href={`/villas?destination=${dest.slug}&${t.query}`} className="dest-find-card">
+                    <Link key={t.key} href={`/villas?destination=${dest.slug}${t.query ? `&${t.query}` : ''}`} className="dest-find-card">
                       <h3 className="dest-find-card-title">{t.title}</h3>
                       <p className="dest-find-card-text">{t.text}</p>
                       <p className="dest-find-card-communities">

@@ -42,14 +42,18 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   const description = prop.shortDescription || `${prop.bedrooms}-bedroom luxury ${typeLabel.toLowerCase()} in ${locStr} with private staff and exclusive amenities.`
   // 1200x630 is the standard social-share card ratio (Facebook/WhatsApp/
   // Twitter); without an explicit height this was requesting the photo's
-  // native ratio instead, which platforms then crop unpredictably.
-  const ogImage = prop.heroImage?.asset?._ref ? urlFor(prop.heroImage).width(1200).height(630).quality(85).url() : undefined
+  // native ratio instead, which platforms then crop unpredictably. Falls
+  // back to the sitewide default photo (set in layout.tsx) rather than no
+  // image, on the unlikely chance a property is missing its hero photo.
+  const ogImage = prop.heroImage?.asset?._ref
+    ? urlFor(prop.heroImage).width(1200).height(630).quality(85).url()
+    : 'https://www.mexicanreserve.com/og-image-1.jpg'
 
   return {
     title,
     description,
     alternates: { canonical: `https://www.mexicanreserve.com/villas/${slug}` },
-    openGraph: { title, description, images: ogImage ? [ogImage] : undefined },
+    openGraph: { title, description, images: [ogImage] },
     twitter: { card: 'summary_large_image', title, description },
   }
 }
