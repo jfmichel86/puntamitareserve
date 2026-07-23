@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useRef, useEffect } from 'react'
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
 import PropertyCard from '@/components/PropertyCard'
 import {
@@ -141,6 +141,26 @@ export default function VillasClient({ properties }: { properties: Property[] })
   const [flVisible, setFlVisible] = useState(false)
   const [communityOpen, setCommunityOpen] = useState(false)
   const filterBarRef = useRef<HTMLDivElement>(null)
+
+  // Auto-loads the next batch as the "Show more properties" wrap scrolls
+  // near the bottom of the viewport, so browsing a large portfolio doesn't
+  // mean repeatedly clicking the same button — the button itself stays as
+  // a visible fallback (keyboard/screen-reader users, or anyone who'd
+  // rather click). A callback ref (not a plain useRef) is required here:
+  // this wrap unmounts once every property is loaded, and React only calls
+  // a callback ref again — with the fresh node, or null on unmount — it
+  // won't re-fire a plain ref for us to notice the swap.
+  const loadMoreObserverRef = useRef<IntersectionObserver | null>(null)
+  const loadMoreSentinelRef = useCallback((node: HTMLDivElement | null) => {
+    loadMoreObserverRef.current?.disconnect()
+    loadMoreObserverRef.current = null
+    if (!node) return
+    loadMoreObserverRef.current = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) setVisibleCount((c) => c + PAGE_SIZE) },
+      { rootMargin: '0px 0px 600px 0px' } // starts loading ~600px before it'd actually be reached
+    )
+    loadMoreObserverRef.current.observe(node)
+  }, [])
 
   // Floating "All Filters" button: shown once the filter bar scrolls out of view.
   useEffect(() => {
@@ -619,7 +639,7 @@ export default function VillasClient({ properties }: { properties: Property[] })
               {visible.map((p) => <PropertyCard key={p._id} property={p} activeCollection={filters.collection || undefined} />)}
             </div>
             {visibleCount < filtered.length && (
-              <div className="load-more-wrap" style={{ display: 'block' }}>
+              <div className="load-more-wrap" style={{ display: 'block' }} ref={loadMoreSentinelRef}>
                 <button className="load-more-btn" onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}>
                   Show more properties
                 </button>

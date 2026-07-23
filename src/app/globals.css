@@ -547,7 +547,7 @@ body {
 section { padding: clamp(40px, 9vh, 108px) 64px; }
 .s-eye { font-family: var(--font-inter), sans-serif; font-weight: 400; font-size: 9.5px; letter-spacing: .32em; text-transform: uppercase; color: var(--ocean); margin-bottom: 16px; }
 .s-div { width: 40px; height: 1px; background: var(--gold); margin-bottom: 24px; }
-.s-title { font-family: var(--font-cormorant), serif; font-weight: 300; font-size: clamp(32px,3.8vw,52px); line-height: 1.10; color: var(--deep-ocean); letter-spacing: .01em; }
+.s-title { font-family: var(--font-cormorant), serif; font-weight: 300; font-size: clamp(32px,3.8vw,52px); line-height: 1.10; color: var(--deep-ocean); letter-spacing: .01em; margin-bottom: 20px; }
 .s-title em { font-style: italic; color: var(--ocean-mid); }
 .s-body { font-family: var(--font-inter), sans-serif; font-weight: 300; font-size: 15px; line-height: 1.82; color: var(--charcoal-light); }
 .view-all { display: inline-flex; align-items: center; gap: 9px; font-family: var(--font-inter), sans-serif; font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--ocean-mid); text-decoration: none; flex-shrink: 0; transition: color .2s; }
@@ -641,11 +641,7 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
    inherits them instead of fighting them. */
 .dest-showcase-hdr { flex-shrink: 0; max-width: 620px; margin: 0 auto; text-align: center; position: relative; z-index: 1; }
 .dest-showcase-hdr .s-div { margin: 0 auto 24px; }
-/* Same reasoning as .dest-why-support: the eyebrow/title above stay
-   centered (short, headline-weight), but this multi-line paragraph reads
-   better left-aligned — centered text loses the fixed left margin that
-   makes several lines of running copy easy to scan. */
-.dest-showcase-hdr .s-body { text-align: left; max-width: 480px; margin: 0 auto; }
+.dest-showcase-hdr .s-body { max-width: 480px; margin: 0 auto; }
 .about-cta { display: inline-flex; align-items: center; gap: 9px; font-family: var(--font-inter), sans-serif; font-size: 10.5px; letter-spacing: .18em; text-transform: uppercase; color: var(--deep-ocean); text-decoration: none; margin-top: 40px; border-bottom: 1px solid var(--deep-ocean); padding-bottom: 6px; transition: gap .2s, opacity .2s; }
 .about-cta:hover { gap: 15px; opacity: .65; }
 .about-cta svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; }
