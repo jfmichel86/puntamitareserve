@@ -49,7 +49,7 @@ export const AMENITY_LABELS: Record<string, string> = {
   // Entertainment & Health
   'basketball-court': 'Basketball Court',
   'bocce-ball-court': 'Bocce Ball Court', 'bowling-alley': 'Bowling Alley',
-  'cards-poker-table': 'Cards / Poker Table', 'cards-table': 'Cards Table',
+  'cards-poker-table': 'Cards / Poker Table',
   'cinema-room': 'Cinema Room', foosball: 'Foosball', games: 'Games',
   'golf-simulator': 'Golf Simulator', gym: 'Gym / Fitness Room', 'golf-clubs': 'High End Golf Clubs',
   'media-room': 'Media Room', petanque: 'Pétanque', piano: 'Piano',
@@ -137,7 +137,7 @@ export const AMENITY_CATS: AmenityCat[] = [
   {
     label: 'Entertainment & Health',
     icon: <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>,
-    keys: ['basketball-court', 'bocce-ball-court', 'bowling-alley', 'cards-poker-table', 'cards-table', 'cinema-room', 'foosball', 'games', 'golf-simulator', 'gym', 'golf-clubs', 'media-room', 'petanque', 'piano', 'pickleball-court', 'ping-pong', 'pool-table', 'putting-green', 'satellite-cable-tv', 'scrabble-table', 'shuffleboard', 'smart-tv', 'sonos', 'sound-system', 'tennis-court', 'video-games', 'yoga-room'],
+    keys: ['basketball-court', 'bocce-ball-court', 'bowling-alley', 'cards-poker-table', 'cinema-room', 'foosball', 'games', 'golf-simulator', 'gym', 'golf-clubs', 'media-room', 'petanque', 'piano', 'pickleball-court', 'ping-pong', 'pool-table', 'putting-green', 'satellite-cable-tv', 'scrabble-table', 'shuffleboard', 'smart-tv', 'sonos', 'sound-system', 'tennis-court', 'video-games', 'yoga-room'],
   },
   {
     label: 'Outdoor Features',
@@ -214,7 +214,6 @@ export const AMENITY_HIGHLIGHTS_PRIORITY: string[] = [
   'pool-table',
   'shuffleboard',
   'cards-poker-table',
-  'cards-table',
   'scrabble-table',
   'foosball',
   'ping-pong',

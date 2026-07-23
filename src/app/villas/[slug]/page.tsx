@@ -122,7 +122,11 @@ export default async function PropertyDetailPage({ params }: { params: Promise<P
   const descH2 = descViewKey ? `${VIEW_H2_MAP[descViewKey]} ${typeLabel}` : (commLabel ? `${commLabel} ${typeLabel}` : `Luxury ${typeLabel}`)
 
   // Rates / min stay / scarcity
-  const seasons = prop.seasons || []
+  const seasons = (prop.seasons || []).slice().sort((a: any, b: any) => {
+    const rateA = a.nightlyRate ?? (a.bedroomRates?.[0]?.nightlyRate ?? Infinity)
+    const rateB = b.nightlyRate ?? (b.bedroomRates?.[0]?.nightlyRate ?? Infinity)
+    return rateA - rateB
+  })
   const validStays = seasons.map((s) => s.minimumStay).filter((n) => n > 0)
   const minStayNights = validStays.length ? Math.min(...validStays) : 0
   // allSeasonRates correctly includes bedroom-tiered rates, not just a flat

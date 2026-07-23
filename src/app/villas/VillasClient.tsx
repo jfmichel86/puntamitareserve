@@ -386,7 +386,7 @@ export default function VillasClient({ properties }: { properties: Property[] })
               <svg className="ff-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
             </button>
             <div className="ff-panel">
-              {[0, 1, 2, 3, 4, 5, 6].map((v) => (
+              {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((v) => (
                 <div
                   key={v}
                   className={`ff-opt${filters.beds === v && !filters.bedsMax ? ' is-sel' : ''}`}
