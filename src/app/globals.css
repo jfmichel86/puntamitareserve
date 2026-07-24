@@ -1187,6 +1187,17 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
   background: rgba(30,58,80,.62); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
   border: 1px solid rgba(255,255,255,.14); padding: 5px 11px; border-radius: 2px;
 }
+/* Deal badge (bottom-right) — the one open corner (top-left is the
+   collection badge, bottom-left the location badge, top-right the save
+   heart). Gold, not navy, so an active promotion reads as a distinct,
+   attention-getting signal rather than just another descriptive tag. */
+.prop-deal-badge {
+  position: absolute; bottom: 14px; right: 14px; z-index: 2;
+  font-family: var(--font-inter), sans-serif; font-size: 9px; font-weight: 400;
+  letter-spacing: .16em; text-transform: uppercase; color: var(--text-on-dark);
+  background: rgba(200,148,58,.88); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,.2); padding: 5px 11px; border-radius: 2px;
+}
 .prop-body { padding: 16px 18px 18px; }
 .prop-type {
   font-family: var(--font-inter), sans-serif; font-size: 9.5px; font-weight: 400;
@@ -1951,6 +1962,19 @@ body.an-visible { --sidebar-top: 140px; }
 .rates-note { list-style: none; padding-left: 0; font-family: var(--font-inter), sans-serif; font-size: 11px; font-weight: 300; color: var(--charcoal-light); line-height: 1.7; margin-top: 14px; }
 .rates-note li { margin-bottom: 2px; padding-left: 14px; position: relative; }
 .rates-note li::before { content: '–'; position: absolute; left: 0; color: var(--gold); }
+
+/* Price on Request — in-page section */
+.por-intro { font-family: var(--font-inter), sans-serif; font-size: 14px; font-weight: 300; color: var(--charcoal); line-height: 1.75; margin-bottom: 24px; }
+.por-cta-row { display: flex; gap: 12px; flex-wrap: wrap; }
+.por-cta-btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; font-family: var(--font-inter), sans-serif; font-size: 13px; font-weight: 500; border-radius: 2px; text-decoration: none; transition: opacity .15s; }
+.por-cta-btn:hover { opacity: .85; }
+.por-wa { background: var(--deep-ocean); color: var(--white); }
+.por-wa svg { width: 16px; height: 16px; fill: var(--white); }
+.por-email { background: transparent; color: var(--charcoal); border: 1px solid var(--sand-dark); }
+.por-email svg { width: 16px; height: 16px; stroke: var(--charcoal); fill: none; stroke-width: 1.8; }
+
+/* Price on Request — sidebar */
+.iq-por { font-size: 26px !important; letter-spacing: .01em; }
 
 /* Rules & policies accordion */
 .policy-item { border-bottom: 1px solid var(--sand); }

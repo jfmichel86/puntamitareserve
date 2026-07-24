@@ -42,11 +42,13 @@ export default function Sidebar({
   minRate,
   minStayNights,
   showScarcity,
+  priceOnRequest = false,
 }: {
   propertyTitle: string
   minRate: number | null
   minStayNights: number
   showScarcity: boolean
+  priceOnRequest?: boolean
 }) {
   const [openPanel, setOpenPanel] = useState<PanelOpen>(null)
   const wrapRef = useRef<HTMLDivElement>(null)
@@ -251,12 +253,24 @@ export default function Sidebar({
     <div className="sidebar-sticky">
       <div className="iq-card">
         <div className="iq-head">
-          <div className="iq-from">Starting from</div>
-          <div className="iq-price">
-            <span className="iq-amount">{minRate ? formatPrice(minRate) : '—'}</span>
-            <span className="iq-per">/ night</span>
-          </div>
-          {minStayNights > 0 && <div className="iq-min-stay">{minStayNights}-night minimum stay</div>}
+          {priceOnRequest ? (
+            <>
+              <div className="iq-from">Pricing</div>
+              <div className="iq-price">
+                <span className="iq-amount iq-por">Please Inquire</span>
+              </div>
+              <div className="iq-min-stay">Rates available upon request</div>
+            </>
+          ) : (
+            <>
+              <div className="iq-from">Starting from</div>
+              <div className="iq-price">
+                <span className="iq-amount">{minRate ? formatPrice(minRate) : '—'}</span>
+                <span className="iq-per">/ night</span>
+              </div>
+              {minStayNights > 0 && <div className="iq-min-stay">{minStayNights}-night minimum stay</div>}
+            </>
+          )}
         </div>
         <div className="iq-body" ref={wrapRef}>
           <div className="iq-field">

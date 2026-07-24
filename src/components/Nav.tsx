@@ -113,32 +113,6 @@ export default function Nav() {
 
       <ul className="nav-links">
         <li
-          className={`nav-dropdown${propsOpen ? ' is-open' : ''}`}
-          ref={propsRef}
-          onMouseEnter={() => setPropsOpen(true)}
-          onMouseLeave={() => setPropsOpen(false)}
-        >
-          <div className={`nav-dropdown-trigger${isActive('/villas') ? ' active' : ''}`}>
-            <Link href="/villas" className="nav-dropdown-trigger-label">Properties</Link>
-            <button
-              type="button"
-              className="nav-dropdown-trigger-caret"
-              onClick={() => setPropsOpen((o) => !o)}
-              aria-expanded={propsOpen}
-              aria-label="Toggle properties menu"
-            >
-              <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
-            </button>
-          </div>
-          <div className="nav-dropdown-panel">
-            {PROPERTIES_MENU.map((p) => (
-              <Link key={p.href} href={p.href} onClick={() => setPropsOpen(false)}>
-                {p.label}
-              </Link>
-            ))}
-          </div>
-        </li>
-        <li
           className={`nav-dropdown${destOpen ? ' is-open' : ''}`}
           ref={destRef}
           onMouseEnter={() => setDestOpen(true)}
@@ -170,7 +144,42 @@ export default function Nav() {
             ))}
           </div>
         </li>
-        <li><Link href="/about" className={pathname === '/about' ? 'active' : ''}>About</Link></li>
+        <li
+          className={`nav-dropdown${propsOpen ? ' is-open' : ''}`}
+          ref={propsRef}
+          onMouseEnter={() => setPropsOpen(true)}
+          onMouseLeave={() => setPropsOpen(false)}
+        >
+          <div className={`nav-dropdown-trigger${isActive('/villas') ? ' active' : ''}`}>
+            {/* Label reads "Collections" (renamed from "Properties") — same
+                dropdown underneath, still leading to /villas. "Collections"
+                surfaces the curated groupings (Exceptional Value, Family
+                Villas, Oceanfront) as the headline idea instead of a flat
+                "browse everything" label competing with the search bar. */}
+            <Link href="/villas" className="nav-dropdown-trigger-label">Collections</Link>
+            <button
+              type="button"
+              className="nav-dropdown-trigger-caret"
+              onClick={() => setPropsOpen((o) => !o)}
+              aria-expanded={propsOpen}
+              aria-label="Toggle collections menu"
+            >
+              <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+          </div>
+          <div className="nav-dropdown-panel">
+            {PROPERTIES_MENU.map((p) => (
+              <Link key={p.href} href={p.href} onClick={() => setPropsOpen(false)}>
+                {p.label}
+              </Link>
+            ))}
+          </div>
+        </li>
+        <li><Link href="/offers" className={pathname === '/offers' ? 'active' : ''}>Exclusive Deals</Link></li>
+        {/* Label reads "The Experience" (renamed from "About") — same /about
+            page, which is actually concierge-service and local-expertise
+            content, not a company bio, so the old label undersold it. */}
+        <li><Link href="/about" className={pathname === '/about' ? 'active' : ''}>The Experience</Link></li>
       </ul>
 
       {/* WhatsApp was removed from here — redundant with the Inquire button
@@ -198,22 +207,6 @@ export default function Nav() {
       <div className={`mobile-drawer${menuOpen ? ' open' : ''}`}>
         <button
           type="button"
-          className={`mobile-dropdown-trigger${isActive('/villas') ? ' active' : ''}`}
-          onClick={() => setMobilePropsOpen((o) => !o)}
-          aria-expanded={mobilePropsOpen}
-        >
-          Properties
-          <svg className={mobilePropsOpen ? 'open' : ''} viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
-        </button>
-        {mobilePropsOpen && (
-          <div className="mobile-dropdown-list">
-            {PROPERTIES_MENU.map((p) => (
-              <Link key={p.href} href={p.href} onClick={closeMenu}>{p.label}</Link>
-            ))}
-          </div>
-        )}
-        <button
-          type="button"
           className={`mobile-dropdown-trigger${isDestActive ? ' active' : ''}`}
           onClick={() => setMobileDestOpen((o) => !o)}
           aria-expanded={mobileDestOpen}
@@ -231,7 +224,24 @@ export default function Nav() {
             ))}
           </div>
         )}
-        <Link href="/about" onClick={closeMenu}>About</Link>
+        <button
+          type="button"
+          className={`mobile-dropdown-trigger${isActive('/villas') ? ' active' : ''}`}
+          onClick={() => setMobilePropsOpen((o) => !o)}
+          aria-expanded={mobilePropsOpen}
+        >
+          Collections
+          <svg className={mobilePropsOpen ? 'open' : ''} viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        {mobilePropsOpen && (
+          <div className="mobile-dropdown-list">
+            {PROPERTIES_MENU.map((p) => (
+              <Link key={p.href} href={p.href} onClick={closeMenu}>{p.label}</Link>
+            ))}
+          </div>
+        )}
+        <Link href="/offers" onClick={closeMenu}>Exclusive Deals</Link>
+        <Link href="/about" onClick={closeMenu}>The Experience</Link>
         {savedCount > 0 && (
           <Link href="/saved" onClick={closeMenu}>Wishlist ({savedCount})</Link>
         )}

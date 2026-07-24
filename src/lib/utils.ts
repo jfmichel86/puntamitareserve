@@ -39,6 +39,7 @@ export type Property = {
   golfCart4Seater?: number
   memberships?: string
   bedConfiguration?: unknown[]
+  priceOnRequest?: boolean
   seasons?: Season[]
   heroImage?: PhotoRef
   mosaicPhotos?: PhotoRef[]
@@ -376,4 +377,34 @@ export function hasActivePromotion(p: Property): boolean {
 /** Check if property has an active last minute deal */
 export function hasLastMinuteDeal(p: Property): boolean {
   return p.promotions?.lastMinuteDeal?.active ?? false
+}
+
+/** Check if property is the current property of the month */
+export function isPropertyOfTheMonth(p: Property): boolean {
+  const potm = p.promotions?.propertyOfTheMonth
+  if (!potm?.active) return false
+  if (potm.month == null || potm.year == null) return true
+  const now = new Date()
+  return potm.month === now.getMonth() + 1 && potm.year === now.getFullYear()
+}
+
+/** Does this property have any currently-active promotion (any of the three types)? */
+export function hasAnyActiveDeal(p: Property): boolean {
+  return hasActivePromotion(p) || hasLastMinuteDeal(p) || isPropertyOfTheMonth(p)
+}
+
+/**
+ * Small gold badge label for the card — shown on every card sitewide when a
+ * property has a genuinely active promotion (not page-specific), so guests
+ * see it wherever the card appears, not only on the Exclusive Deals page.
+ * Priority order when more than one is active: Property of the Month is the
+ * rarest/most editorial distinction, so it wins over a generic limited-time
+ * label, which in turn wins over a last-minute deal (the most transactional
+ * of the three).
+ */
+export function dealBadgeLabel(p: Property): string {
+  if (isPropertyOfTheMonth(p)) return 'Property of the Month'
+  if (hasActivePromotion(p)) return p.promotions?.limitedTimePromotion?.label || 'Limited-Time Offer'
+  if (hasLastMinuteDeal(p)) return 'Last-Minute Deal'
+  return ''
 }

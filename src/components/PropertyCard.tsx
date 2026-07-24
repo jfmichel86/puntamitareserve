@@ -6,7 +6,7 @@ import Image from 'next/image'
 import { urlFor } from '@/lib/sanity'
 import {
   Property, startingRate, totalGuests, formatPrice,
-  communityLabel, collectionBadge, locationBadge, allPhotos,
+  communityLabel, collectionBadge, locationBadge, allPhotos, dealBadgeLabel,
 } from '@/lib/utils'
 
 interface Props {
@@ -29,6 +29,7 @@ export default function PropertyCard({ property: p, activeCollection }: Props) {
   // villas listing, and similar properties — showing both badges together.
   const badge = collectionBadge(p, activeCollection)
   const locBadge = locationBadge(p)
+  const dealBadge = dealBadgeLabel(p)
   const photos = allPhotos(p)
 
   const [photoIdx, setPhotoIdx] = useState(0)
@@ -101,6 +102,7 @@ export default function PropertyCard({ property: p, activeCollection }: Props) {
 
         {badge && <span className="prop-badge">{badge}</span>}
         {locBadge && <span className="prop-loc-badge">{locBadge}</span>}
+        {dealBadge && <span className="prop-deal-badge">{dealBadge}</span>}
 
         <button
           className={`card-save-btn${saved ? ' saved' : ''}`}

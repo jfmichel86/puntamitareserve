@@ -26,8 +26,12 @@ export default function Footer() {
         <div>
           <div className="ft-col-title">Company</div>
           <ul className="ft-links">
-            <li><Link href="/about">About us</Link></li>
+            <li><Link href="/about">The Experience</Link></li>
             <li><Link href="/faq">FAQ</Link></li>
+            {/* Deliberately plain text, same weight as the other Company
+                links — not a button — so it doesn't compete with the
+                guest-facing nav for attention (Francisco's call). */}
+            <li><Link href="/list-your-property">Own a property?</Link></li>
             <li><Link href="/terms-and-conditions">Terms and conditions</Link></li>
             <li><Link href="/cancellation-policy">Cancellation policy</Link></li>
             <li><Link href="/privacy-policy">Privacy policy</Link></li>

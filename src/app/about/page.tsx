@@ -11,7 +11,7 @@ export default function AboutPage() {
     <>
       <section className="pg-header">
         <p className="pg-eyebrow">Who We Are</p>
-        <h1 className="pg-title">The people who know <em>Punta Mita</em></h1>
+        <h1 className="pg-title">The people who know every property, <em>personally</em></h1>
         <p className="pg-sub">Local expertise, personal relationships, and a level of service that doesn&rsquo;t exist on a booking platform.</p>
       </section>
 
