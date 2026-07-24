@@ -53,9 +53,25 @@ export type Property = {
   seoDescription?: string
   ogImage?: unknown
   promotions?: {
-    limitedTimePromotion?: { active: boolean; label?: string; expiryDate?: string }
-    propertyOfTheMonth?:   { active: boolean; month?: number; year?: number }
-    lastMinuteDeal?:       { active: boolean; availableDates?: string; note?: string }
+    limitedTimePromotion?: {
+      active: boolean
+      offerType?: 'percentage' | 'free-nights'
+      percentageOff?: number
+      payNights?: number
+      stayNights?: number
+      expiryDate?: string
+      note?: string
+    }
+    propertyOfTheMonth?: { active: boolean; month?: number; year?: number }
+    lastMinuteDeal?: {
+      active: boolean
+      availableDates?: string
+      offerType?: 'percentage' | 'free-nights'
+      percentageOff?: number
+      payNights?: number
+      stayNights?: number
+      note?: string
+    }
   }
 }
 
@@ -393,6 +409,41 @@ export function hasAnyActiveDeal(p: Property): boolean {
   return hasActivePromotion(p) || hasLastMinuteDeal(p) || isPropertyOfTheMonth(p)
 }
 
+type StructuredOffer = {
+  offerType?: 'percentage' | 'free-nights'
+  percentageOff?: number
+  payNights?: number
+  stayNights?: number
+}
+
+/**
+ * Builds a discount label from the shared percentage/free-nights structure —
+ * "15% Off" or "Pay 3, Stay 4" — rather than a hand-typed string, so the
+ * wording is always consistent no matter who enters it in Sanity. Used by
+ * both Limited Time Promotion and Last Minute Deal, which share this exact
+ * same offer-type structure.
+ */
+function offerLabel(offer: StructuredOffer | undefined, fallback: string): string {
+  if (!offer) return fallback
+  if (offer.offerType === 'percentage' && offer.percentageOff) {
+    return `${offer.percentageOff}% Off`
+  }
+  if (offer.offerType === 'free-nights' && offer.payNights && offer.stayNights) {
+    return `Pay ${offer.payNights}, Stay ${offer.stayNights}`
+  }
+  return fallback
+}
+
+/** Display label for a limited-time promotion, e.g. "15% Off" or "Pay 3, Stay 4". */
+export function limitedTimePromotionLabel(p: Property): string {
+  return offerLabel(p.promotions?.limitedTimePromotion, 'Limited-Time Offer')
+}
+
+/** Display label for a last-minute deal, e.g. "15% Off" or "Pay 3, Stay 4". */
+export function lastMinuteDealLabel(p: Property): string {
+  return offerLabel(p.promotions?.lastMinuteDeal, 'Last-Minute Deal')
+}
+
 /**
  * Small gold badge label for the card — shown on every card sitewide when a
  * property has a genuinely active promotion (not page-specific), so guests
@@ -404,7 +455,7 @@ export function hasAnyActiveDeal(p: Property): boolean {
  */
 export function dealBadgeLabel(p: Property): string {
   if (isPropertyOfTheMonth(p)) return 'Property of the Month'
-  if (hasActivePromotion(p)) return p.promotions?.limitedTimePromotion?.label || 'Limited-Time Offer'
-  if (hasLastMinuteDeal(p)) return 'Last-Minute Deal'
+  if (hasActivePromotion(p)) return limitedTimePromotionLabel(p)
+  if (hasLastMinuteDeal(p)) return lastMinuteDealLabel(p)
   return ''
 }

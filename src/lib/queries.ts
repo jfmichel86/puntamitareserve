@@ -35,9 +35,9 @@ export const PROPERTIES_QUERY = `
     "staffServices": staffServices[]{ role, services },
     policies,
     "promotions": promotions {
-      limitedTimePromotion { active, label, expiryDate },
+      limitedTimePromotion { active, offerType, percentageOff, payNights, stayNights, expiryDate, note },
       propertyOfTheMonth   { active, month, year       },
-      lastMinuteDeal        { active, availableDates, note }
+      lastMinuteDeal        { active, availableDates, offerType, percentageOff, payNights, stayNights, note }
     }
   }
 `
@@ -79,9 +79,9 @@ export const PROPERTY_BY_SLUG_QUERY = `
     seoDescription,
     ogImage,
     "promotions": promotions {
-      limitedTimePromotion { active, label, expiryDate },
+      limitedTimePromotion { active, offerType, percentageOff, payNights, stayNights, expiryDate, note },
       propertyOfTheMonth   { active, month, year       },
-      lastMinuteDeal        { active, availableDates, note }
+      lastMinuteDeal        { active, availableDates, offerType, percentageOff, payNights, stayNights, note }
     }
   }
 `
@@ -124,8 +124,8 @@ export const FEATURED_PROPERTIES_QUERY = `
     "mosaicPhotos": mosaicPhotos[]{ asset, hotspot },
     amenities,
     "promotions": promotions {
-      limitedTimePromotion { active, label, expiryDate },
-      lastMinuteDeal        { active, availableDates, note }
+      limitedTimePromotion { active, offerType, percentageOff, payNights, stayNights, expiryDate, note },
+      lastMinuteDeal        { active, availableDates, offerType, percentageOff, payNights, stayNights, note }
     }
   }
 `
@@ -177,8 +177,8 @@ export const PROPERTIES_BY_DESTINATION_QUERY = `
     "mosaicPhotos": mosaicPhotos[]{ asset, hotspot },
     amenities,
     "promotions": promotions {
-      limitedTimePromotion { active, label, expiryDate },
-      lastMinuteDeal        { active, availableDates, note }
+      limitedTimePromotion { active, offerType, percentageOff, payNights, stayNights, expiryDate, note },
+      lastMinuteDeal        { active, availableDates, offerType, percentageOff, payNights, stayNights, note }
     }
   }
 `

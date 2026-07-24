@@ -55,6 +55,7 @@ export default async function OffersPage() {
           <div className="prop-grid">
             {properties.map((p) => <PropertyCard key={p._id} property={p} />)}
           </div>
+          <p className="deals-disclaimer">Offers exclude peak weeks, including major holidays (such as Christmas, New Year, and Easter / Semana Santa) and other high-demand periods as determined by us.</p>
         </div>
       )}
     </>
