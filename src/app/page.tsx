@@ -3,6 +3,7 @@ import Hero from '@/components/Hero'
 import Collections from '@/components/Collections'
 import Featured from '@/components/Featured'
 import Destination from '@/components/Destination'
+import WhyBookDirect from '@/components/WhyBookDirect'
 import Testimonials from '@/components/Testimonials'
 
 export const metadata: Metadata = {
@@ -49,6 +50,7 @@ export default function Home() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessSchema) }}
       />
       <Hero />
+      <WhyBookDirect />
       <Destination />
       <Featured />
       <Collections />

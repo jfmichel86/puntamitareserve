@@ -202,6 +202,7 @@ body {
 .nav-dropdown-panel a:hover::after { transform: scaleX(1); }
 .nav-dropdown-panel a.is-sel { opacity: 1; color: var(--gold); }
 .nav-dropdown-panel a.is-sel::after { transform: scaleX(1); }
+.nav-dest-suffix { font-size: 9px; letter-spacing: .1em; opacity: .7; }
 
 .nav-cta {
   font-family: var(--font-inter), sans-serif; font-weight: 400;
@@ -567,7 +568,10 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
    Plain vh caps on individual pieces (the earlier attempt) couldn't
    account for the header text's fixed pixel height eating a bigger
    share of a short screen's budget — this does, automatically. */
-#collections { background: var(--white); height: 94vh; min-height: 640px; display: flex; flex-direction: column; justify-content: center; }
+/* Sand, not white — part of the homepage's navy → sand → white rotation.
+   Cards are full-bleed photo tiles with their own dark overlay text, so
+   this only shows through in the gutters/margins around them. */
+#collections { background: var(--sand); height: 94vh; min-height: 640px; display: flex; flex-direction: column; justify-content: center; }
 .collections-intro { flex-shrink: 0; text-align: center; max-width: 620px; margin: 0 auto clamp(20px, 4vh, 48px); }
 .collections-intro .s-div { margin: 0 auto 24px; }
 .collections-browse { flex-shrink: 0; text-align: center; margin-top: clamp(16px, 3vh, 40px); }
@@ -610,7 +614,8 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
 .cc:not(:first-child) .cc-desc { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
 
 /* ── Featured properties ──────────────────────────────────── */
-#featured { background: var(--cream); }
+/* White, not cream — part of the homepage's navy → sand → white rotation. */
+#featured { background: var(--white); }
 .properties-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; align-items: start; }
 .btn-primary { display: inline-block; font-family: var(--font-inter), sans-serif; font-weight: 400; font-size: 10.5px; letter-spacing: .22em; text-transform: uppercase; background: var(--deep-ocean); color: var(--text-on-dark); padding: 16px 44px; border-radius: 2px; text-decoration: none; transition: background .22s, transform .18s; }
 .btn-primary:hover { background: var(--ocean-mid); transform: translateY(-2px); }
@@ -632,16 +637,20 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
    designates for "alternating sections" (see the design tokens), so this
    also sets up a clean dark → light → cream → white → cream rhythm all the
    way down the homepage instead of two darks in a row. */
-#destination { background: var(--sand); position: relative; overflow: hidden; height: 94vh; min-height: 640px; display: flex; flex-direction: column; justify-content: center; }
+/* Navy again — homepage rotation is now Hero(navy) → WhyBookDirect(white)
+   → Destination(navy) → Featured(white) → Collections(sand) →
+   Testimonials(white). Safe to be navy here even though Hero above is also
+   navy-toned, because Why Book Direct (white) sits between them — no two
+   sections in the actual DOM order ever share a tone. */
+#destination { background: var(--deep-ocean); position: relative; overflow: hidden; height: 94vh; min-height: 640px; display: flex; flex-direction: column; justify-content: center; }
 #destination::before { content: ''; position: absolute; top: -80px; right: -80px; width: 440px; height: 440px; border-radius: 50%; background: radial-gradient(circle, rgba(200,148,58,.10) 0%, transparent 65%); pointer-events: none; }
 #destination::after { content: ''; position: absolute; bottom: -60px; left: -60px; width: 360px; height: 360px; border-radius: 50%; background: radial-gradient(circle, rgba(104,126,148,.10) 0%, transparent 65%); pointer-events: none; }
-/* No more dark-specific text-color overrides here — .s-eye/.s-title/.s-body
-   already default to the correct colors for a light section (same ones
-   Featured, Collections, and Testimonials use), so this section now just
-   inherits them instead of fighting them. */
 .dest-showcase-hdr { flex-shrink: 0; max-width: 620px; margin: 0 auto; text-align: center; position: relative; z-index: 1; }
+.dest-showcase-hdr .s-eye { color: var(--gold); }
 .dest-showcase-hdr .s-div { margin: 0 auto 24px; }
-.dest-showcase-hdr .s-body { max-width: 480px; margin: 0 auto; }
+.dest-showcase-hdr .s-title { color: var(--text-on-dark); }
+.dest-showcase-hdr .s-title em { color: var(--mist); }
+.dest-showcase-hdr .s-body { max-width: 480px; margin: 0 auto; color: rgba(239,246,251,.62); }
 .about-cta { display: inline-flex; align-items: center; gap: 9px; font-family: var(--font-inter), sans-serif; font-size: 10.5px; letter-spacing: .18em; text-transform: uppercase; color: var(--deep-ocean); text-decoration: none; margin-top: 40px; border-bottom: 1px solid var(--deep-ocean); padding-bottom: 6px; transition: gap .2s, opacity .2s; }
 .about-cta:hover { gap: 15px; opacity: .65; }
 .about-cta svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; }
@@ -668,6 +677,27 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
 .dest-card-link { display: inline-flex; align-items: center; gap: 7px; font-family: var(--font-inter), sans-serif; font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: var(--gold); transition: gap .2s; }
 .dest-card:hover .dest-card-link { gap: 12px; }
 .dest-card-link svg { width: 11px; height: 11px; stroke: currentColor; fill: none; stroke-width: 2; }
+
+/* ── Why Book Direct (homepage) ───────────────────────────────
+   Sits directly under Hero so it frames every section below it ("book this
+   direct") before a visitor has scrolled past anything else. Homepage rhythm
+   is now Hero=navy, this=white, Destination=navy, Featured=white,
+   Collections=sand, Testimonials=white — no two sections in a row ever
+   share the same tone, and this one is white specifically so it doesn't sit
+   dark-on-dark right against Hero. Colors below are otherwise untouched
+   from .s-eye/.s-title/.s-body's own light-section defaults (same as
+   Featured/Testimonials). */
+#why-book-direct { background: var(--white); }
+.wbd-hdr { text-align: center; max-width: 640px; margin: 0 auto clamp(40px, 7vh, 72px); }
+.wbd-hdr .s-div { margin: 0 auto 24px; }
+.wbd-hdr .s-body { max-width: 480px; margin: 0 auto; }
+.wbd-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; max-width: 1180px; margin: 0 auto; }
+.wbd-item { padding: 0 32px; text-align: center; border-left: 1px solid var(--sand-dark); }
+.wbd-item:first-child { border-left: none; }
+.wbd-icon { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; margin-bottom: 20px; color: var(--gold); }
+.wbd-icon svg { width: 30px; height: 30px; stroke: currentColor; fill: none; stroke-width: 1.4; }
+.wbd-title { font-family: var(--font-cormorant), serif; font-weight: 400; font-size: 19px; letter-spacing: .01em; color: var(--deep-ocean); margin-bottom: 10px; line-height: 1.25; }
+.wbd-desc { font-family: var(--font-inter), sans-serif; font-weight: 300; font-size: 12.5px; line-height: 1.7; color: var(--charcoal-light); }
 
 /* ── Destinations index page (/destinations) ──
    Full editorial showcase — one large alternating row per destination,
@@ -804,7 +834,10 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
 /* Cream, not sand — keeps this section visually distinct from the sand-toned
    Welcome Offer band directly below it on the homepage (Destination's navy
    above still gives it plenty of contrast either way). */
-#testimonials { background: var(--cream); }
+/* White, not cream — part of the homepage's navy → sand → white rotation.
+   .t-card is its own solid white card, so this only affects the gutter
+   background behind the cards. */
+#testimonials { background: var(--white); }
 .t-head { text-align: center; margin-bottom: clamp(24px, 5vh, 60px); }
 .t-head .s-div { margin: 0 auto 24px; }
 .t-head .s-title { margin-bottom: 0; }
@@ -868,6 +901,9 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
   .about-body { grid-template-columns: 1fr; gap: 52px; }
   .about-stats-row { grid-template-columns: 1fr; }
   .t-grid { grid-template-columns: 1fr; }
+  .wbd-grid { grid-template-columns: 1fr; gap: 32px; }
+  .wbd-item { border-left: none; padding: 32px 0 0; border-top: 1px solid rgba(200,148,58,.22); }
+  .wbd-item:first-child { border-top: none; padding-top: 0; }
 }
 @media (max-width: 720px) {
   section { padding: 72px 24px; }
@@ -1507,6 +1543,13 @@ footer { background: var(--deep-ocean); padding: 56px 64px 56px; }
   transition: color .2s; letter-spacing: .02em;
 }
 .ft-links a:hover { color: var(--text-on-dark); }
+/* Footer's "Inside the Gates" suffix reuses .nav-dest-suffix's smaller/dimmer
+   treatment, but the footer's links are plain sentence case (not uppercase
+   tracked like the nav dropdown), so the nav's wide letter-spacing would
+   look inconsistent here and push the line to wrap. Tighter tracking + a
+   hair smaller keeps "Punta Mita — Inside the Gates" on one line. */
+.ft-links .nav-dest-suffix { font-size: 11px; letter-spacing: normal; }
+.ft-links a.ft-nowrap { white-space: nowrap; }
 .ft-contact-item { margin-bottom: 16px; }
 .ft-contact-lbl {
   font-family: var(--font-inter), sans-serif; font-size: 9px; letter-spacing: .18em;

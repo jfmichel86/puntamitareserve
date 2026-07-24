@@ -93,9 +93,9 @@ export default function Nav() {
   const isDestActive = pathname.startsWith('/destinations')
 
   const DESTINATIONS = [
-    { href: '/destinations/punta-mita', label: 'Punta Mita — Inside the Gates' },
-    { href: '/destinations/punta-de-mita', label: 'Punta de Mita Area' },
-    { href: '/destinations/puerto-vallarta', label: 'Puerto Vallarta' },
+    { href: '/destinations/punta-mita', name: 'Punta Mita', suffix: 'Inside the Gates' },
+    { href: '/destinations/punta-de-mita', name: 'Punta de Mita Area', suffix: undefined as string | undefined },
+    { href: '/destinations/puerto-vallarta', name: 'Puerto Vallarta', suffix: undefined as string | undefined },
   ]
 
   const PROPERTIES_MENU = [
@@ -164,7 +164,8 @@ export default function Nav() {
                 className={pathname === d.href ? 'is-sel' : ''}
                 onClick={() => setDestOpen(false)}
               >
-                {d.label}
+                {d.name}
+                {d.suffix && <span className="nav-dest-suffix"> — {d.suffix}</span>}
               </Link>
             ))}
           </div>
@@ -223,7 +224,10 @@ export default function Nav() {
         {mobileDestOpen && (
           <div className="mobile-dropdown-list">
             {DESTINATIONS.map((d) => (
-              <Link key={d.href} href={d.href} onClick={closeMenu}>{d.label}</Link>
+              <Link key={d.href} href={d.href} onClick={closeMenu}>
+                {d.name}
+                {d.suffix && <span className="nav-dest-suffix"> — {d.suffix}</span>}
+              </Link>
             ))}
           </div>
         )}

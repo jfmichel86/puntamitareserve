@@ -36,7 +36,7 @@ export default function Footer() {
         <div>
           <div className="ft-col-title">Destinations</div>
           <ul className="ft-links">
-            <li><Link href="/destinations/punta-mita">Punta Mita — Inside the Gates</Link></li>
+            <li><Link href="/destinations/punta-mita" className="ft-nowrap">Punta Mita<span className="nav-dest-suffix"> — Inside the Gates</span></Link></li>
             <li><Link href="/destinations/punta-de-mita">Punta de Mita Area</Link></li>
             <li><Link href="/destinations/puerto-vallarta">Puerto Vallarta</Link></li>
           </ul>
