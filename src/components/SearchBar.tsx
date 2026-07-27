@@ -13,15 +13,15 @@ function useMounted() {
   return useSyncExternalStore(subscribeNoop, () => true, () => false)
 }
 
-type Field = 'dates' | 'guests' | 'rate' | null
+type Field = 'destination' | 'dates' | 'guests' | null
 type DateMode = 'calendar' | 'flexible'
 
-const PRICE_OPTS: [string, string][] = [
-  ['0-1000', 'Up to $1,000 USD'],
-  ['1001-2500', '$1,001 – $2,500 USD'],
-  ['2501-5000', '$2,501 – $5,000 USD'],
-  ['5001-8000', '$5,001 – $8,000 USD'],
-  ['8001+', '$8,001+ USD'],
+// Values match what the villas listing's Destination filter expects
+// (see destinationOf() in utils.ts) so Search actually filters correctly.
+const DEST_OPTS: [string, string][] = [
+  ['punta-mita', 'Punta Mita'],
+  ['punta-de-mita', 'Punta de Mita Area'],
+  ['puerto-vallarta', 'Puerto Vallarta'],
 ]
 
 const FLEX_OPTS: [string, string][] = [
@@ -71,7 +71,7 @@ export default function SearchBar() {
 
   const [open, setOpen] = useState<Field>(null)
   const [guests, setGuests] = useState({ adults: 0, children: 0, infants: 0 })
-  const [price, setPrice] = useState<string>('')
+  const [destination, setDestination] = useState<string>('')
   const [checkIn, setCheckIn] = useState<string | null>(null)
   const [checkOut, setCheckOut] = useState<string | null>(null)
   const [viewYear, setViewYear] = useState(new Date().getFullYear())
@@ -102,7 +102,7 @@ export default function SearchBar() {
   const clearAll = () => {
     clearDates()
     setGuests({ adults: 0, children: 0, infants: 0 })
-    setPrice('')
+    setDestination('')
   }
 
   const guestsLabel = () => {
@@ -220,17 +220,17 @@ export default function SearchBar() {
           }).join(', ')}`
         : '')
 
-  const priceLabel = price ? PRICE_OPTS.find(([v]) => v === price)?.[1] : ''
+  const destinationLabel = destination ? DEST_OPTS.find(([v]) => v === destination)?.[1] : ''
 
   // Everything a guest actually picks in this bar should carry through to
-  // the results — price and guest counts both map directly to filters that
-  // already exist on the villas listing page. (Dates don't yet: there's no
-  // per-property availability calendar in Sanity to filter against, so a
+  // the results — destination and guest counts both map directly to filters
+  // that already exist on the villas listing page. (Dates don't yet: there's
+  // no per-property availability calendar in Sanity to filter against, so a
   // date range here can't honestly narrow the results — it's left for a
   // future step once real availability data exists.)
   const searchHref = () => {
     const params = new URLSearchParams()
-    if (price) params.set('price', price)
+    if (destination) params.set('destination', destination)
     if (guests.adults) params.set('adults', String(guests.adults))
     if (guests.children) params.set('children', String(guests.children))
     if (guests.infants) params.set('infants', String(guests.infants))
@@ -245,11 +245,36 @@ export default function SearchBar() {
   // calling it twice never causes React to remount/reset either instance.)
   const renderFields = () => (
     <>
+      {/* Destination */}
+      <div className={`sf sf-destination${open === 'destination' ? ' is-open' : ''}`}>
+        <button className="sf-trigger" type="button" onClick={() => toggle('destination')}>
+          <div className="sf-inner">
+            {!destinationLabel && <span className="sf-label">Destination</span>}
+            <span className="sf-val">{destinationLabel}</span>
+          </div>
+          <svg className="sf-chev" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        {open === 'destination' && (
+          <div className="sf-panel destination-panel">
+            <div className="destination-opts">
+              <div className="sf-opt" onClick={() => { setDestination(''); setOpen(null) }}>
+                All Destinations<span className="sel-dot" style={{ opacity: destination === '' ? 1 : 0 }} />
+              </div>
+              {DEST_OPTS.map(([v, l]) => (
+                <div key={v} className="sf-opt" onClick={() => { setDestination(v === destination ? '' : v); setOpen(null) }}>
+                  {l}<span className="sel-dot" style={{ opacity: destination === v ? 1 : 0 }} />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Dates */}
       <div className={`sf sf-dates${open === 'dates' ? ' is-open' : ''}`}>
         <button className="sf-trigger" type="button" onClick={() => toggle('dates')}>
           <div className="sf-inner">
-            {!datesLabel && <span className="sf-label">Check in &nbsp;→&nbsp; Check out</span>}
+            {!datesLabel && <span className="sf-label">Dates</span>}
             <span className="sf-val">{datesLabel}</span>
           </div>
           <svg className="sf-chev" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
@@ -357,28 +382,6 @@ export default function SearchBar() {
             ))}
             <div className="g-done-row">
               <button className="g-done-btn" type="button" onClick={() => setOpen(null)}>Done</button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Nightly Rate */}
-      <div className={`sf sf-rate${open === 'rate' ? ' is-open' : ''}`}>
-        <button className="sf-trigger" type="button" onClick={() => toggle('rate')}>
-          <div className="sf-inner">
-            {!priceLabel && <span className="sf-label">Nightly Rate</span>}
-            <span className="sf-val">{priceLabel}</span>
-          </div>
-          <svg className="sf-chev" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
-        </button>
-        {open === 'rate' && (
-          <div className="sf-panel rate-panel">
-            <div className="rate-opts">
-              {PRICE_OPTS.map(([v, l]) => (
-                <div key={v} className="sf-opt" onClick={() => { setPrice(v === price ? '' : v); setOpen(null) }}>
-                  {l}<span className={`sel-dot${price === v ? '' : ''}`} style={{ opacity: price === v ? 1 : 0 }} />
-                </div>
-              ))}
             </div>
           </div>
         )}

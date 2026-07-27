@@ -246,10 +246,17 @@ export function communityLabel(p: Property): string {
   return raw.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
 }
 
-/** Which destination a property belongs to, for the Destination filter */
-export function destinationOf(p: Property): 'punta-mita' | 'punta-de-mita' | '' {
-  if (p.communityPuntaMita) return 'punta-mita'
-  if (p.communityPuntaDeMita) return 'punta-de-mita'
+/** Which destination a property belongs to, for the Destination filter.
+ *  Reads straight off the authoritative `locationLabel` field rather than
+ *  inferring from the community sub-fields — those are only ever set for
+ *  Punta Mita and Punta de Mita Area properties (Puerto Vallarta has no
+ *  community dropdown by design), so the old community-based check could
+ *  never actually match a Puerto Vallarta property, silently leaving it
+ *  stuck as "Coming soon" on the villas listing's Destination filter. */
+export function destinationOf(p: Property): 'punta-mita' | 'punta-de-mita' | 'puerto-vallarta' | '' {
+  if (p.locationLabel === 'punta-mita') return 'punta-mita'
+  if (p.locationLabel === 'punta-de-mita-area') return 'punta-de-mita'
+  if (p.locationLabel === 'puerto-vallarta') return 'puerto-vallarta'
   return ''
 }
 

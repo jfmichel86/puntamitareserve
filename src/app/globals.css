@@ -148,9 +148,12 @@ body {
   display: inline-flex; align-items: center; gap: 5px; position: relative;
   font-family: var(--font-inter), sans-serif; font-weight: 300;
   font-size: 11px; line-height: inherit; letter-spacing: .18em; text-transform: uppercase;
-  color: var(--text-on-dark); opacity: .7; transition: opacity .22s;
+  color: var(--text-on-dark);
 }
-.nav-dropdown-trigger-label { color: inherit; text-decoration: none; }
+/* Label carries its own opacity now (matching plain nav links at .7)
+   instead of the whole trigger — see the svg rule below for why they can't
+   share one opacity value anymore. */
+.nav-dropdown-trigger-label { color: inherit; text-decoration: none; opacity: .7; transition: opacity .22s; }
 .nav-dropdown-trigger-caret {
   appearance: none; -webkit-appearance: none;
   background: none; border: none; margin: 0; padding: 2px;
@@ -162,14 +165,20 @@ body {
   transform: scaleX(0); transform-origin: left;
   transition: transform .3s cubic-bezier(.16,1,.3,1);
 }
-/* No separate opacity here (used to be .8, stacking on top of the trigger's
-   own .7 for an effective ~.56) — that extra dimming on the arrow made the
-   whole "Destinations"/"Collections" cluster read visually softer than
-   plain nav links next to it, even though the label text itself was
-   already styled at the exact same brightness. Letting it inherit the
-   trigger's .7 like the text does removes that mismatch. */
-.nav-dropdown-trigger svg { width: 9px; height: 9px; stroke: currentColor; fill: none; stroke-width: 2; transition: transform .22s; }
-.nav-dropdown-trigger:hover, .nav-dropdown-trigger.active, .nav-dropdown.is-open .nav-dropdown-trigger { opacity: 1; }
+/* Matching the numeric opacity to .7 (like the label) wasn't enough — a
+   thin single-line chevron has far less "ink" on screen than bold, tracked
+   uppercase text, so at the same opacity it still reads as visually
+   lighter/softer, dragging down how the whole "Destinations"/"Collections"
+   cluster feels next to plain links with no icon at all. Fixed by giving
+   the icon more visual weight instead: a heavier stroke and a higher base
+   opacity of its own, independent from the label's .7. */
+.nav-dropdown-trigger svg { width: 9px; height: 9px; stroke: currentColor; fill: none; stroke-width: 2.4; opacity: .85; transition: transform .22s, opacity .22s; }
+.nav-dropdown-trigger:hover .nav-dropdown-trigger-label,
+.nav-dropdown-trigger.active .nav-dropdown-trigger-label,
+.nav-dropdown.is-open .nav-dropdown-trigger .nav-dropdown-trigger-label { opacity: 1; }
+.nav-dropdown-trigger:hover svg,
+.nav-dropdown-trigger.active svg,
+.nav-dropdown.is-open .nav-dropdown-trigger svg { opacity: 1; }
 .nav-dropdown-trigger:hover::after, .nav-dropdown-trigger.active::after, .nav-dropdown.is-open .nav-dropdown-trigger::after { transform: scaleX(1); }
 .nav-dropdown.is-open .nav-dropdown-trigger svg { transform: rotate(180deg); }
 .nav-dropdown-panel {
@@ -367,16 +376,25 @@ body {
 }
 .sf { flex: 1; position: relative; min-width: 0; }
 .sf-trigger {
-  width: 100%; height: 100%; display: flex; align-items: center; gap: 0; padding: 20px 16px;
+  width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; gap: 0; padding: 20px 16px;
   background: transparent; border: none; border-right: 1px solid var(--sand); cursor: pointer;
   text-align: left; transition: background .18s;
 }
 .sf:first-child .sf-trigger { border-radius: 4px 0 0 4px; }
 .sf-trigger:hover { background: rgba(248,244,238,.85); }
-.sf-inner { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; }
+/* Was `flex: 1`, which made this box grow to fill all leftover space in the
+   trigger EXCEPT the chevron's own width+margin — so the text centered
+   itself only within that narrower, right-shifted box, leaving a visibly
+   smaller gap on the left than on the right (chevron + its margin + the
+   button's own right padding all stacked up on that side). Sizing to its
+   own content instead, combined with `justify-content: center` on the
+   trigger above, centers the text+chevron as one unit, so left and right
+   margins match. min-width: 0 stays so long guest labels can still shrink
+   and ellipsis instead of overflowing. */
+.sf-inner { flex: 0 1 auto; display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; }
 .sf-label { font-family: var(--font-inter), sans-serif; font-weight: 500; font-size: 9.5px; letter-spacing: .20em; text-transform: uppercase; color: var(--charcoal); white-space: nowrap; line-height: 1; }
 .search-bar .sf-guests { flex: 1.4; }
-.search-bar .sf-rate { flex: 1.1; }
+.search-bar .sf-destination { flex: 1.2; }
 .sf-val { font-family: var(--font-inter), sans-serif; font-size: 13.5px; font-weight: 300; color: var(--charcoal); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; line-height: 1.4; }
 .sf-val:empty { display: none; }
 .sf-chev { width: 13px; height: 13px; stroke: var(--charcoal-light); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; margin-left: 8px; transition: transform .25s cubic-bezier(.16,1,.3,1), stroke .18s; }

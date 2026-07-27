@@ -338,7 +338,9 @@ export default function VillasClient({ properties }: { properties: Property[] })
               <div className={`ff-opt${filters.destination === 'punta-de-mita' ? ' is-sel' : ''}`} onClick={() => { setFilters((f) => ({ ...f, destination: 'punta-de-mita' })); closeAll() }}>
                 Punta de Mita <span className="opt-count">{cnt(countFor({ destination: 'punta-de-mita' }))}</span>
               </div>
-              <div className="ff-opt ff-opt-soon">Puerto Vallarta <span className="ff-soon-label">Coming soon</span></div>
+              <div className={`ff-opt${filters.destination === 'puerto-vallarta' ? ' is-sel' : ''}`} onClick={() => { setFilters((f) => ({ ...f, destination: 'puerto-vallarta' })); closeAll() }}>
+                Puerto Vallarta <span className="opt-count">{cnt(countFor({ destination: 'puerto-vallarta' }))}</span>
+              </div>
             </div>
           </div>
 
