@@ -7,6 +7,7 @@ import NewsletterBand from '@/components/NewsletterBand'
 import OfferBadge from '@/components/OfferBadge'
 import ScrollReveal from '@/components/ScrollReveal'
 import FloatingActionsController from '@/components/FloatingActionsController'
+import SplashScreen from '@/components/SplashScreen'
 
 // Self-hosted via next/font — same weights as the live site's Google Fonts
 // link (Cormorant Garamond 300/400 roman+italic, Inter 300/400/500), just
@@ -58,6 +59,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${cormorant.variable} ${inter.variable}`}>
       <body>
+        <SplashScreen />
         <ScrollReveal />
         <FloatingActionsController />
         <Nav />

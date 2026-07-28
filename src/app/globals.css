@@ -392,14 +392,18 @@ body {
    margins match. min-width: 0 stays so long guest labels can still shrink
    and ellipsis instead of overflowing. */
 .sf-inner { flex: 0 1 auto; display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; }
-.sf-label { font-family: var(--font-inter), sans-serif; font-weight: 500; font-size: 9.5px; letter-spacing: .20em; text-transform: uppercase; color: var(--charcoal); white-space: nowrap; line-height: 1; }
+/* Trigger scale — the field's own closed-state text (label or selected
+   value) should read slightly bigger than the option list inside its
+   dropdown, not smaller. Kept in sync with .sf-val below and with every
+   other filter trigger sitewide (.ff-trigger, .iq-dd-val, .ct-dd-val). */
+.sf-label { font-family: var(--font-inter), sans-serif; font-weight: 500; font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--charcoal); white-space: nowrap; line-height: 1; }
 .search-bar .sf-guests { flex: 1.4; }
 .search-bar .sf-destination { flex: 1.2; }
 /* Matches .sf-label's typography exactly (uppercase, tracked, same size/
    weight) so a field doesn't change its whole look the moment you pick
    something — before and after should read as the same field, just with
    different words in it. */
-.sf-val { font-family: var(--font-inter), sans-serif; font-weight: 500; font-size: 9.5px; letter-spacing: .20em; text-transform: uppercase; color: var(--charcoal); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; line-height: 1; }
+.sf-val { font-family: var(--font-inter), sans-serif; font-weight: 500; font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--charcoal); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; line-height: 1; }
 .sf-val:empty { display: none; }
 .sf-chev { width: 13px; height: 13px; stroke: var(--charcoal-light); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; margin-left: 8px; transition: transform .25s cubic-bezier(.16,1,.3,1), stroke .18s; }
 .sf.is-open .sf-trigger { background: rgba(248,244,238,.90); }
@@ -411,10 +415,11 @@ body {
   border-top: 2px solid var(--gold); padding: 6px 0 8px; z-index: 600;
   animation: dropDown .20s cubic-bezier(.16,1,.3,1) both;
 }
-/* Matches the trigger's own label/value typography (uppercase, tracked)
-   so the dropdown list reads as the same field, not a switch to a
-   different, plainer style once it's open. */
-.sf-opt { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; font-family: var(--font-inter), sans-serif; font-size: 10.5px; font-weight: 500; letter-spacing: .16em; text-transform: uppercase; color: var(--charcoal); cursor: pointer; transition: background .13s, color .13s; white-space: nowrap; }
+/* Option scale — matches the trigger's uppercase/tracked look, but a size
+   step smaller (10px vs. the trigger's 11px) so the field itself always
+   reads as the bigger, primary text and the list underneath reads as
+   secondary, not the other way around. */
+.sf-opt { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; font-family: var(--font-inter), sans-serif; font-size: 10px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--charcoal); cursor: pointer; transition: background .13s, color .13s; white-space: nowrap; }
 .sf-opt:hover { background: var(--cream); }
 .sf-opt.is-sel { color: var(--deep-ocean); font-weight: 700; }
 .sel-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gold); flex-shrink: 0; opacity: 0; transition: opacity .15s; }
@@ -539,23 +544,27 @@ body {
 /* Calendar / Flexible segmented toggle */
 .dp-tabs { display: flex; justify-content: center; padding: 14px 32px 12px; border-bottom: 1px solid var(--sand); }
 .dp-toggle-group { display: inline-flex; border: 1.5px solid var(--charcoal); border-radius: 6px; overflow: hidden; background: none; padding: 0; gap: 0; }
-.dp-tab { font-family: var(--font-inter), sans-serif; font-size: 12.5px; font-weight: 400; color: var(--charcoal-light); background: none; border: none; border-radius: 0; padding: 9px 28px; cursor: pointer; transition: color .15s; white-space: nowrap; }
+/* Option scale, matching every other selectable option sitewide (see the
+   comment on .sf-opt) — this control is shared by the homepage search bar,
+   the villa page's booking sidebar, and the Contact page, so this one
+   change keeps all three consistent at once. */
+.dp-tab { font-family: var(--font-inter), sans-serif; font-size: 10px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--charcoal-light); background: none; border: none; border-radius: 0; padding: 9px 28px; cursor: pointer; transition: color .15s; white-space: nowrap; }
 .dp-tab + .dp-tab { border-left: 1.5px solid var(--charcoal); }
-.dp-tab.dp-active { color: var(--deep-ocean); font-weight: 600; }
+.dp-tab.dp-active { color: var(--deep-ocean); font-weight: 700; }
 .dp-tab:hover:not(.dp-active) { color: var(--charcoal); }
 
 .dp-flex-body { padding: 12px 28px 10px; }
 
 /* Flexibility pills row (under the calendar) */
 .dp-flex-row { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--sand); padding-bottom: 0; }
-.dp-flex-pill { font-family: var(--font-inter), sans-serif; font-size: 12px; font-weight: 400; color: var(--charcoal); background: none; border: 1.5px solid var(--sand-dark); padding: 6px 14px; border-radius: 100px; cursor: pointer; transition: border-color .15s, color .15s; }
+.dp-flex-pill { font-family: var(--font-inter), sans-serif; font-size: 10px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--charcoal); background: none; border: 1.5px solid var(--sand-dark); padding: 6px 14px; border-radius: 100px; cursor: pointer; transition: border-color .15s, color .15s; }
 .dp-flex-pill:hover { border-color: var(--charcoal-light); color: var(--deep-ocean); }
-.dp-flex-pill.dp-active { border: 2.5px solid var(--charcoal); color: var(--charcoal); font-weight: 500; }
+.dp-flex-pill.dp-active { border: 2.5px solid var(--charcoal); color: var(--charcoal); font-weight: 700; }
 
 /* Flexible mode body */
 .dp-flex-q { font-family: var(--font-inter), sans-serif; font-size: 13px; font-weight: 500; color: var(--charcoal); margin-bottom: 14px; text-align: center; }
 .dp-pills { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; justify-content: center; }
-.dp-pill { font-family: var(--font-inter), sans-serif; font-size: 13.5px; font-weight: 300; color: var(--charcoal); background: none; border: 1.5px solid var(--sand-dark); padding: 10px 24px; border-radius: 100px; cursor: pointer; transition: background .15s, border-color .15s, color .15s; }
+.dp-pill { font-family: var(--font-inter), sans-serif; font-size: 10px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--charcoal); background: none; border: 1.5px solid var(--sand-dark); padding: 10px 24px; border-radius: 100px; cursor: pointer; transition: background .15s, border-color .15s, color .15s; }
 .dp-pill:hover { border-color: var(--ocean-mid); color: var(--deep-ocean); }
 .dp-pill.dp-active { background: var(--deep-ocean); border-color: var(--deep-ocean); color: var(--white); }
 
@@ -786,8 +795,8 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
 }
 .exp-chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
 .exp-chip {
-  font-family: var(--font-inter), sans-serif; font-size: 11px; font-weight: 400;
-  letter-spacing: .08em; text-transform: uppercase; color: var(--charcoal);
+  font-family: var(--font-inter), sans-serif; font-size: 10px; font-weight: 500;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--charcoal);
   background: var(--cream); border: 1px solid var(--sand); border-radius: 100px;
   padding: 8px 16px; cursor: pointer; opacity: .75; white-space: nowrap;
   transition: background .2s, opacity .2s, color .2s, border-color .2s;
@@ -1057,7 +1066,7 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
   padding: 8px 14px;
   background: none; border: none; cursor: pointer;
   font-family: var(--font-inter), sans-serif; font-size: 11px;
-  font-weight: 400; letter-spacing: .10em; text-transform: uppercase;
+  font-weight: 500; letter-spacing: .16em; text-transform: uppercase;
   color: var(--charcoal); opacity: .65; border-radius: 3px;
   transition: background .2s, opacity .2s; white-space: nowrap;
 }
@@ -1082,19 +1091,23 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
 .ff-opt {
   display: flex; align-items: center; justify-content: space-between;
   padding: 10px 18px;
-  font-family: var(--font-inter), sans-serif; font-size: 12px;
-  font-weight: 300; color: var(--charcoal);
+  font-family: var(--font-inter), sans-serif; font-size: 10px;
+  font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--charcoal);
   cursor: pointer; transition: background .15s;
 }
 .ff-opt:hover { background: var(--cream); }
-.ff-opt.is-sel { color: var(--deep-ocean); font-weight: 500; }
+.ff-opt.is-sel { color: var(--deep-ocean); font-weight: 700; }
 .ff-opt.is-sel::after { content: ''; display: block; width: 5px; height: 5px; border-radius: 50%; background: var(--gold); flex-shrink: 0; }
+/* Option scale, not trigger scale — this chip already IS the selectable
+   choice (no separate closed-state trigger + hidden list the way
+   .ff-trigger/.ff-opt work), so it belongs with every other directly-
+   clickable option sitewide, same as a checkbox or a dropdown row. */
 .ff-chip {
   display: flex; align-items: center; gap: 6px;
   padding: 8px 14px; flex-shrink: 0;
   background: none; border: none; cursor: pointer;
-  font-family: var(--font-inter), sans-serif; font-size: 11px;
-  font-weight: 400; letter-spacing: .10em; text-transform: uppercase;
+  font-family: var(--font-inter), sans-serif; font-size: 10px;
+  font-weight: 500; letter-spacing: .12em; text-transform: uppercase;
   color: var(--charcoal); opacity: .65; border-radius: 3px;
   transition: background .2s, opacity .2s; white-space: nowrap;
 }
@@ -1336,8 +1349,8 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
 .g-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 20px; border-bottom: 1px solid var(--sand); }
 .g-row:last-of-type { border-bottom: none; }
 .g-info { display: flex; flex-direction: column; gap: 3px; }
-.g-type { font-family: var(--font-inter), sans-serif; font-size: 12px; font-weight: 300; color: var(--charcoal); }
-.g-age { font-family: var(--font-inter), sans-serif; font-size: 10px; font-weight: 300; color: var(--charcoal-light); }
+.g-type { font-family: var(--font-inter), sans-serif; font-size: 10px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--charcoal); }
+.g-age { font-family: var(--font-inter), sans-serif; font-size: 8.5px; font-weight: 400; letter-spacing: .08em; text-transform: uppercase; color: var(--charcoal-light); }
 .g-counter { display: flex; align-items: center; gap: 16px; }
 .ctr-btn {
   width: 28px; height: 28px; border-radius: 50%;
@@ -1365,8 +1378,6 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
 /* Homepage search-bar guest picker (index.html) — larger type, no Clear button */
 .guests-panel .g-row { padding: 10px 24px; }
 .guests-panel .g-info { gap: 4px; }
-.guests-panel .g-type { font-size: 13.5px; font-weight: 400; }
-.guests-panel .g-age { font-size: 11px; }
 .guests-panel .g-counter { gap: 18px; }
 .guests-panel .ctr-btn { width: 30px; height: 30px; font-size: 19px; }
 .guests-panel .ctr-val { font-size: 15px; min-width: 18px; }
@@ -1438,17 +1449,20 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
 .mf-body { flex: 1; overflow-y: auto; }
 .mf-section { padding: 20px 24px 18px; border-bottom: 1px solid var(--sand); }
 .mf-section:last-child { border-bottom: none; }
-.mf-section-title { font-family: var(--font-inter), sans-serif; font-size: 9px; font-weight: 400; letter-spacing: .22em; text-transform: uppercase; color: var(--charcoal-light); margin-bottom: 14px; }
+/* Bigger and bolder than the options grouped under it (10px/500) — a
+   section heading should read as the top of the hierarchy, not a quiet
+   caption smaller than the very options it's introducing. */
+.mf-section-title { font-family: var(--font-inter), sans-serif; font-size: 12px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--charcoal); margin-bottom: 14px; }
 .mf-type-chips, .mf-coll-chips { display: flex; gap: 8px; flex-wrap: wrap; }
 .mf-coll-chip {
   display: flex; align-items: center; gap: 6px;
   padding: 8px 16px; border-radius: 2px; border: 1px solid var(--sand); background: none;
-  font-family: var(--font-inter), sans-serif; font-size: 12px; font-weight: 300; color: var(--charcoal);
+  font-family: var(--font-inter), sans-serif; font-size: 10px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--charcoal);
   cursor: pointer; transition: border-color .2s, background .2s, color .2s;
 }
 .mf-type-chip {
   padding: 8px 20px; border-radius: 2px; border: 1px solid var(--sand); background: none;
-  font-family: var(--font-inter), sans-serif; font-size: 12px; font-weight: 300; color: var(--charcoal);
+  font-family: var(--font-inter), sans-serif; font-size: 10px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--charcoal);
   cursor: pointer; transition: border-color .2s, background .2s, color .2s;
 }
 .mf-type-chip:hover, .mf-coll-chip:hover { border-color: var(--ocean-mid); background: var(--mist-light); }
@@ -1458,12 +1472,12 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
 .mf-comm-group-hd { font-family: var(--font-inter), sans-serif; font-size: 9px; font-weight: 500; letter-spacing: .18em; text-transform: uppercase; color: var(--ocean); padding: 10px 0 4px; }
 .mf-comm-opt {
   display: flex; align-items: center; justify-content: space-between; padding: 9px 0; cursor: pointer;
-  font-family: var(--font-inter), sans-serif; font-size: 13px; font-weight: 300; color: var(--charcoal);
+  font-family: var(--font-inter), sans-serif; font-size: 10px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--charcoal);
   transition: color .15s; border-bottom: 1px solid var(--sand); user-select: none;
 }
 .mf-comm-opt:last-child { border-bottom: none; }
 .mf-comm-opt:hover { color: var(--deep-ocean); }
-.mf-comm-opt.is-sel { color: var(--deep-ocean); font-weight: 500; }
+.mf-comm-opt.is-sel { color: var(--deep-ocean); font-weight: 700; }
 .mf-comm-opt.is-sel::after {
   content: ''; display: block; width: 5px; height: 5px;
   border-radius: 50%; background: var(--gold); flex-shrink: 0; margin-left: 8px;
@@ -1473,7 +1487,7 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
 .mf-comm-current {
   display: flex; align-items: center; justify-content: space-between; width: 100%;
   padding: 12px 14px; background: none; border: none; cursor: pointer;
-  font-family: var(--font-inter), sans-serif; font-size: 13px; font-weight: 500; color: var(--charcoal);
+  font-family: var(--font-inter), sans-serif; font-size: 11px; font-weight: 500; letter-spacing: .16em; text-transform: uppercase; color: var(--charcoal);
   transition: color .15s;
 }
 .mf-community-select.is-open .mf-comm-current { border-bottom: 1px solid var(--sand); }
@@ -1485,7 +1499,7 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
 .mf-community-select .mf-community-list { padding: 4px 14px 2px; }
 .mf-check {
   display: flex; align-items: center; gap: 12px; padding: 9px 0; cursor: pointer;
-  font-family: var(--font-inter), sans-serif; font-size: 13px; font-weight: 300; color: var(--charcoal);
+  font-family: var(--font-inter), sans-serif; font-size: 10px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--charcoal);
   transition: color .15s; user-select: none;
 }
 .mf-check:hover { color: var(--deep-ocean); }
@@ -1562,7 +1576,7 @@ footer { background: var(--deep-ocean); padding: 56px 64px 56px; }
 /* Footer needs a bit of space before the tagline below — spacing only,
    never alignment or sizing. The logo itself renders identically to the
    header everywhere it's used. */
-.footer-top .brand-logo { margin-bottom: 20px; }
+.ft-brand-row { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
 .ft-tagline {
   font-family: var(--font-inter), sans-serif; font-size: 12px; font-weight: 300;
   color: rgba(239,246,251,.38); line-height: 1.78; max-width: 260px;
@@ -1720,7 +1734,7 @@ body.on-saved-page .wa, body.on-saved-page .offer-badge { display: none; }
     flex-wrap: wrap; height: auto; padding: 10px 16px; row-gap: 8px;
   }
   .ff-trigger { padding: 8px 12px; font-size: 10px; }
-  .ff-chip { padding: 8px 12px; font-size: 10px; }
+  .ff-chip { padding: 8px 12px; font-size: 9px; }
   .fb-sep { display: none; } /* separators suited a single scrolling row; redundant once chips wrap */
   .mf-btn { padding: 8px 12px; font-size: 10px; }
   .mf-drawer { width: 100vw; }
@@ -2072,8 +2086,8 @@ body.an-visible { --sidebar-top: 140px; }
   font: inherit; text-align: left;
 }
 .iq-dd-trigger:hover, .iq-dd-trigger.is-open { border-color: var(--ocean); }
-.iq-dd-val { font-family: var(--font-inter), sans-serif; font-size: 13px; font-weight: 300; color: var(--charcoal); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.iq-dd-val.ph { color: var(--charcoal-light); font-style: italic; }
+.iq-dd-val { font-family: var(--font-inter), sans-serif; font-size: 11px; font-weight: 500; letter-spacing: .16em; text-transform: uppercase; color: var(--charcoal); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.iq-dd-val.ph { color: var(--charcoal-light); font-style: normal; font-weight: 400; }
 .iq-dd-arrow { width: 12px; height: 12px; stroke: var(--charcoal-light); fill: none; stroke-width: 2; flex-shrink: 0; transition: transform .22s; }
 .iq-dd-trigger.is-open .iq-dd-arrow { transform: rotate(180deg); stroke: var(--ocean); }
 
@@ -2105,16 +2119,16 @@ body.an-visible { --sidebar-top: 140px; }
 .iq-date-panel .dp-done-btn { font-size: 10px; padding: 2px 0; }
 .iq-date-panel .dp-flex-q { font-size: 12.5px; margin: 0 0 10px; }
 .iq-date-panel .dp-pills { margin-bottom: 18px; }
-.iq-date-panel .dp-pill { font-size: 13px; padding: 9px 20px; }
+.iq-date-panel .dp-pill { padding: 9px 20px; }
 .iq-date-panel .dp-month-nav-btn { height: 50px; }
 .iq-date-panel .dp-month-tiles { max-height: none; overflow: hidden; margin-bottom: 0; }
 .iq-date-panel .dp-month-tile { flex: 1; min-width: 0; height: auto; padding: 9px 4px; font-size: 11px; line-height: 1.35; border-width: 1.5px; }
 
 .iq-guest-panel { right: 0; width: 280px; padding: 0; }
 
-.iq-dd-opt { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; font-family: var(--font-inter), sans-serif; font-size: 13px; font-weight: 300; color: var(--charcoal); cursor: pointer; transition: background .15s; }
+.iq-dd-opt { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; font-family: var(--font-inter), sans-serif; font-size: 10px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--charcoal); cursor: pointer; transition: background .15s; }
 .iq-dd-opt:hover { background: var(--cream); }
-.iq-dd-opt.is-sel { color: var(--deep-ocean); font-weight: 500; }
+.iq-dd-opt.is-sel { color: var(--deep-ocean); font-weight: 700; }
 .iq-dd-opt.is-sel::after { content: ''; display: block; width: 5px; height: 5px; border-radius: 50%; background: var(--gold); flex-shrink: 0; }
 
 .iq-divider { height: 1px; background: var(--sand); margin: 16px 0; }
@@ -2409,7 +2423,7 @@ textarea.ct-input { resize: vertical; min-height: 88px; line-height: 1.65; }
   cursor: pointer; transition: border-color .15s, background .15s; text-align: left; user-select: none;
 }
 .ct-dd-trigger:hover, .ct-dd-trigger.is-open { border-color: var(--charcoal-light); background: var(--white); }
-.ct-dd-val { font-family: var(--font-inter), sans-serif; font-size: 13px; font-weight: 300; color: var(--charcoal); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ct-dd-val { font-family: var(--font-inter), sans-serif; font-size: 11px; font-weight: 500; letter-spacing: .16em; text-transform: uppercase; color: var(--charcoal); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ct-dd-val.ph { color: rgba(30,58,80,.38); }
 .ct-dd-trigger .ff-arrow { width: 10px; height: 10px; stroke: var(--charcoal-light); fill: none; stroke-width: 2; flex-shrink: 0; transition: transform .22s; }
 .ct-dd-trigger.is-open .ff-arrow { transform: rotate(180deg); }
@@ -2419,9 +2433,9 @@ textarea.ct-input { resize: vertical; min-height: 88px; line-height: 1.65; }
   box-shadow: 0 12px 40px rgba(30,58,80,.16); padding: 6px 0; z-index: 400;
   animation: ctFadeIn .18s ease both;
 }
-.ct-dd-opt { display: flex; align-items: center; justify-content: space-between; padding: 10px 18px; font-family: var(--font-inter), sans-serif; font-size: 12px; font-weight: 300; color: var(--charcoal); cursor: pointer; transition: background .15s; }
+.ct-dd-opt { display: flex; align-items: center; justify-content: space-between; padding: 10px 18px; font-family: var(--font-inter), sans-serif; font-size: 10px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--charcoal); cursor: pointer; transition: background .15s; }
 .ct-dd-opt:hover { background: var(--cream); }
-.ct-dd-opt.is-sel { color: var(--deep-ocean); font-weight: 500; }
+.ct-dd-opt.is-sel { color: var(--deep-ocean); font-weight: 700; }
 .ct-dd-opt.is-sel::after { content: ''; display: block; width: 5px; height: 5px; border-radius: 50%; background: var(--gold); flex-shrink: 0; }
 
 /* Date panel — contact page uses tighter spacing than the homepage search bar */
@@ -2441,7 +2455,7 @@ textarea.ct-input { resize: vertical; min-height: 88px; line-height: 1.65; }
 .ct-date-panel .dp-done-btn { font-size: 10px; padding: 2px 0; }
 .ct-date-panel .dp-flex-q { font-size: 12.5px; margin: 0 0 10px; }
 .ct-date-panel .dp-pills { margin-bottom: 18px; }
-.ct-date-panel .dp-pill { font-size: 13px; padding: 9px 22px; }
+.ct-date-panel .dp-pill { padding: 9px 22px; }
 .ct-date-panel .dp-month-nav-btn { height: 50px; }
 .ct-date-panel .dp-month-tiles { max-height: none; overflow: hidden; margin-bottom: 0; }
 .ct-date-panel .dp-month-tile { flex: 1; min-width: 0; height: auto; padding: 9px 4px; font-size: 11px; line-height: 1.35; border-width: 1.5px; }
@@ -2454,9 +2468,9 @@ textarea.ct-input { resize: vertical; min-height: 88px; line-height: 1.65; }
 }
 
 .ct-pills { display: flex; flex-wrap: wrap; gap: 8px; }
-.ct-pill { font-family: var(--font-inter), sans-serif; font-size: 12px; font-weight: 300; color: var(--charcoal); background: var(--cream); border: 1.5px solid var(--sand-dark); border-radius: 3px; padding: 7px 13px; cursor: pointer; transition: border-color .15s, background .15s, color .15s; user-select: none; }
+.ct-pill { font-family: var(--font-inter), sans-serif; font-size: 10px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--charcoal); background: var(--cream); border: 1.5px solid var(--sand-dark); border-radius: 3px; padding: 7px 13px; cursor: pointer; transition: border-color .15s, background .15s, color .15s; user-select: none; }
 .ct-pill:hover { border-color: var(--charcoal-light); color: var(--deep-ocean); }
-.ct-pill.active { background: var(--mist-light); border-color: var(--deep-ocean); color: var(--deep-ocean); font-weight: 400; }
+.ct-pill.active { background: var(--mist-light); border-color: var(--deep-ocean); color: var(--deep-ocean); font-weight: 700; }
 
 .ct-submit-row { margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--sand); }
 .ct-submit-btn { font-family: var(--font-inter), sans-serif; font-size: 11.5px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; background: var(--deep-ocean); color: var(--white); border: none; padding: 13px 30px; border-radius: 2px; cursor: pointer; transition: background .2s; display: inline-flex; align-items: center; gap: 10px; }
@@ -2658,7 +2672,7 @@ textarea.ct-input { resize: vertical; min-height: 88px; line-height: 1.65; }
   letter-spacing: .14em; text-transform: uppercase; color: var(--charcoal-light); white-space: nowrap;
 }
 .sv-season-val {
-  font-family: var(--font-inter), sans-serif; font-size: 12.5px; font-weight: 400; color: var(--charcoal); white-space: nowrap;
+  font-family: var(--font-inter), sans-serif; font-size: 11px; font-weight: 500; letter-spacing: .16em; text-transform: uppercase; color: var(--charcoal); white-space: nowrap;
 }
 .sv-season-chev {
   width: 12px; height: 12px; stroke: var(--charcoal-light); fill: none; stroke-width: 1.8;
@@ -2674,11 +2688,11 @@ textarea.ct-input { resize: vertical; min-height: 88px; line-height: 1.65; }
 }
 .sv-season-opt {
   display: flex; align-items: center; justify-content: space-between; gap: 16px;
-  padding: 10px 16px; font-family: var(--font-inter), sans-serif; font-size: 13px; font-weight: 300;
+  padding: 10px 16px; font-family: var(--font-inter), sans-serif; font-size: 10px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase;
   color: var(--charcoal); cursor: pointer; transition: background .13s, color .13s; white-space: nowrap;
 }
 .sv-season-opt:hover { background: var(--cream); }
-.sv-season-opt.is-sel { color: var(--deep-ocean); font-weight: 400; }
+.sv-season-opt.is-sel { color: var(--deep-ocean); font-weight: 700; }
 .sv-season-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gold); flex-shrink: 0; opacity: 0; transition: opacity .15s; }
 .sv-season-opt.is-sel .sv-season-dot { opacity: 1; }
 .sv-cmp-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
@@ -2765,8 +2779,6 @@ textarea.ct-input { resize: vertical; min-height: 88px; line-height: 1.65; }
 /* Inquiry modal's guest counter — its own sizing, close to but not identical
    to the homepage's .guests-panel scope, so it gets its own override. */
 .inq-guests-wrap .g-row { padding: 12px 20px; }
-.inq-guests-wrap .g-type { font-size: 13px; font-weight: 400; }
-.inq-guests-wrap .g-age { font-size: 11px; }
 .inq-guests-wrap .g-counter { gap: 18px; }
 .inq-guests-wrap .ctr-btn { width: 30px; height: 30px; font-size: 19px; }
 .inq-guests-wrap .ctr-val { font-size: 15px; min-width: 18px; }
@@ -3040,4 +3052,14 @@ textarea.ct-input { resize: vertical; min-height: 88px; line-height: 1.65; }
 @media (max-width: 420px) {
   .dest-facts-grid.facts-grid { grid-template-columns: 1fr; }
 }
+
+/* One-time branded loading moment (see SplashScreen.tsx) — sits above
+   everything else on the page for its brief life, then unmounts entirely. */
+.splash-screen {
+  position: fixed; inset: 0; z-index: 999999;
+  background: var(--deep-ocean);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 1; transition: opacity .3s ease;
+}
+.splash-screen--hide { opacity: 0; }
 

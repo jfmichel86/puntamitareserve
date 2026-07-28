@@ -1,12 +1,16 @@
 import Link from 'next/link'
 import Logo from './Logo'
+import PyramidMark from './PyramidMark'
 
 export default function Footer() {
   return (
     <footer>
       <div className="footer-top">
         <div>
-          <Logo size="lg" />
+          <div className="ft-brand-row">
+            <PyramidMark size={54} />
+            <Logo size="lg" />
+          </div>
           <p className="ft-tagline">Mexico, reserved for the few — beginning with an exceptional collection across Punta Mita, Punta de Mita and Puerto Vallarta, with the personal service to make every stay extraordinary.</p>
           <div className="ft-social">
             <a href="https://www.instagram.com/luxuryrentalspuntamita/" target="_blank" rel="noopener" aria-label="Instagram">
