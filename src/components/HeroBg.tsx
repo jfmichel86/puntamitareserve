@@ -19,7 +19,13 @@ export default function HeroBg({ photos }: { photos: string[] }) {
   if (photos.length === 0) return null
 
   return (
-    <div className="hero-photos">
+    // Purely ambient, decorative background — the actual meaningful content
+    // (headline, subhead) lives in the sibling .hero-content and already
+    // reads fine on its own, so this rotating collage carries no unique
+    // information of its own. aria-hidden tells screen readers to skip it
+    // entirely, rather than announcing an unlabeled image with nothing
+    // useful to say about it.
+    <div className="hero-photos" aria-hidden="true">
       {photos.map((src, i) => (
         <div
           key={src}

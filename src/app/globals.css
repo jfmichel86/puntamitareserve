@@ -425,7 +425,7 @@ body {
    step smaller (10px vs. the trigger's 11px) so the field itself always
    reads as the bigger, primary text and the list underneath reads as
    secondary, not the other way around. */
-.sf-opt { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; font-family: var(--font-inter), sans-serif; font-size: 10px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--charcoal); cursor: pointer; transition: background .13s, color .13s; white-space: nowrap; }
+.sf-opt { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; font-family: var(--font-inter), sans-serif; font-size: 10px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--charcoal); cursor: pointer; transition: background .13s, color .13s; white-space: nowrap; user-select: none; }
 .sf-opt:hover { background: var(--cream); }
 .sf-opt.is-sel { color: var(--deep-ocean); font-weight: 700; }
 .sel-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gold); flex-shrink: 0; opacity: 0; transition: opacity .15s; }
@@ -554,7 +554,7 @@ body {
    comment on .sf-opt) — this control is shared by the homepage search bar,
    the villa page's booking sidebar, and the Contact page, so this one
    change keeps all three consistent at once. */
-.dp-tab { font-family: var(--font-inter), sans-serif; font-size: 10px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--charcoal-light); background: none; border: none; border-radius: 0; padding: 9px 28px; cursor: pointer; transition: color .15s; white-space: nowrap; }
+.dp-tab { font-family: var(--font-inter), sans-serif; font-size: 10px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--charcoal-light); background: none; border: none; border-radius: 0; padding: 9px 28px; cursor: pointer; transition: color .15s; white-space: nowrap; user-select: none; }
 .dp-tab + .dp-tab { border-left: 1.5px solid var(--charcoal); }
 .dp-tab.dp-active { color: var(--deep-ocean); font-weight: 700; }
 .dp-tab:hover:not(.dp-active) { color: var(--charcoal); }
@@ -563,14 +563,14 @@ body {
 
 /* Flexibility pills row (under the calendar) */
 .dp-flex-row { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--sand); padding-bottom: 0; }
-.dp-flex-pill { font-family: var(--font-inter), sans-serif; font-size: 10px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--charcoal); background: none; border: 1.5px solid var(--sand-dark); padding: 6px 14px; border-radius: 100px; cursor: pointer; transition: border-color .15s, color .15s; }
+.dp-flex-pill { font-family: var(--font-inter), sans-serif; font-size: 10px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--charcoal); background: none; border: 1.5px solid var(--sand-dark); padding: 6px 14px; border-radius: 100px; cursor: pointer; transition: border-color .15s, color .15s; user-select: none; }
 .dp-flex-pill:hover { border-color: var(--charcoal-light); color: var(--deep-ocean); }
 .dp-flex-pill.dp-active { border: 2.5px solid var(--charcoal); color: var(--charcoal); font-weight: 700; }
 
 /* Flexible mode body */
 .dp-flex-q { font-family: var(--font-inter), sans-serif; font-size: 13px; font-weight: 500; color: var(--charcoal); margin-bottom: 14px; text-align: center; }
 .dp-pills { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; justify-content: center; }
-.dp-pill { font-family: var(--font-inter), sans-serif; font-size: 10px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--charcoal); background: none; border: 1.5px solid var(--sand-dark); padding: 10px 24px; border-radius: 100px; cursor: pointer; transition: background .15s, border-color .15s, color .15s; }
+.dp-pill { font-family: var(--font-inter), sans-serif; font-size: 10px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--charcoal); background: none; border: 1.5px solid var(--sand-dark); padding: 10px 24px; border-radius: 100px; cursor: pointer; transition: background .15s, border-color .15s, color .15s; user-select: none; }
 .dp-pill:hover { border-color: var(--ocean-mid); color: var(--deep-ocean); }
 .dp-pill.dp-active { background: var(--deep-ocean); border-color: var(--deep-ocean); color: var(--white); }
 
@@ -806,6 +806,7 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
   background: var(--cream); border: 1px solid var(--sand); border-radius: 100px;
   padding: 8px 16px; cursor: pointer; opacity: .75; white-space: nowrap;
   transition: background .2s, opacity .2s, color .2s, border-color .2s;
+  user-select: none;
 }
 .exp-chip:hover { opacity: 1; border-color: var(--sand-dark); }
 .exp-chip.is-active { background: var(--deep-ocean); border-color: var(--deep-ocean); color: var(--text-on-dark); opacity: 1; }
@@ -1105,7 +1106,7 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
   padding: 10px 18px;
   font-family: var(--font-inter), sans-serif; font-size: 10px;
   font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--charcoal);
-  cursor: pointer; transition: background .15s;
+  cursor: pointer; transition: background .15s; user-select: none;
 }
 .ff-opt:hover { background: var(--cream); }
 .ff-opt.is-sel { color: var(--deep-ocean); font-weight: 700; }
@@ -1126,6 +1127,7 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
   font-weight: 500; letter-spacing: .16em; text-transform: uppercase;
   color: var(--charcoal); opacity: .65; border-radius: 3px;
   transition: background .2s, opacity .2s, border-color .2s; white-space: nowrap;
+  user-select: none;
 }
 .ff-chip:hover { background: var(--cream); opacity: 1; border-color: var(--ocean-mid); }
 .ff-chip.is-active { background: var(--deep-ocean); border-color: var(--deep-ocean); color: var(--text-on-dark); opacity: 1; }
@@ -1142,7 +1144,7 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
   background: none; border: 1px solid var(--sand); border-radius: 20px; cursor: pointer;
   font-family: var(--font-inter), sans-serif; font-size: 10px;
   font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--charcoal-light);
-  transition: border-color .2s, color .2s;
+  transition: border-color .2s, color .2s; user-select: none;
 }
 .fb-clear:hover { border-color: var(--charcoal-light); color: var(--charcoal); }
 .fb-clear.visible { display: flex; }
@@ -1364,7 +1366,15 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
 .ff-guests .ff-panel { min-width: 280px; padding: 0; }
 .g-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 20px; border-bottom: 1px solid var(--sand); }
 .g-row:last-of-type { border-bottom: none; }
-.g-info { display: flex; flex-direction: column; gap: 3px; }
+/* text-align: left is explicit, not decorative — this panel gets reused
+   inside .hero-content on the homepage, which sets text-align: center for
+   its whole section. Nothing here used to reset that, so on the homepage
+   specifically, "ADULTS"/"AGES 13+" etc. were each centered independently
+   inside their own stretched-width row instead of sharing a left edge —
+   since every label is a different length, their centers lined up but
+   their start points didn't, reading as "not aligned." This reset makes it
+   correct here and immune to the same problem from any future ancestor. */
+.g-info { display: flex; flex-direction: column; gap: 3px; text-align: left; }
 .g-type { font-family: var(--font-inter), sans-serif; font-size: 10px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--charcoal); }
 .g-age { font-family: var(--font-inter), sans-serif; font-size: 8.5px; font-weight: 400; letter-spacing: .08em; text-transform: uppercase; color: var(--charcoal-light); }
 .g-counter { display: flex; align-items: center; gap: 16px; }
@@ -1374,7 +1384,7 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
   color: var(--charcoal); font-size: 18px;
   font-family: var(--font-inter), sans-serif; font-weight: 300; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
-  line-height: 1; padding: 0 0 2px;
+  line-height: 1; padding: 0 0 2px; user-select: none;
   transition: border-color .18s, background .18s, color .18s;
 }
 .ctr-btn:hover:not(:disabled) { border-color: var(--ocean-mid); color: var(--deep-ocean); background: var(--mist-light); }
@@ -1384,7 +1394,7 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
 .g-clear-btn, .g-done-btn {
   font-family: var(--font-inter), sans-serif; font-size: 10px; font-weight: 400;
   letter-spacing: .14em; text-transform: uppercase; background: none; border: none;
-  cursor: pointer; padding: 4px 0;
+  cursor: pointer; padding: 4px 0; user-select: none;
 }
 .g-clear-btn { color: var(--charcoal-light); text-decoration: underline; text-underline-offset: 3px; transition: color .18s; }
 .g-clear-btn:hover { color: var(--charcoal); }
@@ -1417,7 +1427,7 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
   padding: 8px 16px; background: none; border: 1px solid var(--sand); border-radius: 3px;
   cursor: pointer; font-family: var(--font-inter), sans-serif; font-size: 11px;
   font-weight: 500; letter-spacing: .16em; text-transform: uppercase; color: var(--charcoal);
-  transition: border-color .2s, background .2s, color .2s; white-space: nowrap;
+  transition: border-color .2s, background .2s, color .2s; white-space: nowrap; user-select: none;
 }
 .mf-btn:hover { border-color: var(--ocean-mid); background: var(--cream); }
 .mf-btn.is-active { border-color: var(--deep-ocean); background: var(--deep-ocean); color: var(--text-on-dark); }
@@ -1483,12 +1493,12 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
   display: flex; align-items: center; gap: 6px;
   padding: 8px 16px; border-radius: 2px; border: 1px solid var(--sand); background: none;
   font-family: var(--font-inter), sans-serif; font-size: 10px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--charcoal);
-  cursor: pointer; transition: border-color .2s, background .2s, color .2s;
+  cursor: pointer; transition: border-color .2s, background .2s, color .2s; user-select: none;
 }
 .mf-type-chip {
   padding: 8px 20px; border-radius: 2px; border: 1px solid var(--sand); background: none;
   font-family: var(--font-inter), sans-serif; font-size: 10px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--charcoal);
-  cursor: pointer; transition: border-color .2s, background .2s, color .2s;
+  cursor: pointer; transition: border-color .2s, background .2s, color .2s; user-select: none;
 }
 .mf-type-chip:hover, .mf-coll-chip:hover { border-color: var(--ocean-mid); background: var(--mist-light); }
 .mf-type-chip.is-sel, .mf-coll-chip.is-sel { border-color: var(--deep-ocean); background: var(--deep-ocean); color: var(--text-on-dark); }
@@ -1500,11 +1510,19 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
 .mf-comm-dests { border: 1px solid var(--sand); border-radius: 3px; }
 .mf-comm-dest { border-bottom: 1px solid var(--sand); }
 .mf-comm-dest:last-child { border-bottom: none; }
+/* Option scale (10px/.12em), matching every other selectable name in this
+   drawer (PROPERTY TYPE, LOCATION, COLLECTIONS chips are all this size) —
+   was previously the bigger 11px "trigger" scale reserved for the top-level
+   filter bar (Destination/Guests/Bedrooms/Nightly Rate). That made "Punta
+   Mita"/"Punta de Mita Area" read visibly larger than every other filter
+   name in the same drawer, purely because this happens to expand a small
+   list underneath it rather than being a flat chip — a technical distinction
+   the visitor has no reason to perceive as a size difference. */
 .mf-comm-dest-trigger {
   display: flex; align-items: center; justify-content: space-between; width: 100%;
   padding: 12px 14px; background: none; border: none; cursor: pointer;
-  font-family: var(--font-inter), sans-serif; font-size: 11px; font-weight: 500; letter-spacing: .16em; text-transform: uppercase; color: var(--charcoal);
-  transition: color .15s;
+  font-family: var(--font-inter), sans-serif; font-size: 10px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--charcoal);
+  transition: color .15s; user-select: none;
 }
 .mf-comm-dest-trigger:hover { color: var(--deep-ocean); }
 .mf-comm-dest.is-open .mf-comm-dest-trigger { border-bottom: 1px solid var(--sand); color: var(--deep-ocean); }
@@ -1745,8 +1763,14 @@ body.on-saved-page .wa, body.on-saved-page .offer-badge { display: none; }
      awkwardly high, next to the wordmark instead of the tagline. Full-width
      as its own row above the link grid reads cleaner and more editorial —
      a brand statement, then a tidy grid of links below it. */
-  .footer-top > div:first-child { grid-column: 1 / -1; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,.07); margin-bottom: 4px; }
-  .ft-tagline { max-width: 420px; }
+  /* Centered, not left-aligned — once the brand block becomes its own
+     full-width row (rather than sitting in a column next to the others),
+     a left-aligned logo just sits in empty space with nothing to align
+     against, which reads as unintentional. Centering it reads as a
+     deliberate brand statement instead. */
+  .footer-top > div:first-child { grid-column: 1 / -1; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,.07); margin-bottom: 4px; text-align: center; }
+  .ft-brand-row, .ft-social { justify-content: center; }
+  .ft-tagline { max-width: 420px; margin: 0 auto; }
   .help-cta { padding: 48px 40px; flex-direction: column; align-items: flex-start; gap: 28px; }
 }
 @media (max-width: 720px) {
@@ -1764,15 +1788,39 @@ body.on-saved-page .wa, body.on-saved-page .offer-badge { display: none; }
   .pg-header { padding: 132px 24px 40px; }
   .pg-title { font-size: 36px; }
   /* The inherited design scrolled this row horizontally and clipped
-     anything that opened below it — which meant every dropdown (Destination,
-     Guests, Bedrooms, Nightly Rate, Sort) was invisible the instant you
-     tapped it on a phone, with no way to actually use those filters. Wrapping
-     is already turned on at 1400px above; this just tightens padding/type
-     further for phone-width screens. */
-  .fb-inner { padding: 10px 16px; }
-  .ff-trigger { padding: 8px 12px; font-size: 10px; }
-  .ff-chip { padding: 8px 12px; font-size: 10px; }
-  .mf-btn { padding: 8px 12px; font-size: 10px; }
+     anything that opened below it — every dropdown (Destination, Guests,
+     Bedrooms, Nightly Rate, Sort) was invisible the instant you tapped it on
+     a phone. Wrapping (turned on at 1400px above) fixed that, but as a
+     single ragged row at phone width it left every filter a different
+     width depending on its own label length — Destination/Guests/Bedrooms
+     bunch up on one line, Nightly Rate spills alone onto the next — reading
+     as messy rather than designed. A real 2-column grid instead gives every
+     filter the same width and a tidy, consistent row-by-row layout — still
+     no clipping, dropdowns still open exactly the same way, just organized
+     instead of accidental. */
+  .fb-inner { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; padding: 10px 16px; }
+  .ff-trigger {
+    width: 100%; justify-content: space-between;
+    padding: 10px 12px; font-size: 10px;
+  }
+  .ff-chip, .mf-btn { justify-content: center; padding: 10px 12px; font-size: 10px; }
+  .mf-btn { margin-left: 0; }
+  .fb-clear { grid-column: 1 / -1; justify-content: center; }
+  /* Guests and Nightly Rate always land in the grid's right-hand column now
+     (fixed 2-column order, not a content-dependent wrap) — their dropdown
+     panels are wider (240–280px) than that column itself, so opening from
+     the trigger's left edge like the left-column fields do would push them
+     past the right edge of the screen. Opening from the right edge instead
+     keeps them growing back toward the middle of the bar, which always has
+     room. */
+  .ff-guests .ff-panel, .ff-price .ff-panel { left: auto; right: 0; }
+  /* Sort is right-anchored sitewide (further up) because it's normally the
+     rightmost item in a single-row bar. In this 2-column grid it lands in
+     the LEFT column instead (9 items, odd position) — kept right-anchored,
+     its panel would extend leftward from a trigger that's already near the
+     left edge and spill off-screen. Left-anchoring it back here matches
+     where it actually sits now. */
+  .ff-sort .ff-panel { left: 0; right: auto; }
   .mf-drawer { width: 100vw; }
   .results-bar { padding: 14px 24px 0; }
   .properties-section { padding: 20px 24px 80px; } /* extra bottom for floating btn */
@@ -2162,7 +2210,7 @@ body.an-visible { --sidebar-top: 140px; }
 
 .iq-guest-panel { right: 0; width: 280px; padding: 0; }
 
-.iq-dd-opt { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; font-family: var(--font-inter), sans-serif; font-size: 10px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--charcoal); cursor: pointer; transition: background .15s; }
+.iq-dd-opt { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; font-family: var(--font-inter), sans-serif; font-size: 10px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--charcoal); cursor: pointer; transition: background .15s; user-select: none; }
 .iq-dd-opt:hover { background: var(--cream); }
 .iq-dd-opt.is-sel { color: var(--deep-ocean); font-weight: 700; }
 .iq-dd-opt.is-sel::after { content: ''; display: block; width: 5px; height: 5px; border-radius: 50%; background: var(--gold); flex-shrink: 0; }
@@ -2469,7 +2517,7 @@ textarea.ct-input { resize: vertical; min-height: 88px; line-height: 1.65; }
   box-shadow: 0 12px 40px rgba(30,58,80,.16); padding: 6px 0; z-index: 400;
   animation: ctFadeIn .18s ease both;
 }
-.ct-dd-opt { display: flex; align-items: center; justify-content: space-between; padding: 10px 18px; font-family: var(--font-inter), sans-serif; font-size: 10px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--charcoal); cursor: pointer; transition: background .15s; }
+.ct-dd-opt { display: flex; align-items: center; justify-content: space-between; padding: 10px 18px; font-family: var(--font-inter), sans-serif; font-size: 10px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--charcoal); cursor: pointer; transition: background .15s; user-select: none; }
 .ct-dd-opt:hover { background: var(--cream); }
 .ct-dd-opt.is-sel { color: var(--deep-ocean); font-weight: 700; }
 .ct-dd-opt.is-sel::after { content: ''; display: block; width: 5px; height: 5px; border-radius: 50%; background: var(--gold); flex-shrink: 0; }
@@ -2725,21 +2773,28 @@ textarea.ct-input { resize: vertical; min-height: 88px; line-height: 1.65; }
 .sv-season-opt {
   display: flex; align-items: center; justify-content: space-between; gap: 16px;
   padding: 10px 16px; font-family: var(--font-inter), sans-serif; font-size: 10px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase;
-  color: var(--charcoal); cursor: pointer; transition: background .13s, color .13s; white-space: nowrap;
+  color: var(--charcoal); cursor: pointer; transition: background .13s, color .13s; white-space: nowrap; user-select: none;
 }
 .sv-season-opt:hover { background: var(--cream); }
 .sv-season-opt.is-sel { color: var(--deep-ocean); font-weight: 700; }
 .sv-season-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gold); flex-shrink: 0; opacity: 0; transition: opacity .15s; }
 .sv-season-opt.is-sel .sv-season-dot { opacity: 1; }
 .sv-cmp-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-.sv-cmp-table { width: 100%; border-collapse: collapse; font-family: var(--font-inter), sans-serif; }
+/* table-layout: fixed makes every property column exactly as wide as its
+   `width` below, always — without it, the browser's default "auto" layout
+   sizes each column to fit its own content, so a longer property name could
+   quietly widen just its own column (and with it, that column's photo,
+   since the photo is width: 100% of the column) while the others stayed
+   narrower — the photos then visibly came out different sizes/positions
+   depending on how long each name happened to be. */
+.sv-cmp-table { width: 100%; border-collapse: collapse; table-layout: fixed; font-family: var(--font-inter), sans-serif; }
 .sv-cmp-table th, .sv-cmp-table td { vertical-align: middle; }
 .sv-cmp-lbl {
   width: 160px; min-width: 140px; padding: 16px 20px 16px 0;
   font-size: 10px; font-weight: 400; letter-spacing: .14em; text-transform: uppercase; color: var(--charcoal-light);
   border-top: 1px solid rgba(30,58,80,.07); white-space: nowrap;
 }
-.sv-cmp-hd { padding: 0 12px 20px; text-align: center; min-width: 200px; }
+.sv-cmp-hd { width: 220px; padding: 0 12px 20px; text-align: center; }
 .sv-cmp-thumb-wrap { position: relative; width: 100%; }
 .sv-cmp-thumb { width: 100%; aspect-ratio: 3/2; border-radius: 3px; background-size: cover; background-position: center; display: block; text-decoration: none; }
 .sv-cmp-thumb-empty { background: linear-gradient(160deg, var(--deep-ocean) 0%, var(--ocean-mid) 100%); }
@@ -2754,7 +2809,14 @@ textarea.ct-input { resize: vertical; min-height: 88px; line-height: 1.65; }
 }
 .sv-cmp-remove-btn:hover { background: var(--white); transform: scale(1.1); }
 .sv-cmp-remove-btn svg { width: 11px; height: 11px; stroke: var(--charcoal); fill: none; stroke-width: 2.2; }
-.sv-cmp-prop-name { font-family: var(--font-cormorant), serif; font-size: 16px; font-weight: 300; color: var(--deep-ocean); margin: 10px 0 0; text-align: center; }
+/* Clamped to 2 lines (with the fixed column width above, that's now the
+   same 2-line allowance for every property regardless of name length) so
+   an unusually long name can't make just its own row taller than the rest. */
+.sv-cmp-prop-name {
+  font-family: var(--font-cormorant), serif; font-size: 16px; font-weight: 300; color: var(--deep-ocean);
+  margin: 10px 0 0; text-align: center; line-height: 1.25;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
 .sv-cmp-val { text-align: center; padding: 16px 12px; font-size: 13px; font-weight: 300; color: var(--charcoal); border-top: 1px solid rgba(30,58,80,.07); }
 .sv-cmp-val .is-price { font-weight: 400; color: var(--deep-ocean); }
 .sv-cmp-val .is-price strong { color: var(--gold); }
@@ -2763,7 +2825,7 @@ textarea.ct-input { resize: vertical; min-height: 88px; line-height: 1.65; }
 @media (max-width: 768px) {
   #sv-compare { padding: 0 24px 60px; }
   .sv-cmp-lbl { width: 110px; min-width: 100px; }
-  .sv-cmp-hd { min-width: 150px; }
+  .sv-cmp-hd { width: 150px; }
 }
 
 /* Toast */

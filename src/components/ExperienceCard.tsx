@@ -39,7 +39,7 @@ export default function ExperienceCard({
     <div className="exp-card">
       <div className="exp-card-photo">
         {photoUrl ? (
-          <div className="exp-card-bg" style={{ backgroundImage: `url('${photoUrl}')` }} />
+          <div className="exp-card-bg" style={{ backgroundImage: `url('${photoUrl}')` }} role="img" aria-label={e.title} />
         ) : (
           <div className="exp-card-bg exp-card-bg--placeholder">
             <span>Photo placeholder</span>

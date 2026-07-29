@@ -632,6 +632,7 @@ export default function SavedClient({ properties }: { properties: Property[] }) 
                               href={`/villas/${p.slug}`}
                               className={`sv-cmp-thumb${ref ? '' : ' sv-cmp-thumb-empty'}`}
                               style={ref ? { backgroundImage: `url('${urlFor(p.heroImage!).width(1200).height(800).quality(90).url()}')` } : undefined}
+                              aria-label={p.title}
                             />
                             {!isShared && (
                               <button

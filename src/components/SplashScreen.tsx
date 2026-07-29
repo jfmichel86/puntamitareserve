@@ -18,6 +18,13 @@ export default function SplashScreen() {
   useLayoutEffect(() => {
     if (sessionStorage.getItem(SESSION_KEY)) return
     sessionStorage.setItem(SESSION_KEY, '1')
+    // This IS the intended use of the effect — reading the one-time,
+    // external "has this session already seen the splash" flag and
+    // reflecting it into React state — not a computation that belongs in
+    // render. The lint rule's cascading-render concern doesn't apply here:
+    // this only ever runs once per session (the early return above skips it
+    // on every subsequent mount), so there's no render loop to worry about.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true)
     setVisible(true)
     const fadeTimer = setTimeout(() => setVisible(false), 650)

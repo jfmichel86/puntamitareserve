@@ -52,6 +52,7 @@ export default function BeachClubShowcase({ items }: { items: ClubItem[] }) {
                   key={i}
                   className="dest-showcase-mosaic-item"
                   style={src ? { backgroundImage: `url('${src}')` } : undefined}
+                  {...(src ? { role: 'img', 'aria-label': `${club.title} — photo ${i + 1}` } : {})}
                 >
                   {!src && <span className="dest-showcase-mosaic-label">Photo placeholder</span>}
                 </div>

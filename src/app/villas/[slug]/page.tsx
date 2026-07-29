@@ -3,7 +3,7 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import { client, urlFor } from '@/lib/sanity'
 import { PROPERTY_BY_SLUG_QUERY, PROPERTY_SLUGS_QUERY } from '@/lib/queries'
-import { Property, startingRate, allSeasonRates, formatPrice, communityLabel, VIEW_LABELS } from '@/lib/utils'
+import { Property, Season, startingRate, allSeasonRates, formatPrice, communityLabel, VIEW_LABELS, hasActivePromotion } from '@/lib/utils'
 import {
   MEMBERSHIP_LABELS, BED_LABELS, LOC_LABEL, VIEW_H2_MAP,
   AMENITY_CATS, AMENITY_LABELS, pickAmenityHighlights, STAFF_NAMES, STAFF_SERVICE_LABELS,
@@ -122,7 +122,7 @@ export default async function PropertyDetailPage({ params }: { params: Promise<P
   const descH2 = descViewKey ? `${VIEW_H2_MAP[descViewKey]} ${typeLabel}` : (commLabel ? `${commLabel} ${typeLabel}` : `Luxury ${typeLabel}`)
 
   // Rates / min stay / scarcity
-  const seasons = (prop.seasons || []).slice().sort((a: any, b: any) => {
+  const seasons = (prop.seasons || []).slice().sort((a: Season, b: Season) => {
     const rateA = a.nightlyRate ?? (a.bedroomRates?.[0]?.nightlyRate ?? Infinity)
     const rateB = b.nightlyRate ?? (b.bedroomRates?.[0]?.nightlyRate ?? Infinity)
     return rateA - rateB
@@ -394,6 +394,15 @@ export default async function PropertyDetailPage({ params }: { params: Promise<P
                 <li>Rates do not include the cost of Food and Beverage</li>
                 <li>Rates do not include Staff Gratuities, recommended at 10% to 15% of the reservation pre-tax total</li>
                 <li>Rates are subject to change without notice</li>
+                {/* The admin-entered Note field on Limited Time Promotion (e.g.
+                    "Excludes Christmas week") was previously saved on every
+                    property but never actually shown anywhere on the site —
+                    this is the fix, placed with the other rate caveats since
+                    that's exactly what it is: fine print about when the
+                    promo does/doesn't apply. */}
+                {hasActivePromotion(prop) && prop.promotions?.limitedTimePromotion?.note && (
+                  <li>{prop.promotions.limitedTimePromotion.note}</li>
+                )}
               </ul>
             </div>
           ) : null}

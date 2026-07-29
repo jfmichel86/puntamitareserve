@@ -75,6 +75,7 @@ function CollectionCard({ c, photos }: { c: Collection; photos: string[] }) {
               key={i}
               className="cc-slide"
               style={usingPhotos ? { backgroundImage: `url('${s}')` } : { background: s }}
+              {...(usingPhotos ? { role: 'img', 'aria-label': `${c.name} — photo ${i + 1}` } : { 'aria-hidden': true })}
             />
           ))}
         </div>
