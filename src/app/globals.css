@@ -5,6 +5,15 @@
 
 /* ── Reset ────────────────────────────────────────────────── */
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+/* Sitewide baseline for every native clickable control — without this,
+   mobile Safari waits ~300ms after each tap to check whether it's the start
+   of a double-tap-to-zoom gesture before firing the click, which can make
+   quick or repeated taps (a guest counter's +/-, rapid filter taps) feel
+   unreliable even though the element's clickable area is perfectly correct.
+   Div-based clickable rows (.sf-opt, .ff-opt, etc.) aren't <button>/<a>
+   elements, so they get the same property set individually alongside their
+   own rules further down. */
+button, a, [role="button"] { touch-action: manipulation; }
 
 /* ── Design Tokens ────────────────────────────────────────── */
 :root {
@@ -425,7 +434,7 @@ body {
    step smaller (10px vs. the trigger's 11px) so the field itself always
    reads as the bigger, primary text and the list underneath reads as
    secondary, not the other way around. */
-.sf-opt { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; font-family: var(--font-inter), sans-serif; font-size: 10px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--charcoal); cursor: pointer; transition: background .13s, color .13s; white-space: nowrap; user-select: none; }
+.sf-opt { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; font-family: var(--font-inter), sans-serif; font-size: 10px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--charcoal); cursor: pointer; transition: background .13s, color .13s; white-space: nowrap; user-select: none; touch-action: manipulation; }
 .sf-opt:hover { background: var(--cream); }
 .sf-opt.is-sel { color: var(--deep-ocean); font-weight: 700; }
 .sel-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gold); flex-shrink: 0; opacity: 0; transition: opacity .15s; }
@@ -1106,7 +1115,7 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
   padding: 10px 18px;
   font-family: var(--font-inter), sans-serif; font-size: 10px;
   font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--charcoal);
-  cursor: pointer; transition: background .15s; user-select: none;
+  cursor: pointer; transition: background .15s; user-select: none; touch-action: manipulation;
 }
 .ff-opt:hover { background: var(--cream); }
 .ff-opt.is-sel { color: var(--deep-ocean); font-weight: 700; }
@@ -1378,13 +1387,22 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
 .g-type { font-family: var(--font-inter), sans-serif; font-size: 10px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--charcoal); }
 .g-age { font-family: var(--font-inter), sans-serif; font-size: 8.5px; font-weight: 400; letter-spacing: .08em; text-transform: uppercase; color: var(--charcoal-light); }
 .g-counter { display: flex; align-items: center; gap: 16px; }
+/* touch-action: manipulation matters most right here — this is the one
+   control on the site someone taps rapidly and repeatedly (bumping a guest
+   count up several times in a row). Without it, mobile Safari holds every
+   tap for ~300ms waiting to see if it's the start of a double-tap-to-zoom
+   gesture, and quick repeated taps can get debounced or swallowed entirely
+   in that window — which reads exactly like "half my taps aren't
+   registering," even though nothing about the button's clickable area is
+   actually wrong. This tells the browser to skip that wait and treat every
+   tap as an immediate, single click. */
 .ctr-btn {
   width: 28px; height: 28px; border-radius: 50%;
   border: 1px solid var(--sand-dark); background: transparent;
   color: var(--charcoal); font-size: 18px;
   font-family: var(--font-inter), sans-serif; font-weight: 300; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
-  line-height: 1; padding: 0 0 2px; user-select: none;
+  line-height: 1; padding: 0 0 2px; user-select: none; touch-action: manipulation;
   transition: border-color .18s, background .18s, color .18s;
 }
 .ctr-btn:hover:not(:disabled) { border-color: var(--ocean-mid); color: var(--deep-ocean); background: var(--mist-light); }
@@ -1530,7 +1548,7 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
 .mf-comm-opt {
   display: flex; align-items: center; justify-content: space-between; padding: 9px 0; cursor: pointer;
   font-family: var(--font-inter), sans-serif; font-size: 10px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--charcoal);
-  transition: color .15s; border-bottom: 1px solid var(--sand); user-select: none;
+  transition: color .15s; border-bottom: 1px solid var(--sand); user-select: none; touch-action: manipulation;
 }
 .mf-comm-opt:last-child { border-bottom: none; }
 .mf-comm-opt:hover { color: var(--deep-ocean); }
@@ -1545,7 +1563,7 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
 .mf-check {
   display: flex; align-items: center; gap: 12px; padding: 9px 0; cursor: pointer;
   font-family: var(--font-inter), sans-serif; font-size: 10px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--charcoal);
-  transition: color .15s; user-select: none;
+  transition: color .15s; user-select: none; touch-action: manipulation;
 }
 .mf-check:hover { color: var(--deep-ocean); }
 .mf-check input[type="checkbox"] { width: 16px; height: 16px; flex-shrink: 0; accent-color: var(--deep-ocean); cursor: pointer; }
@@ -2210,7 +2228,7 @@ body.an-visible { --sidebar-top: 140px; }
 
 .iq-guest-panel { right: 0; width: 280px; padding: 0; }
 
-.iq-dd-opt { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; font-family: var(--font-inter), sans-serif; font-size: 10px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--charcoal); cursor: pointer; transition: background .15s; user-select: none; }
+.iq-dd-opt { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; font-family: var(--font-inter), sans-serif; font-size: 10px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--charcoal); cursor: pointer; transition: background .15s; user-select: none; touch-action: manipulation; }
 .iq-dd-opt:hover { background: var(--cream); }
 .iq-dd-opt.is-sel { color: var(--deep-ocean); font-weight: 700; }
 .iq-dd-opt.is-sel::after { content: ''; display: block; width: 5px; height: 5px; border-radius: 50%; background: var(--gold); flex-shrink: 0; }
@@ -2517,7 +2535,7 @@ textarea.ct-input { resize: vertical; min-height: 88px; line-height: 1.65; }
   box-shadow: 0 12px 40px rgba(30,58,80,.16); padding: 6px 0; z-index: 400;
   animation: ctFadeIn .18s ease both;
 }
-.ct-dd-opt { display: flex; align-items: center; justify-content: space-between; padding: 10px 18px; font-family: var(--font-inter), sans-serif; font-size: 10px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--charcoal); cursor: pointer; transition: background .15s; user-select: none; }
+.ct-dd-opt { display: flex; align-items: center; justify-content: space-between; padding: 10px 18px; font-family: var(--font-inter), sans-serif; font-size: 10px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--charcoal); cursor: pointer; transition: background .15s; user-select: none; touch-action: manipulation; }
 .ct-dd-opt:hover { background: var(--cream); }
 .ct-dd-opt.is-sel { color: var(--deep-ocean); font-weight: 700; }
 .ct-dd-opt.is-sel::after { content: ''; display: block; width: 5px; height: 5px; border-radius: 50%; background: var(--gold); flex-shrink: 0; }
@@ -2773,7 +2791,7 @@ textarea.ct-input { resize: vertical; min-height: 88px; line-height: 1.65; }
 .sv-season-opt {
   display: flex; align-items: center; justify-content: space-between; gap: 16px;
   padding: 10px 16px; font-family: var(--font-inter), sans-serif; font-size: 10px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase;
-  color: var(--charcoal); cursor: pointer; transition: background .13s, color .13s; white-space: nowrap; user-select: none;
+  color: var(--charcoal); cursor: pointer; transition: background .13s, color .13s; white-space: nowrap; user-select: none; touch-action: manipulation;
 }
 .sv-season-opt:hover { background: var(--cream); }
 .sv-season-opt.is-sel { color: var(--deep-ocean); font-weight: 700; }

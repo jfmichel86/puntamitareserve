@@ -384,9 +384,9 @@ export default function SearchBar() {
                   <div className="g-age">{age}</div>
                 </div>
                 <div className="g-counter">
-                  <button className="ctr-btn" disabled={guests[key] === 0} onClick={() => step(key, -1)}>−</button>
+                  <button className="ctr-btn" type="button" disabled={guests[key] === 0} onClick={() => step(key, -1)}>−</button>
                   <span className="ctr-val">{guests[key]}</span>
-                  <button className="ctr-btn" onClick={() => step(key, 1)}>+</button>
+                  <button className="ctr-btn" type="button" onClick={() => step(key, 1)}>+</button>
                 </div>
               </div>
             ))}

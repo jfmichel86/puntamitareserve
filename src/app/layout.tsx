@@ -53,6 +53,14 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
   },
+  // Proves to Google that Francisco owns this domain, so Search Console
+  // will verify the site and start indexing it. Value comes from the
+  // Search Console "HTML tag" verification step (Search Console >
+  // Settings > Ownership verification) — this is the equivalent of
+  // pasting that meta tag directly, just done the Next.js-native way.
+  verification: {
+    google: 'fgb-E-kmAgG8OT5ZmbRSIoVrTOiKVNDyV5qKbp6lks0',
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

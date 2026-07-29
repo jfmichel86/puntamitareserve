@@ -383,9 +383,9 @@ export default function VillasClient({ properties }: { properties: Property[] })
                     <div className="g-age">{age}</div>
                   </div>
                   <div className="g-counter">
-                    <button className="ctr-btn" disabled={filters.guests[key] === 0} onClick={() => guestStep(key, -1)}>−</button>
+                    <button className="ctr-btn" type="button" disabled={filters.guests[key] === 0} onClick={() => guestStep(key, -1)}>−</button>
                     <span className="ctr-val">{filters.guests[key]}</span>
-                    <button className="ctr-btn" onClick={() => guestStep(key, 1)}>+</button>
+                    <button className="ctr-btn" type="button" onClick={() => guestStep(key, 1)}>+</button>
                   </div>
                 </div>
               ))}
