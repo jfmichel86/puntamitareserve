@@ -35,6 +35,12 @@ const localBusinessSchema = {
   geo: { '@type': 'GeoCoordinates', latitude: '20.7729', longitude: '-105.5395' },
   sameAs: ['https://www.instagram.com/luxuryrentalspuntamita/'],
   priceRange: '$$$',
+  // Google requires this summary alongside individual reviews below —
+  // without it, the star rating won't show up in search results even
+  // though the reviews themselves are present. Values reflect the 3
+  // real testimonials listed here (all 5-star); update reviewCount and
+  // ratingValue together if more reviews are added below.
+  aggregateRating: { '@type': 'AggregateRating', ratingValue: '5', reviewCount: '3' },
   review: [
     { '@type': 'Review', author: { '@type': 'Person', name: 'Joe N.' }, reviewRating: { '@type': 'Rating', ratingValue: '5', bestRating: '5' }, reviewBody: "Pictures of the villa don't begin to do it justice — beautiful, clean, and well-appointed." },
     { '@type': 'Review', author: { '@type': 'Person', name: 'Kelsey M.' }, reviewRating: { '@type': 'Rating', ratingValue: '5', bestRating: '5' }, reviewBody: 'The house was spotless, beautifully updated, and it felt like our own luxury resort.' },
