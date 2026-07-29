@@ -72,6 +72,14 @@ export default function SearchBar() {
   const [open, setOpen] = useState<Field>(null)
   const [guests, setGuests] = useState({ adults: 0, children: 0, infants: 0 })
   const [destination, setDestination] = useState<string>('')
+  // "" is both the untouched starting value AND what "All Destinations"
+  // sets it to, so the label below couldn't tell those two apart — picking
+  // "All Destinations" looked like nothing had happened, since the trigger
+  // just kept showing the "Destination" placeholder with no confirmation.
+  // This flips true the moment the visitor makes ANY explicit choice in the
+  // dropdown (including "All Destinations" itself), so a deliberate pick of
+  // "search everywhere" reads back exactly like picking a specific place.
+  const [destinationTouched, setDestinationTouched] = useState(false)
   const [checkIn, setCheckIn] = useState<string | null>(null)
   const [checkOut, setCheckOut] = useState<string | null>(null)
   const [viewYear, setViewYear] = useState(new Date().getFullYear())
@@ -220,7 +228,9 @@ export default function SearchBar() {
           }).join(', ')}`
         : '')
 
-  const destinationLabel = destination ? DEST_OPTS.find(([v]) => v === destination)?.[1] : ''
+  const destinationLabel = destination
+    ? DEST_OPTS.find(([v]) => v === destination)?.[1]
+    : (destinationTouched ? 'All Destinations' : '')
 
   // Everything a guest actually picks in this bar should carry through to
   // the results — destination and guest counts both map directly to filters
@@ -257,11 +267,11 @@ export default function SearchBar() {
         {open === 'destination' && (
           <div className="sf-panel destination-panel">
             <div className="destination-opts">
-              <div className="sf-opt" onClick={() => { setDestination(''); setOpen(null) }}>
+              <div className="sf-opt" onClick={() => { setDestination(''); setDestinationTouched(true); setOpen(null) }}>
                 All Destinations<span className="sel-dot" style={{ opacity: destination === '' ? 1 : 0 }} />
               </div>
               {DEST_OPTS.map(([v, l]) => (
-                <div key={v} className="sf-opt" onClick={() => { setDestination(v === destination ? '' : v); setOpen(null) }}>
+                <div key={v} className="sf-opt" onClick={() => { setDestination(v === destination ? '' : v); setDestinationTouched(true); setOpen(null) }}>
                   {l}<span className="sel-dot" style={{ opacity: destination === v ? 1 : 0 }} />
                 </div>
               ))}

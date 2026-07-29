@@ -82,10 +82,16 @@ body {
 .brand-logo-top::after {
   content: ''; width: 9px; height: 1px; background: var(--gold); opacity: .6; flex-shrink: 0;
 }
+/* letter-spacing adds trailing space after the LAST character but not
+   before the first — left uncorrected, that invisible sliver pushes the
+   text (and everything centered relative to it) off-true-center. This
+   cancels it out so "Mexican" sits exactly as far from the rule on
+   either side. */
+.brand-logo-top-text { margin-right: -0.34em; }
 .brand-logo-bottom {
   font-family: var(--font-cormorant), serif; font-weight: 600;
   font-size: 20px; letter-spacing: .05em; text-transform: uppercase;
-  color: var(--text-on-dark);
+  color: var(--text-on-dark); margin-right: -0.05em;
 }
 .brand-logo-rule {
   width: 22px; height: 1px; background: var(--gold); opacity: .6; margin-top: 7px;
@@ -1056,10 +1062,16 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
   overflow: visible;
 }
 .fb-inner {
-  display: flex; align-items: center; gap: 0;
+  /* gap (not the separators' own margins) is what actually spaces every
+     control apart — that way spacing stays correct even when a .fb-sep
+     between two items gets hidden (see the 1400px breakpoint below):
+     flexbox's gap only applies between elements actually in the layout, so
+     two chips that used to sandwich a now-hidden separator automatically
+     end up one gap-width apart instead of flush against each other. */
+  display: flex; align-items: center; gap: 10px;
   padding: 0 64px; height: 60px;
 }
-.fb-sep { width: 1px; height: 24px; background: var(--sand); flex-shrink: 0; margin: 0 16px; }
+.fb-sep { width: 1px; height: 24px; background: var(--sand); flex-shrink: 0; margin: 0; }
 .ff { position: relative; flex-shrink: 0; }
 .ff-trigger {
   display: flex; align-items: center; gap: 7px;
@@ -1098,34 +1110,38 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
 .ff-opt:hover { background: var(--cream); }
 .ff-opt.is-sel { color: var(--deep-ocean); font-weight: 700; }
 .ff-opt.is-sel::after { content: ''; display: block; width: 5px; height: 5px; border-radius: 50%; background: var(--gold); flex-shrink: 0; }
-/* Option scale, not trigger scale — this chip already IS the selectable
-   choice (no separate closed-state trigger + hidden list the way
-   .ff-trigger/.ff-opt work), so it belongs with every other directly-
-   clickable option sitewide, same as a checkbox or a dropdown row. */
+/* Trigger scale, not option scale — unlike the option chips inside a drawer
+   section (.mf-type-chip etc.), Pool/Staffed/Favorites sit directly in the
+   top-level filter bar as peers of Destination/Guests/Bedrooms/Nightly Rate,
+   so they need to match those triggers' size, not the smaller nested-list
+   scale. Each also gets its own bordered pill (matching the drawer's chip
+   language) instead of sitting as bare icon+text — three unbordered labels
+   flush against each other read as a run of prose rather than three
+   separate controls. */
 .ff-chip {
   display: flex; align-items: center; gap: 6px;
   padding: 8px 14px; flex-shrink: 0;
-  background: none; border: none; cursor: pointer;
-  font-family: var(--font-inter), sans-serif; font-size: 10px;
-  font-weight: 500; letter-spacing: .12em; text-transform: uppercase;
+  background: none; border: 1px solid var(--sand); cursor: pointer;
+  font-family: var(--font-inter), sans-serif; font-size: 11px;
+  font-weight: 500; letter-spacing: .16em; text-transform: uppercase;
   color: var(--charcoal); opacity: .65; border-radius: 3px;
-  transition: background .2s, opacity .2s; white-space: nowrap;
+  transition: background .2s, opacity .2s, border-color .2s; white-space: nowrap;
 }
-.ff-chip:hover { background: var(--cream); opacity: 1; }
-.ff-chip.is-active { background: var(--deep-ocean); color: var(--text-on-dark); opacity: 1; }
+.ff-chip:hover { background: var(--cream); opacity: 1; border-color: var(--ocean-mid); }
+.ff-chip.is-active { background: var(--deep-ocean); border-color: var(--deep-ocean); color: var(--text-on-dark); opacity: 1; }
 .ff-chip svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 1.8; flex-shrink: 0; }
 /* Guests' Favorites chip — stays gold-tinted even when inactive (unlike the
    plain-grey Pool chip) so it reads as a curated pick, not a generic amenity. */
-.ff-chip-favorite { color: var(--gold); opacity: 1; }
-.ff-chip-favorite:hover { background: var(--cream); }
-.ff-chip-favorite.is-active { background: var(--deep-ocean); color: var(--text-on-dark); }
+.ff-chip-favorite { color: var(--gold); border-color: var(--sand); opacity: 1; }
+.ff-chip-favorite:hover { background: var(--cream); border-color: var(--ocean-mid); }
+.ff-chip-favorite.is-active { background: var(--deep-ocean); border-color: var(--deep-ocean); color: var(--text-on-dark); }
 .ff-sort .ff-panel { left: auto; right: 0; }
 .fb-clear {
   display: none; align-items: center; gap: 5px;
-  padding: 6px 12px; margin-left: 8px; flex-shrink: 0;
+  padding: 6px 12px; flex-shrink: 0;
   background: none; border: 1px solid var(--sand); border-radius: 20px; cursor: pointer;
   font-family: var(--font-inter), sans-serif; font-size: 10px;
-  letter-spacing: .12em; text-transform: uppercase; color: var(--charcoal-light);
+  font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--charcoal-light);
   transition: border-color .2s, color .2s;
 }
 .fb-clear:hover { border-color: var(--charcoal-light); color: var(--charcoal); }
@@ -1375,12 +1391,16 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
 .g-done-btn { color: var(--deep-ocean); border-bottom: 1px solid var(--ocean); transition: color .18s, border-color .18s; }
 .g-done-btn:hover { color: var(--gold); border-color: var(--gold); }
 
-/* Homepage search-bar guest picker (index.html) — larger type, no Clear button */
+/* Homepage search-bar guest picker — layout-only tweaks (padding/gap).
+   The counter number used to also be bumped to 15px here (and 19px on the
+   +/- buttons), a leftover from the old static index.html page, which made
+   the "0"/"1"/etc. read noticeably bigger than the ADULTS/CHILDREN/INFANTS
+   label next to it. Letting it fall back to the shared 12px .ctr-val below
+   keeps it consistent with the Villas listing page and the booking
+   Sidebar's guest picker, which never had this override. */
 .guests-panel .g-row { padding: 10px 24px; }
 .guests-panel .g-info { gap: 4px; }
 .guests-panel .g-counter { gap: 18px; }
-.guests-panel .ctr-btn { width: 30px; height: 30px; font-size: 19px; }
-.guests-panel .ctr-val { font-size: 15px; min-width: 18px; }
 .guests-panel .g-done-row { padding: 8px 24px; justify-content: flex-end; }
 .guests-panel .g-done-btn { font-size: 10.5px; padding: 5px 0; }
 
@@ -1396,7 +1416,7 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
   display: flex; align-items: center; gap: 7px; margin-left: auto; flex-shrink: 0;
   padding: 8px 16px; background: none; border: 1px solid var(--sand); border-radius: 3px;
   cursor: pointer; font-family: var(--font-inter), sans-serif; font-size: 11px;
-  font-weight: 400; letter-spacing: .10em; text-transform: uppercase; color: var(--charcoal);
+  font-weight: 500; letter-spacing: .16em; text-transform: uppercase; color: var(--charcoal);
   transition: border-color .2s, background .2s, color .2s; white-space: nowrap;
 }
 .mf-btn:hover { border-color: var(--ocean-mid); background: var(--cream); }
@@ -1441,8 +1461,13 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
   box-shadow: -16px 0 56px rgba(30,58,80,.16);
 }
 .mf-drawer.open { transform: translateX(0); }
-.mf-header { display: flex; align-items: center; justify-content: space-between; padding: 22px 24px 18px; border-bottom: 1px solid var(--sand); flex-shrink: 0; }
-.mf-title { font-family: var(--font-cormorant), serif; font-weight: 400; font-size: 21px; color: var(--charcoal); letter-spacing: .02em; }
+.mf-header { display: flex; align-items: center; justify-content: space-between; padding: 24px; border-bottom: 1px solid var(--sand); flex-shrink: 0; }
+/* 28px matches the size already used for every other panel/modal headline
+   sitewide (.ct-form-title, .inq-title) — was 21px, which read smaller and
+   lighter than the bold 12px section labels beneath it (PROPERTY TYPE,
+   LOCATION, etc.), inverting the hierarchy: the drawer's own title looked
+   less important than its own subsections. */
+.mf-title { font-family: var(--font-cormorant), serif; font-weight: 400; font-size: 28px; color: var(--charcoal); letter-spacing: .02em; }
 .mf-close { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--sand); background: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: border-color .2s, background .2s; }
 .mf-close:hover { border-color: var(--charcoal-light); background: var(--cream); }
 .mf-close svg { width: 14px; height: 14px; stroke: var(--charcoal); fill: none; stroke-width: 2; }
@@ -1468,8 +1493,22 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
 .mf-type-chip:hover, .mf-coll-chip:hover { border-color: var(--ocean-mid); background: var(--mist-light); }
 .mf-type-chip.is-sel, .mf-coll-chip.is-sel { border-color: var(--deep-ocean); background: var(--deep-ocean); color: var(--text-on-dark); }
 .mf-coll-chip.is-sel .opt-count { color: rgba(239,246,251,.7); }
-.mf-comm-group { margin-bottom: 6px; }
-.mf-comm-group-hd { font-family: var(--font-inter), sans-serif; font-size: 9px; font-weight: 500; letter-spacing: .18em; text-transform: uppercase; color: var(--ocean); padding: 10px 0 4px; }
+/* Community filter — one independent accordion row per destination, instead
+   of a single dropdown that either mixes every destination's communities
+   together or has to be disabled until a Destination is chosen elsewhere.
+   Each row opens on its own; only one is open at a time (openCommGroup). */
+.mf-comm-dests { border: 1px solid var(--sand); border-radius: 3px; }
+.mf-comm-dest { border-bottom: 1px solid var(--sand); }
+.mf-comm-dest:last-child { border-bottom: none; }
+.mf-comm-dest-trigger {
+  display: flex; align-items: center; justify-content: space-between; width: 100%;
+  padding: 12px 14px; background: none; border: none; cursor: pointer;
+  font-family: var(--font-inter), sans-serif; font-size: 11px; font-weight: 500; letter-spacing: .16em; text-transform: uppercase; color: var(--charcoal);
+  transition: color .15s;
+}
+.mf-comm-dest-trigger:hover { color: var(--deep-ocean); }
+.mf-comm-dest.is-open .mf-comm-dest-trigger { border-bottom: 1px solid var(--sand); color: var(--deep-ocean); }
+.mf-comm-dest-list { padding: 4px 14px 6px; max-height: 260px; overflow-y: auto; }
 .mf-comm-opt {
   display: flex; align-items: center; justify-content: space-between; padding: 9px 0; cursor: pointer;
   font-family: var(--font-inter), sans-serif; font-size: 10px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--charcoal);
@@ -1482,21 +1521,9 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
   content: ''; display: block; width: 5px; height: 5px;
   border-radius: 50%; background: var(--gold); flex-shrink: 0; margin-left: 8px;
 }
-.mf-community-list { max-height: 260px; overflow-y: auto; }
-.mf-community-select { border: 1px solid var(--sand); border-radius: 3px; }
-.mf-comm-current {
-  display: flex; align-items: center; justify-content: space-between; width: 100%;
-  padding: 12px 14px; background: none; border: none; cursor: pointer;
-  font-family: var(--font-inter), sans-serif; font-size: 11px; font-weight: 500; letter-spacing: .16em; text-transform: uppercase; color: var(--charcoal);
-  transition: color .15s;
-}
-.mf-community-select.is-open .mf-comm-current { border-bottom: 1px solid var(--sand); }
-.mf-comm-current:hover { color: var(--deep-ocean); }
-.mf-comm-current-right { display: flex; align-items: center; gap: 10px; }
-.mf-comm-current-right .opt-count { font-size: 12px; font-weight: 300; color: var(--charcoal-light); }
+.mf-comm-opt .opt-count { font-size: 12px; font-weight: 300; color: var(--charcoal-light); }
 .mf-comm-chev { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2; transition: transform .2s; }
-.mf-community-select.is-open .mf-comm-chev { transform: rotate(180deg); }
-.mf-community-select .mf-community-list { padding: 4px 14px 2px; }
+.mf-comm-dest.is-open .mf-comm-chev { transform: rotate(180deg); }
 .mf-check {
   display: flex; align-items: center; gap: 12px; padding: 9px 0; cursor: pointer;
   font-family: var(--font-inter), sans-serif; font-size: 10px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--charcoal);
@@ -1688,10 +1715,24 @@ body.on-saved-page .wa, body.on-saved-page .offer-badge { display: none; }
 
 /* ── Responsive ───────────────────────────────────────────── */
 @media (max-width: 1100px) { .prop-grid { grid-template-columns: repeat(2,1fr); } }
+/* The filter bar is the most important control on this page, so it must
+   never clip filters off the right edge of the screen — with 9+ items
+   (Destination, Guests, Bedrooms, Nightly Rate, Pool, Staffed, Favorites,
+   All Filters, Sort, plus Clear once a filter is active) it simply doesn't
+   fit on one line below full desktop widths. Wrapping onto a second row
+   keeps every filter reachable at any window size, the same fix already
+   used below 720px — this just widens the range it kicks in at so laptop
+   and tablet widths in between aren't left with hidden, unreachable
+   filters. */
+@media (max-width: 1400px) {
+  .filter-bar { overflow: visible; }
+  .fb-inner { flex-wrap: wrap; height: auto; padding: 10px 40px; row-gap: 8px; }
+  .fb-sep { display: none; }
+}
 @media (max-width: 960px) {
   .nav, .nav--scrolled { padding-left: 40px; padding-right: 40px; }
   .pg-header { padding: 132px 40px 40px; }
-  .fb-inner { padding: 0 40px; }
+  .fb-inner { padding: 10px 40px; }
   .results-bar { padding: 16px 40px 0; }
   .properties-section { padding: 28px 40px 64px; }
   .newsletter-band { padding: 56px 40px; }
@@ -1726,16 +1767,11 @@ body.on-saved-page .wa, body.on-saved-page .offer-badge { display: none; }
      anything that opened below it — which meant every dropdown (Destination,
      Guests, Bedrooms, Nightly Rate, Sort) was invisible the instant you
      tapped it on a phone, with no way to actually use those filters. Wrapping
-     the chips onto multiple lines instead removes the need to clip anything,
-     so each dropdown can open normally, exactly like it already does on
-     desktop — same markup, same .ff-panel, no new code path. */
-  .filter-bar { overflow: visible; }
-  .fb-inner {
-    flex-wrap: wrap; height: auto; padding: 10px 16px; row-gap: 8px;
-  }
+     is already turned on at 1400px above; this just tightens padding/type
+     further for phone-width screens. */
+  .fb-inner { padding: 10px 16px; }
   .ff-trigger { padding: 8px 12px; font-size: 10px; }
-  .ff-chip { padding: 8px 12px; font-size: 9px; }
-  .fb-sep { display: none; } /* separators suited a single scrolling row; redundant once chips wrap */
+  .ff-chip { padding: 8px 12px; font-size: 10px; }
   .mf-btn { padding: 8px 12px; font-size: 10px; }
   .mf-drawer { width: 100vw; }
   .results-bar { padding: 14px 24px 0; }
@@ -2776,12 +2812,11 @@ textarea.ct-input { resize: vertical; min-height: 88px; line-height: 1.65; }
 .inq-cal-wrap .dp-flex-row { padding: 14px 0 0; border-top: none; margin-top: 0; }
 .inq-cal-wrap .dp-panel-footer { justify-content: flex-start; margin-top: 0; }
 
-/* Inquiry modal's guest counter — its own sizing, close to but not identical
-   to the homepage's .guests-panel scope, so it gets its own override. */
+/* Inquiry modal's guest counter — layout-only (padding/gap), same reasoning
+   as .guests-panel above: the counter number and +/- buttons used to be
+   oversized here too, making the number read bigger than its own label. */
 .inq-guests-wrap .g-row { padding: 12px 20px; }
 .inq-guests-wrap .g-counter { gap: 18px; }
-.inq-guests-wrap .ctr-btn { width: 30px; height: 30px; font-size: 19px; }
-.inq-guests-wrap .ctr-val { font-size: 15px; min-width: 18px; }
 
 @media (max-width: 768px) {
   #sv-pg-header      { padding: 128px 24px 36px; }

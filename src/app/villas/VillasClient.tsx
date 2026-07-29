@@ -139,7 +139,11 @@ export default function VillasClient({ properties }: { properties: Property[] })
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
   const [flVisible, setFlVisible] = useState(false)
-  const [communityOpen, setCommunityOpen] = useState(false)
+  // Which destination's community accordion is expanded (null = none open).
+  // Replaces a single always-visible "Any community" dropdown — each
+  // destination gets its own small, self-contained list instead of one
+  // combined list mixing every destination's communities together.
+  const [openCommGroup, setOpenCommGroup] = useState<string | null>(null)
   const filterBarRef = useRef<HTMLDivElement>(null)
 
   // Auto-loads the next batch as the "Show more properties" wrap scrolls
@@ -315,8 +319,22 @@ export default function VillasClient({ properties }: { properties: Property[] })
     return found ? communityLabel(found) : slug
   }
 
+  // Drives the page header below — reads the same filters.destination state
+  // the filter bar itself uses, so the headline stays truthful whether the
+  // destination came in on the URL (a shared link) or was picked from the
+  // dropdown a moment ago. Previously this text was hardcoded to "Punta
+  // Mita" in page.tsx no matter what was actually selected.
+  const heroDestLabel = filters.destination ? DEST_LABELS[filters.destination] : null
+
   return (
     <>
+      {/* Page header */}
+      <section className="pg-header">
+        <p className="pg-eyebrow">{heroDestLabel ?? 'All Destinations'} · México</p>
+        <h1 className="pg-title">All Properties in <em>{heroDestLabel ?? 'México'}</em></h1>
+        <p className="pg-sub">Every home we represent, personally curated — reach out and we&rsquo;ll handle the rest.</p>
+      </section>
+
       {/* FILTER BAR */}
       <div className="filter-bar" ref={filterBarRef} onClick={(e) => { if (e.target === e.currentTarget) closeAll() }}>
         <div className="fb-inner">
@@ -329,16 +347,20 @@ export default function VillasClient({ properties }: { properties: Property[] })
               <svg className="ff-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
             </button>
             <div className="ff-panel">
-              <div className={`ff-opt${!filters.destination ? ' is-sel' : ''}`} onClick={() => { setFilters((f) => ({ ...f, destination: '' })); closeAll() }}>
+              {/* Switching destinations always clears any selected Community too —
+                  a community picked under one destination is meaningless (and
+                  would silently zero out the results) once a different
+                  destination is active. */}
+              <div className={`ff-opt${!filters.destination ? ' is-sel' : ''}`} onClick={() => { setFilters((f) => ({ ...f, destination: '', community: '' })); closeAll() }}>
                 All destinations <span className="opt-count">{cnt(countFor({ destination: '' }))}</span>
               </div>
-              <div className={`ff-opt${filters.destination === 'punta-mita' ? ' is-sel' : ''}`} onClick={() => { setFilters((f) => ({ ...f, destination: 'punta-mita' })); closeAll() }}>
+              <div className={`ff-opt${filters.destination === 'punta-mita' ? ' is-sel' : ''}`} onClick={() => { setFilters((f) => ({ ...f, destination: 'punta-mita', community: '' })); closeAll() }}>
                 Punta Mita <span className="opt-count">{cnt(countFor({ destination: 'punta-mita' }))}</span>
               </div>
-              <div className={`ff-opt${filters.destination === 'punta-de-mita' ? ' is-sel' : ''}`} onClick={() => { setFilters((f) => ({ ...f, destination: 'punta-de-mita' })); closeAll() }}>
+              <div className={`ff-opt${filters.destination === 'punta-de-mita' ? ' is-sel' : ''}`} onClick={() => { setFilters((f) => ({ ...f, destination: 'punta-de-mita', community: '' })); closeAll() }}>
                 Punta de Mita <span className="opt-count">{cnt(countFor({ destination: 'punta-de-mita' }))}</span>
               </div>
-              <div className={`ff-opt${filters.destination === 'puerto-vallarta' ? ' is-sel' : ''}`} onClick={() => { setFilters((f) => ({ ...f, destination: 'puerto-vallarta' })); closeAll() }}>
+              <div className={`ff-opt${filters.destination === 'puerto-vallarta' ? ' is-sel' : ''}`} onClick={() => { setFilters((f) => ({ ...f, destination: 'puerto-vallarta', community: '' })); closeAll() }}>
                 Puerto Vallarta <span className="opt-count">{cnt(countFor({ destination: 'puerto-vallarta' }))}</span>
               </div>
             </div>
@@ -543,45 +565,39 @@ export default function VillasClient({ properties }: { properties: Property[] })
 
           <div className="mf-section">
             <div className="mf-section-title">Community</div>
-            <div className={`mf-community-select${communityOpen ? ' is-open' : ''}`}>
-              <button
-                type="button"
-                className="mf-comm-current"
-                onClick={() => setCommunityOpen((o) => !o)}
-                aria-expanded={communityOpen}
-              >
-                <span>{filters.community ? communityLabelFromSlug(filters.community) : 'Any community'}</span>
-                <span className="mf-comm-current-right">
-                  <span className="opt-count">{cnt(countFor({ community: filters.community }))}</span>
-                  <svg className="mf-comm-chev" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
-                </span>
-              </button>
-              {communityOpen && (
-                <div className="mf-community-list">
-                  <div
-                    className={`mf-comm-opt${!filters.community ? ' is-sel' : ''}`}
-                    onClick={() => { setFilters((f) => ({ ...f, community: '' })); setCommunityOpen(false) }}
-                  >
-                    Any community <span className="opt-count">{cnt(countFor({ community: '' }))}</span>
-                  </div>
-                  {(['punta-mita', 'punta-de-mita'] as const).map((destKey) => {
-                    const comms = Array.from(communitiesByDest[destKey]).sort((a, b) =>
-                      communityLabelFromSlug(a).localeCompare(communityLabelFromSlug(b))
-                    )
-                    if (comms.length === 0) return null
-                    // Original hides the non-matching destination group once a destination filter is active.
-                    if (filters.destination && filters.destination !== destKey) return null
-                    return (
-                      <div className="mf-comm-group" key={destKey}>
-                        <div className="mf-comm-group-hd">{DEST_LABELS[destKey]}</div>
+            {/* One self-contained accordion row per destination, instead of
+                a single dropdown mixing every destination's communities
+                together (or requiring the top Destination filter to be set
+                first). A destination with no communities at all — Puerto
+                Vallarta today — is simply skipped ("if it applies"), and
+                this scales cleanly as more destinations get added later:
+                each new one just adds its own row, never a bigger combined
+                list. */}
+            <div className="mf-comm-dests">
+              {(['punta-mita', 'punta-de-mita', 'puerto-vallarta'] as const).map((destKey) => {
+                const comms = Array.from(communitiesByDest[destKey] ?? []).sort((a, b) =>
+                  communityLabelFromSlug(a).localeCompare(communityLabelFromSlug(b))
+                )
+                if (comms.length === 0) return null
+                const isOpen = openCommGroup === destKey
+                return (
+                  <div className={`mf-comm-dest${isOpen ? ' is-open' : ''}`} key={destKey}>
+                    <button
+                      type="button"
+                      className="mf-comm-dest-trigger"
+                      onClick={() => setOpenCommGroup(isOpen ? null : destKey)}
+                      aria-expanded={isOpen}
+                    >
+                      <span>{DEST_LABELS[destKey]}</span>
+                      <svg className="mf-comm-chev" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    {isOpen && (
+                      <div className="mf-comm-dest-list">
                         {comms.map((c) => (
                           <div
                             key={c}
                             className={`mf-comm-opt${filters.community === c ? ' is-sel' : ''}`}
-                            onClick={() => {
-                              setFilters((f) => ({ ...f, community: f.community === c ? '' : c }))
-                              setCommunityOpen(false)
-                            }}
+                            onClick={() => setFilters((f) => ({ ...f, community: f.community === c ? '' : c }))}
                           >
                             {communityLabelFromSlug(c)}{' '}
                             <span className="opt-count">
@@ -590,10 +606,10 @@ export default function VillasClient({ properties }: { properties: Property[] })
                           </div>
                         ))}
                       </div>
-                    )
-                  })}
-                </div>
-              )}
+                    )}
+                  </div>
+                )
+              })}
             </div>
           </div>
         </div>
