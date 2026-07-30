@@ -195,19 +195,19 @@ export default async function PropertyDetailPage({ params }: { params: Promise<P
             <h1 className="prop-title">{titleFirst} {titleRest && <em>{titleRest}</em>}</h1>
             {prop.tagline && <p className="pd-tagline">{prop.tagline}</p>}
             <div className="specs-strip">
-              <div className="spec-item">
+              <div className="spec-item spec-beds">
                 <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                 {prop.bedrooms} bedroom{prop.bedrooms !== 1 ? 's' : ''}
               </div>
               {prop.bathrooms ? (
-                <div className="spec-item">
+                <div className="spec-item spec-baths">
                   <svg viewBox="0 0 24 24"><path d="M2 12h20v5a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-5z"/><path d="M6 12V7a2 2 0 0 1 2-2v0a2 2 0 0 1 2 2v5"/><line x1="7" y1="19" x2="7" y2="22"/><line x1="17" y1="19" x2="17" y2="22"/></svg>
                   {prop.bathrooms} bathroom{prop.bathrooms !== 1 ? 's' : ''}
                 </div>
               ) : null}
-              <div className="spec-item">
+              <div className="spec-item spec-guests">
                 <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                Up to {prop.maxAdults || 0}{prop.childOnlyBeds ? ` + ${prop.childOnlyBeds}` : ''} guests
+                Up to {prop.maxAdults || 0} adult{(prop.maxAdults || 0) !== 1 ? 's' : ''}{prop.childOnlyBeds ? ` + ${prop.childOnlyBeds} child${prop.childOnlyBeds !== 1 ? 'ren' : ''}` : ''}
               </div>
               <div className="spec-rating">
                 <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>

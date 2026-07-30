@@ -100,8 +100,12 @@ export default function PropertyCard({ property: p, activeCollection }: Props) {
           </>
         )}
 
-        {badge && <span className="prop-badge">{badge}</span>}
-        {locBadge && <span className="prop-loc-badge">{locBadge}</span>}
+        {(badge || locBadge) && (
+          <div className="prop-badge-stack">
+            {badge && <span className="prop-badge">{badge}</span>}
+            {locBadge && <span className="prop-loc-badge">{locBadge}</span>}
+          </div>
+        )}
         {dealBadge && <span className="prop-deal-badge">{dealBadge}</span>}
 
         <button

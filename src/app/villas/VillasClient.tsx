@@ -517,6 +517,68 @@ export default function VillasClient({ properties }: { properties: Property[] })
           </button>
         </div>
         <div className="mf-body">
+          {/* Bedrooms / Nightly Rate / Amenities — mobile-only (hidden on
+              desktop via CSS, .mf-mobile-only), reusing the exact same
+              filters.beds/price/pool/staff/featured state as their inline
+              desktop-only counterparts in the top bar. On a phone, showing
+              all 9 top-bar controls inline made the filter bar taller than
+              the first property card; moving these three into the drawer
+              (which already exists and already works well as a full-height
+              panel) keeps only Destination, Guests, Filters and Sort
+              visible up front, with everything else one tap away instead
+              of pushing all the actual results down the screen. */}
+          <div className="mf-section mf-mobile-only">
+            <div className="mf-section-title">Bedrooms</div>
+            <div className="mf-type-chips">
+              {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((v) => (
+                <button
+                  key={v}
+                  className={`mf-type-chip${filters.beds === v && !filters.bedsMax ? ' is-sel' : ''}`}
+                  onClick={() => setFilters((f) => ({ ...f, beds: v, bedsMax: 0 }))}
+                >
+                  {v === 0 ? 'Any' : `${v}+`} <span className="opt-count">{cnt(countFor({ beds: v, bedsMax: 0 }))}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="mf-section mf-mobile-only">
+            <div className="mf-section-title">Nightly Rate</div>
+            <div className="mf-coll-chips">
+              {[
+                ['', 'Any'],
+                ['0-1000', 'Up to $1,000'],
+                ['1001-2500', '$1,001 – $2,500'],
+                ['2501-5000', '$2,501 – $5,000'],
+                ['5001-8000', '$5,001 – $8,000'],
+                ['8001+', '$8,001+'],
+              ].map(([v, l]) => (
+                <button key={v} className={`mf-coll-chip${filters.price === v ? ' is-sel' : ''}`} onClick={() => setFilters((f) => ({ ...f, price: v }))}>
+                  {l} <span className="opt-count">{cnt(countFor({ price: v }))}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="mf-section mf-mobile-only">
+            <div className="mf-section-title">Amenities</div>
+            <label className="mf-check">
+              <input type="checkbox" checked={filters.pool} onChange={() => setFilters((f) => ({ ...f, pool: !f.pool }))} />
+              <span>Private pool</span>{' '}
+              <span className="opt-count">{cnt(countFor({ pool: true }))}</span>
+            </label>
+            <label className="mf-check">
+              <input type="checkbox" checked={filters.staff} onChange={() => setFilters((f) => ({ ...f, staff: !f.staff }))} />
+              <span>Fully staffed</span>{' '}
+              <span className="opt-count">{cnt(countFor({ staff: true }))}</span>
+            </label>
+            <label className="mf-check">
+              <input type="checkbox" checked={filters.featured} onChange={() => setFilters((f) => ({ ...f, featured: !f.featured }))} />
+              <span>Favorites</span>{' '}
+              <span className="opt-count">{cnt(countFor({ featured: true }))}</span>
+            </label>
+          </div>
+
           <div className="mf-section">
             <div className="mf-section-title">Property Type</div>
             <div className="mf-type-chips">
