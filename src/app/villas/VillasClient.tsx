@@ -276,6 +276,15 @@ export default function VillasClient({ properties }: { properties: Property[] })
     }))
   }
 
+  // Same stepper pattern as guests — 0 reads as "Any", 8 is the top of the
+  // existing 0-8 range the old dropdown offered. Clears bedsMax on every
+  // step since that field is a deep-link-only range (?beds=2&bedsMax=4)
+  // with no UI control of its own; touching the stepper always means the
+  // person wants a plain "N+ bedrooms" filter again.
+  const bedsStep = (dir: 1 | -1) => {
+    setFilters((f) => ({ ...f, beds: Math.max(0, Math.min(8, f.beds + dir)), bedsMax: 0 }))
+  }
+
   const toggleView = (v: string) => {
     setFilters((f) => ({
       ...f,
@@ -310,9 +319,14 @@ export default function VillasClient({ properties }: { properties: Property[] })
 
   // Count of active filters that live only in the "More Filters" drawer
   // (mirrors the original site's mf-badge / fl-badge count formula).
+  // Pool + Staffed now count toward the badge too — they used to have their
+  // own visible chips in the bar (an active chip was its own indicator), but
+  // now that they only live inside this drawer, the "All Filters" badge is
+  // the only place a person would see that one of them is switched on.
   const drawerFilterCount =
     (filters.community ? 1 : 0) + (filters.type ? 1 : 0) + filters.views.length +
-    (filters.collection ? 1 : 0) + (filters.locationType ? 1 : 0)
+    (filters.collection ? 1 : 0) + (filters.locationType ? 1 : 0) +
+    (filters.pool ? 1 : 0) + (filters.staff ? 1 : 0)
 
   function communityLabelFromSlug(slug: string) {
     const found = properties.find((p) => p.communityPuntaMita === slug || p.communityPuntaDeMita === slug)
@@ -398,28 +412,21 @@ export default function VillasClient({ properties }: { properties: Property[] })
 
           <div className="fb-sep" />
 
-          {/* Bedrooms */}
-          <div className={`ff ff-beds${filters.beds ? ' is-active' : ''}${openPanel === 'beds' ? ' is-open' : ''}`}>
-            <button className="ff-trigger" onClick={() => toggle('beds')}>
-              <span className="ff-val">
-                {filters.beds
-                  ? (filters.bedsMax ? `${filters.beds}-${filters.bedsMax} bedrooms` : `${filters.beds}+ bedrooms`)
-                  : 'Bedrooms'}
-              </span>
-              <span className="ff-dot" />
-              <svg className="ff-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
-            </button>
-            <div className="ff-panel">
-              {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((v) => (
-                <div
-                  key={v}
-                  className={`ff-opt${filters.beds === v && !filters.bedsMax ? ' is-sel' : ''}`}
-                  onClick={() => { setFilters((f) => ({ ...f, beds: v, bedsMax: 0 })); closeAll() }}
-                >
-                  {v === 0 ? 'Any bedrooms' : `${v}+ bedrooms`}
-                </div>
-              ))}
-            </div>
+          {/* Bedrooms — no dropdown at all (Francisco's call): the stepper
+              sits directly in the bar as its own compact control, same
+              visual weight as the .ff-chip toggles (Pool, Staffed), instead
+              of hiding behind a click-to-open trigger. The "Bedrooms" label
+              stays put as a constant caption — only the number in the
+              middle changes — rather than the whole label swapping to
+              "3+ bedrooms" text, which read like a second, different label
+              fighting with the +/- buttons for attention. */}
+          <div className={`ff-beds-inline${filters.beds ? ' is-active' : ''}`}>
+            <span className="fbi-label">Bedrooms</span>
+            <button className="fbi-btn" type="button" aria-label="Fewer bedrooms" disabled={filters.beds === 0} onClick={() => bedsStep(-1)}>−</button>
+            <span className="fbi-val">
+              {filters.beds === 0 ? 'Any' : (filters.bedsMax ? `${filters.beds}-${filters.bedsMax}` : filters.beds)}
+            </span>
+            <button className="fbi-btn" type="button" aria-label="More bedrooms" disabled={filters.beds === 8} onClick={() => bedsStep(1)}>+</button>
           </div>
 
           <div className="fb-sep" />
@@ -449,25 +456,17 @@ export default function VillasClient({ properties }: { properties: Property[] })
 
           <div className="fb-sep" />
 
-          {/* Pool chip */}
-          <button className={`ff-chip${filters.pool ? ' is-active' : ''}`} onClick={() => setFilters((f) => ({ ...f, pool: !f.pool }))}>
-            <svg viewBox="0 0 24 24"><path d="M4 12c1.5-2 3-3 5-1s3.5 3 5 1 3-3 5-1M4 18c1.5-2 3-3 5-1s3.5 3 5 1 3-3 5-1M12 4v4M9 5l3-1 3 1"/></svg>
-            Pool
-          </button>
+          {/* Pool and Staffed chips were removed from the inline bar
+              (Francisco's call — too crowded with Destination, Guests,
+              Bedrooms, Nightly Rate, Favorites and All Filters all in one
+              row already). Both filters still live in the "All Filters"
+              drawer's Amenities section below, which is no longer
+              mobile-only now that it's the only way to reach them on any
+              screen size. */}
 
-          {/* Staffed chip — 4+ staff roles, same threshold as the
-              destination page's "Fully Staffed" tile */}
-          <button className={`ff-chip${filters.staff ? ' is-active' : ''}`} onClick={() => setFilters((f) => ({ ...f, staff: !f.staff }))}>
-            <svg viewBox="0 0 24 24"><circle cx="9" cy="7" r="3"/><circle cx="17" cy="8" r="2.5"/><path d="M3 20v-1a6 6 0 0112 0v1M14 20v-1a4.5 4.5 0 016.5-4"/></svg>
-            Staffed
-          </button>
-
-          <div className="fb-sep" />
-
-          {/* Guests' Favorites (featured) chip — permanently gold-tinted (unlike
-              Pool's plain grey) since these are the highest-commission
-              properties and deserve to read as a curated pick, not a generic
-              amenity checkbox. */}
+          {/* Guests' Favorites (featured) chip stays — the highest-
+              commission properties, worth a permanent one-tap pill rather
+              than being buried in All Filters like Pool/Staffed now are. */}
           <button className={`ff-chip ff-chip-favorite${filters.featured ? ' is-active' : ''}`} onClick={() => setFilters((f) => ({ ...f, featured: !f.featured }))}>
             <svg viewBox="0 0 24 24" strokeLinejoin="round"><polygon points="12 3 14.8 8.7 21 9.6 16.5 13.9 17.6 20 12 17 6.4 20 7.5 13.9 3 9.6 9.2 8.7"/></svg>
             Favorites
@@ -517,16 +516,14 @@ export default function VillasClient({ properties }: { properties: Property[] })
           </button>
         </div>
         <div className="mf-body">
-          {/* Bedrooms / Nightly Rate / Amenities — mobile-only (hidden on
-              desktop via CSS, .mf-mobile-only), reusing the exact same
-              filters.beds/price/pool/staff/featured state as their inline
-              desktop-only counterparts in the top bar. On a phone, showing
-              all 9 top-bar controls inline made the filter bar taller than
-              the first property card; moving these three into the drawer
-              (which already exists and already works well as a full-height
-              panel) keeps only Destination, Guests, Filters and Sort
-              visible up front, with everything else one tap away instead
-              of pushing all the actual results down the screen. */}
+          {/* Bedrooms / Nightly Rate — mobile-only (hidden on desktop via
+              CSS, .mf-mobile-only), reusing the exact same filters.beds/
+              price state as their inline desktop-only counterparts in the
+              top bar. On a phone, showing all the top-bar controls inline
+              made the filter bar taller than the first property card;
+              moving these into the drawer (which already exists and
+              already works well as a full-height panel) keeps only
+              Destination, Guests, Filters and Sort visible up front. */}
           <div className="mf-section mf-mobile-only">
             <div className="mf-section-title">Bedrooms</div>
             <div className="mf-type-chips">
@@ -560,7 +557,12 @@ export default function VillasClient({ properties }: { properties: Property[] })
             </div>
           </div>
 
-          <div className="mf-section mf-mobile-only">
+          {/* Amenities — NOT mobile-only. Pool and Staffed used to have
+              their own inline chips in the desktop bar; those were removed
+              (Francisco's call, too crowded alongside Destination, Guests,
+              Bedrooms, Nightly Rate and Favorites) so this drawer section
+              is now the only place to reach them, on every screen size. */}
+          <div className="mf-section">
             <div className="mf-section-title">Amenities</div>
             <label className="mf-check">
               <input type="checkbox" checked={filters.pool} onChange={() => setFilters((f) => ({ ...f, pool: !f.pool }))} />
@@ -571,11 +573,6 @@ export default function VillasClient({ properties }: { properties: Property[] })
               <input type="checkbox" checked={filters.staff} onChange={() => setFilters((f) => ({ ...f, staff: !f.staff }))} />
               <span>Fully staffed</span>{' '}
               <span className="opt-count">{cnt(countFor({ staff: true }))}</span>
-            </label>
-            <label className="mf-check">
-              <input type="checkbox" checked={filters.featured} onChange={() => setFilters((f) => ({ ...f, featured: !f.featured }))} />
-              <span>Favorites</span>{' '}
-              <span className="opt-count">{cnt(countFor({ featured: true }))}</span>
             </label>
           </div>
 

@@ -1108,7 +1108,6 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
 }
 .ff.is-open .ff-panel { display: block; }
 .ff-destination .ff-panel { min-width: 220px; }
-.ff-beds .ff-panel { min-width: 210px; }
 .ff-price .ff-panel { min-width: 240px; }
 .ff-opt {
   display: flex; align-items: center; justify-content: space-between;
@@ -1146,6 +1145,41 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
 .ff-chip-favorite { color: var(--gold); border-color: var(--sand); opacity: 1; }
 .ff-chip-favorite:hover { background: var(--cream); border-color: var(--ocean-mid); }
 .ff-chip-favorite.is-active { background: var(--deep-ocean); border-color: var(--deep-ocean); color: var(--text-on-dark); }
+/* Bedrooms stepper, integrated directly in the bar — no click-to-open
+   trigger/panel at all (Francisco's call: a dropdown just to reach a −/+
+   control was one tap too many). Matches .ff-trigger's bare look exactly
+   (no border/box) so it reads as a peer of Destination/Guests/Nightly
+   Rate — the other borderless triggers either side of it in the bar —
+   rather than the bordered .ff-chip toggles (Pool, Staffed, Favorites),
+   which are a visually distinct, secondary group. */
+.ff-beds-inline {
+  display: flex; align-items: center; gap: 7px; flex-shrink: 0;
+  padding: 8px 14px;
+  background: none; border-radius: 3px;
+  font-family: var(--font-inter), sans-serif; font-size: 11px;
+  font-weight: 500; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--charcoal); opacity: .65; transition: background .2s, opacity .2s;
+}
+.ff-beds-inline:hover { background: var(--cream); opacity: 1; }
+.ff-beds-inline.is-active { opacity: 1; color: var(--deep-ocean); }
+.fbi-label { white-space: nowrap; }
+.fbi-val {
+  font-family: var(--font-inter), sans-serif; font-size: 12px; font-weight: 400;
+  letter-spacing: normal; text-transform: none; color: var(--charcoal);
+  min-width: 14px; text-align: center;
+}
+.ff-beds-inline.is-active .fbi-val { color: var(--deep-ocean); font-weight: 600; }
+.fbi-btn {
+  width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
+  border: 1px solid var(--sand-dark); background: transparent;
+  color: var(--charcoal); font-size: 14px; line-height: 1;
+  font-family: var(--font-inter), sans-serif; font-weight: 300; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: border-color .18s, color .18s, background .18s;
+  touch-action: manipulation; user-select: none;
+}
+.fbi-btn:hover:not(:disabled) { border-color: var(--ocean-mid); color: var(--deep-ocean); background: var(--mist-light); }
+.fbi-btn:disabled { opacity: .25; cursor: default; }
 .ff-sort .ff-panel { left: auto; right: 0; }
 .fb-clear {
   display: none; align-items: center; gap: 5px;
@@ -1244,30 +1278,26 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
 .card-save-btn svg { width: 14px; height: 14px; stroke: var(--charcoal); fill: none; stroke-width: 1.8; transition: stroke .2s, fill .2s; }
 .card-save-btn.saved svg { stroke: #C8943A; fill: #C8943A; }
 
-/* Collection + location tags now share one bottom-left stack (Francisco's
-   call — a top-left collection tag read disconnected from the rest of the
-   card's bottom-anchored badges). This wrapper does the positioning; the
-   two tags inside are just flex children, not independently placed.
-   column-reverse pins the collection tag (first in the DOM) to the very
-   bottom, with the location tag stacking above it — and if only one tag
-   is present, it simply sits alone at the bottom corner. */
-.prop-badge-stack {
-  position: absolute; bottom: 14px; left: 14px; z-index: 2;
-  display: flex; flex-direction: column-reverse; align-items: flex-start; gap: 8px;
-}
-.prop-badge, .prop-loc-badge {
+.prop-badge {
+  position: absolute; top: 14px; left: 14px; z-index: 2;
   font-family: var(--font-inter), sans-serif; font-size: 9px; font-weight: 400;
   letter-spacing: .16em; text-transform: uppercase; color: var(--text-on-dark);
   background: rgba(30,58,80,.62); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255,255,255,.14); border-radius: 2px;
+  border: 1px solid rgba(255,255,255,.14); padding: 5px 10px; border-radius: 2px;
 }
-.prop-badge { padding: 5px 10px; }
 .prop-badge--gold { background: rgba(200,148,58,.85); border-color: rgba(255,255,255,.2); }
-.prop-loc-badge { padding: 5px 11px; }
-/* Deal badge (bottom-right) — the other open corner (top-right is the save
-   heart, bottom-left the collection/location tag stack). Gold, not navy,
-   so an active promotion reads as a distinct, attention-getting signal
-   rather than just another descriptive tag. */
+/* Location badge (bottom-left) — villas listing card shows this ALONGSIDE .prop-badge */
+.prop-loc-badge {
+  position: absolute; bottom: 14px; left: 14px; z-index: 2;
+  font-family: var(--font-inter), sans-serif; font-size: 9px; font-weight: 400;
+  letter-spacing: .16em; text-transform: uppercase; color: var(--text-on-dark);
+  background: rgba(30,58,80,.62); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,.14); padding: 5px 11px; border-radius: 2px;
+}
+/* Deal badge (bottom-right) — the one open corner (top-left is the
+   collection badge, bottom-left the location badge, top-right the save
+   heart). Gold, not navy, so an active promotion reads as a distinct,
+   attention-getting signal rather than just another descriptive tag. */
 .prop-deal-badge {
   position: absolute; bottom: 14px; right: 14px; z-index: 2;
   font-family: var(--font-inter), sans-serif; font-size: 9px; font-weight: 400;
@@ -1837,7 +1867,7 @@ body.on-saved-page .wa, body.on-saved-page .offer-badge { display: none; }
      desktop since those five stay inline there. That leaves just
      Destination, Guests, Filters and Sort in the compact bar itself: a
      clean, minimal 2x2 grid, four rows shorter than before. */
-  .ff-beds, .ff-price, .ff-chip { display: none; }
+  .ff-beds-inline, .ff-price, .ff-chip { display: none; }
   .fb-inner { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; padding: 10px 16px; }
   .ff-trigger {
     width: 100%; justify-content: space-between;
@@ -2417,8 +2447,14 @@ body.an-visible { --sidebar-top: 140px; }
   .g-cell:not(.g-main) { display: none; }
   .gallery-btns { right: 36px; }
   /* Same padding-compensation as above, recalculated for .gallery's
-     14px/24px mobile padding (12+24=36, 12+14=26). */
+     14px/24px mobile padding (12+24=36, 12+14=26). Missed .gallery-pills
+     in the first pass — it had the identical bug (stuck at left: 76px,
+     which is the correct desktop offset but far too deep on mobile, where
+     .gallery's padding is only 24px not 64px), so the "Exceptional Value"
+     pill sat well inside the photo instead of hugging its true left edge
+     the way Francisco wants. */
   .gallery-counter { top: 26px; right: 36px; }
+  .gallery-pills { left: 36px; }
   .detail-wrap, .similar { padding-left: 24px; padding-right: 24px; }
   .facts-grid { grid-template-columns: 1fr 1fr; }
   .bedroom-grid { grid-template-columns: 1fr; }
