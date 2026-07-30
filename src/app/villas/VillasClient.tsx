@@ -276,13 +276,23 @@ export default function VillasClient({ properties }: { properties: Property[] })
     }))
   }
 
-  // Same stepper pattern as guests — 0 reads as "Any", 8 is the top of the
-  // existing 0-8 range the old dropdown offered. Clears bedsMax on every
-  // step since that field is a deep-link-only range (?beds=2&bedsMax=4)
-  // with no UI control of its own; touching the stepper always means the
-  // person wants a plain "N+ bedrooms" filter again.
+  // Was hardcoded to 8 — that silently capped the filter below whatever the
+  // biggest actual property has (12 bedrooms today), so someone looking for
+  // a 9-12 bedroom estate could never select high enough. Now it reads the
+  // real ceiling straight from the data, so it's correct even as new,
+  // bigger (or smaller-maxed) properties get added later.
+  const maxBedrooms = useMemo(
+    () => properties.reduce((max, p) => Math.max(max, p.bedrooms || 0), 0),
+    [properties]
+  )
+
+  // Same stepper pattern as guests — 0 reads as "Any", maxBedrooms is the
+  // top of the range. Clears bedsMax on every step since that field is a
+  // deep-link-only range (?beds=2&bedsMax=4) with no UI control of its own;
+  // touching the stepper always means the person wants a plain "N+
+  // bedrooms" filter again.
   const bedsStep = (dir: 1 | -1) => {
-    setFilters((f) => ({ ...f, beds: Math.max(0, Math.min(8, f.beds + dir)), bedsMax: 0 }))
+    setFilters((f) => ({ ...f, beds: Math.max(0, Math.min(maxBedrooms, f.beds + dir)), bedsMax: 0 }))
   }
 
   const toggleView = (v: string) => {
@@ -426,7 +436,7 @@ export default function VillasClient({ properties }: { properties: Property[] })
             <span className="fbi-val">
               {filters.beds === 0 ? 'Any' : (filters.bedsMax ? `${filters.beds}-${filters.bedsMax}` : filters.beds)}
             </span>
-            <button className="fbi-btn" type="button" aria-label="More bedrooms" disabled={filters.beds === 8} onClick={() => bedsStep(1)}>+</button>
+            <button className="fbi-btn" type="button" aria-label="More bedrooms" disabled={filters.beds === maxBedrooms} onClick={() => bedsStep(1)}>+</button>
           </div>
 
           <div className="fb-sep" />
@@ -524,37 +534,39 @@ export default function VillasClient({ properties }: { properties: Property[] })
               moving these into the drawer (which already exists and
               already works well as a full-height panel) keeps only
               Destination, Guests, Filters and Sort visible up front. */}
+          {/* Same +/- stepper as the inline bar (Francisco's call — a grid
+              of 13 pills, one per bedroom count, was worse than the bar's
+              own control, not a simplification of it). Reuses fbi-btn/
+              fbi-val so it's visually identical, just laid out in its own
+              row instead of squeezed into the bar. */}
           <div className="mf-section mf-mobile-only">
             <div className="mf-section-title">Bedrooms</div>
-            <div className="mf-type-chips">
-              {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((v) => (
-                <button
-                  key={v}
-                  className={`mf-type-chip${filters.beds === v && !filters.bedsMax ? ' is-sel' : ''}`}
-                  onClick={() => setFilters((f) => ({ ...f, beds: v, bedsMax: 0 }))}
-                >
-                  {v === 0 ? 'Any' : `${v}+`} <span className="opt-count">{cnt(countFor({ beds: v, bedsMax: 0 }))}</span>
-                </button>
-              ))}
+            <div className="mf-stepper">
+              <button className="fbi-btn" type="button" aria-label="Fewer bedrooms" disabled={filters.beds === 0} onClick={() => bedsStep(-1)}>−</button>
+              <span className="fbi-val">
+                {filters.beds === 0 ? 'Any' : (filters.bedsMax ? `${filters.beds}-${filters.bedsMax}` : filters.beds)}
+              </span>
+              <button className="fbi-btn" type="button" aria-label="More bedrooms" disabled={filters.beds === maxBedrooms} onClick={() => bedsStep(1)}>+</button>
             </div>
           </div>
 
+          {/* A real dropdown, not pills (Francisco's call) — six price
+              bands read more naturally as one menu than as a row of
+              buttons that wrap across multiple lines. */}
           <div className="mf-section mf-mobile-only">
             <div className="mf-section-title">Nightly Rate</div>
-            <div className="mf-coll-chips">
-              {[
-                ['', 'Any'],
-                ['0-1000', 'Up to $1,000'],
-                ['1001-2500', '$1,001 – $2,500'],
-                ['2501-5000', '$2,501 – $5,000'],
-                ['5001-8000', '$5,001 – $8,000'],
-                ['8001+', '$8,001+'],
-              ].map(([v, l]) => (
-                <button key={v} className={`mf-coll-chip${filters.price === v ? ' is-sel' : ''}`} onClick={() => setFilters((f) => ({ ...f, price: v }))}>
-                  {l} <span className="opt-count">{cnt(countFor({ price: v }))}</span>
-                </button>
-              ))}
-            </div>
+            <select
+              className="mf-select"
+              value={filters.price}
+              onChange={(e) => setFilters((f) => ({ ...f, price: e.target.value }))}
+            >
+              <option value="">Any</option>
+              <option value="0-1000">Up to $1,000</option>
+              <option value="1001-2500">$1,001 – $2,500</option>
+              <option value="2501-5000">$2,501 – $5,000</option>
+              <option value="5001-8000">$5,001 – $8,000</option>
+              <option value="8001+">$8,001+</option>
+            </select>
           </div>
 
           {/* Amenities — NOT mobile-only. Pool and Staffed used to have
@@ -566,13 +578,11 @@ export default function VillasClient({ properties }: { properties: Property[] })
             <div className="mf-section-title">Amenities</div>
             <label className="mf-check">
               <input type="checkbox" checked={filters.pool} onChange={() => setFilters((f) => ({ ...f, pool: !f.pool }))} />
-              <span>Private pool</span>{' '}
-              <span className="opt-count">{cnt(countFor({ pool: true }))}</span>
+              <span>Private pool</span>
             </label>
             <label className="mf-check">
               <input type="checkbox" checked={filters.staff} onChange={() => setFilters((f) => ({ ...f, staff: !f.staff }))} />
-              <span>Fully staffed</span>{' '}
-              <span className="opt-count">{cnt(countFor({ staff: true }))}</span>
+              <span>Fully staffed</span>
             </label>
           </div>
 
@@ -581,7 +591,7 @@ export default function VillasClient({ properties }: { properties: Property[] })
             <div className="mf-type-chips">
               {[['', 'All'], ['villa', 'Villa'], ['condo', 'Condo'], ['estate', 'Estate']].map(([v, l]) => (
                 <button key={v} className={`mf-type-chip${filters.type === v ? ' is-sel' : ''}`} onClick={() => setFilters((f) => ({ ...f, type: v }))}>
-                  {l} <span className="opt-count">{cnt(countFor({ type: v }))}</span>
+                  {l}
                 </button>
               ))}
             </div>
@@ -592,7 +602,7 @@ export default function VillasClient({ properties }: { properties: Property[] })
             <div className="mf-coll-chips">
               {[['', 'All'], ['oceanfront', 'Oceanfront'], ['beachfront', 'Beachfront'], ['golf-course', 'Golf Course'], ['hillside', 'Hillside']].map(([v, l]) => (
                 <button key={v} className={`mf-coll-chip${filters.locationType === v ? ' is-sel' : ''}`} onClick={() => setFilters((f) => ({ ...f, locationType: v }))}>
-                  {l} <span className="opt-count">{cnt(countFor({ locationType: v }))}</span>
+                  {l}
                 </button>
               ))}
             </div>
@@ -603,10 +613,7 @@ export default function VillasClient({ properties }: { properties: Property[] })
             {[['ocean-view', 'Ocean View'], ['golf-course-view', 'Golf Course View']].map(([v, l]) => (
               <label className="mf-check" key={v}>
                 <input type="checkbox" checked={filters.views.includes(v)} onChange={() => toggleView(v)} />
-                <span>{l}</span>{' '}
-                <span className="opt-count">
-                  {cnt(countFor({ views: Array.from(new Set([...filters.views, v])) }))}
-                </span>
+                <span>{l}</span>
               </label>
             ))}
           </div>
@@ -616,7 +623,7 @@ export default function VillasClient({ properties }: { properties: Property[] })
             <div className="mf-coll-chips">
               {[['', 'All'], ...Object.entries(COLL_NAMES)].map(([v, l]) => (
                 <button key={v} className={`mf-coll-chip${filters.collection === v ? ' is-sel' : ''}`} onClick={() => setFilters((f) => ({ ...f, collection: v }))}>
-                  {l} <span className="opt-count">{cnt(countFor({ collection: v }))}</span>
+                  {l}
                 </button>
               ))}
             </div>
@@ -658,10 +665,7 @@ export default function VillasClient({ properties }: { properties: Property[] })
                             className={`mf-comm-opt${filters.community === c ? ' is-sel' : ''}`}
                             onClick={() => setFilters((f) => ({ ...f, community: f.community === c ? '' : c }))}
                           >
-                            {communityLabelFromSlug(c)}{' '}
-                            <span className="opt-count">
-                              {cnt(countFor({ community: c }))}
-                            </span>
+                            {communityLabelFromSlug(c)}
                           </div>
                         ))}
                       </div>

@@ -1536,11 +1536,14 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
 .mf-body { flex: 1; overflow-y: auto; }
 .mf-section { padding: 20px 24px 18px; border-bottom: 1px solid var(--sand); }
 .mf-section:last-child { border-bottom: none; }
-/* Bedrooms/Nightly Rate/Amenities sections — duplicates of controls that
-   stay inline in the desktop filter bar, added here only to make room in
-   the compact mobile bar (see the 720px breakpoint below, which switches
-   this back to visible). Hidden by default so desktop's drawer isn't
-   showing three sections it doesn't need alongside its own inline ones. */
+/* Bedrooms/Nightly Rate sections — duplicates of controls that stay inline
+   in the desktop filter bar, added here only to make room in the compact
+   mobile bar (see the 720px breakpoint below, which switches this back to
+   visible). Hidden by default so desktop's drawer isn't showing two
+   sections it doesn't need alongside its own inline ones. (Amenities used
+   to be part of this group too, but Pool/Staffed no longer have inline
+   chips anywhere, so that section is a normal always-visible .mf-section
+   now — see its own comment in VillasClient.tsx.) */
 .mf-mobile-only { display: none; }
 /* Bigger and bolder than the options grouped under it (10px/500) — a
    section heading should read as the top of the hierarchy, not a quiet
@@ -1560,7 +1563,30 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
 }
 .mf-type-chip:hover, .mf-coll-chip:hover { border-color: var(--ocean-mid); background: var(--mist-light); }
 .mf-type-chip.is-sel, .mf-coll-chip.is-sel { border-color: var(--deep-ocean); background: var(--deep-ocean); color: var(--text-on-dark); }
-.mf-coll-chip.is-sel .opt-count { color: rgba(239,246,251,.7); }
+/* Bedrooms stepper inside the drawer — same fbi-btn/fbi-val pieces as the
+   inline bar (Francisco's call: it should look like that control, not a
+   grid of pills), just sized up slightly since this row has a full section
+   to itself instead of fighting for space in the bar. */
+.mf-stepper { display: flex; align-items: center; gap: 14px; }
+.mf-stepper .fbi-btn { width: 32px; height: 32px; font-size: 16px; }
+.mf-stepper .fbi-val { font-size: 14px; min-width: 26px; }
+/* Nightly Rate as an actual dropdown (Francisco's call), not pills — a
+   plain native <select> rather than a custom open/close panel, since this
+   sits inside an already-scrolling drawer and a native control sidesteps
+   any positioning/overflow fuss a custom panel would need there. Custom
+   chevron replaces the browser default so it still reads as "this site's"
+   dropdown, matching the .ff-arrow chevron used everywhere else. */
+.mf-select {
+  width: 100%; padding: 12px 40px 12px 16px;
+  border: 1px solid var(--sand); border-radius: 2px; background-color: var(--white);
+  font-family: var(--font-inter), sans-serif; font-size: 12px; font-weight: 500;
+  letter-spacing: .04em; color: var(--charcoal); cursor: pointer;
+  appearance: none; -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234D4D4F' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 14px center; background-size: 12px;
+  transition: border-color .2s;
+}
+.mf-select:hover, .mf-select:focus { border-color: var(--ocean-mid); outline: none; }
 /* Community filter — one independent accordion row per destination, instead
    of a single dropdown that either mixes every destination's communities
    together or has to be disabled until a Destination is chosen elsewhere.
