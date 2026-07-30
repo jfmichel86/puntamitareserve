@@ -35,17 +35,14 @@ const localBusinessSchema = {
   geo: { '@type': 'GeoCoordinates', latitude: '20.7729', longitude: '-105.5395' },
   sameAs: ['https://www.instagram.com/luxuryrentalspuntamita/'],
   priceRange: '$$$',
-  // Google requires this summary alongside individual reviews below —
-  // without it, the star rating won't show up in search results even
-  // though the reviews themselves are present. Values reflect the 3
-  // real testimonials listed here (all 5-star); update reviewCount and
-  // ratingValue together if more reviews are added below.
-  aggregateRating: { '@type': 'AggregateRating', ratingValue: '5', reviewCount: '3' },
-  review: [
-    { '@type': 'Review', author: { '@type': 'Person', name: 'Joe N.' }, reviewRating: { '@type': 'Rating', ratingValue: '5', bestRating: '5' }, reviewBody: "Pictures of the villa don't begin to do it justice — beautiful, clean, and well-appointed." },
-    { '@type': 'Review', author: { '@type': 'Person', name: 'Kelsey M.' }, reviewRating: { '@type': 'Rating', ratingValue: '5', bestRating: '5' }, reviewBody: 'The house was spotless, beautifully updated, and it felt like our own luxury resort.' },
-    { '@type': 'Review', author: { '@type': 'Person', name: 'Joe F.' }, reviewRating: { '@type': 'Rating', ratingValue: '5', bestRating: '5' }, reviewBody: 'An incredible stay! The property is new and gorgeous and so wonderfully planned.' },
-  ],
+  // Deliberately no `review` / `aggregateRating` here. Google disqualifies
+  // (and can issue a manual action against) LocalBusiness/Organization
+  // structured data where the business collected and curated the reviews
+  // about itself on its own site — regardless of whether the reviews are
+  // genuine. The compliant path is a Google Business Profile, where guests
+  // leave reviews directly with Google, not through us. The testimonials
+  // still display normally on the page via the <Testimonials /> component
+  // below — they're just not marked up as schema.org review data.
 }
 
 export default function Home() {
