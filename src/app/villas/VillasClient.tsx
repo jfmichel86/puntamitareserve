@@ -144,6 +144,11 @@ export default function VillasClient({ properties }: { properties: Property[] })
   // destination gets its own small, self-contained list instead of one
   // combined list mixing every destination's communities together.
   const [openCommGroup, setOpenCommGroup] = useState<string | null>(null)
+  // Nightly Rate inside the drawer — its own open state, separate from the
+  // bar's openPanel, since this dropdown lives in a completely different
+  // part of the page (the drawer) with no shared positioning/outside-click
+  // logic to piggyback on.
+  const [mfPriceOpen, setMfPriceOpen] = useState(false)
   const filterBarRef = useRef<HTMLDivElement>(null)
 
   // Auto-loads the next batch as the "Show more properties" wrap scrolls
@@ -534,39 +539,65 @@ export default function VillasClient({ properties }: { properties: Property[] })
               moving these into the drawer (which already exists and
               already works well as a full-height panel) keeps only
               Destination, Guests, Filters and Sort visible up front. */}
-          {/* Same +/- stepper as the inline bar (Francisco's call — a grid
-              of 13 pills, one per bedroom count, was worse than the bar's
-              own control, not a simplification of it). Reuses fbi-btn/
-              fbi-val so it's visually identical, just laid out in its own
-              row instead of squeezed into the bar. */}
-          <div className="mf-section mf-mobile-only">
-            <div className="mf-section-title">Bedrooms</div>
-            <div className="mf-stepper">
-              <button className="fbi-btn" type="button" aria-label="Fewer bedrooms" disabled={filters.beds === 0} onClick={() => bedsStep(-1)}>−</button>
-              <span className="fbi-val">
-                {filters.beds === 0 ? 'Any' : (filters.bedsMax ? `${filters.beds}-${filters.bedsMax}` : filters.beds)}
-              </span>
-              <button className="fbi-btn" type="button" aria-label="More bedrooms" disabled={filters.beds === maxBedrooms} onClick={() => bedsStep(1)}>+</button>
+          {/* Bedrooms + Nightly Rate share one row (Francisco's call — best
+              use of the drawer's width, instead of two full-width rows for
+              two fairly compact controls). Splitting the row in half also
+              naturally fixes the Nightly Rate dropdown reading as "very
+              wide" — its trigger now only spans one column, matching
+              Bedrooms' width, and just the open panel is allowed to grow
+              wider than that column (see .mf-dd-wrap below) since a 2-line
+              price label squeezed into a half-width column would wrap
+              awkwardly otherwise. */}
+          <div className="mf-section mf-mobile-only mf-section-row">
+            <div className="mf-section-col">
+              <div className="mf-section-title">Bedrooms</div>
+              <div className="mf-stepper">
+                <button className="fbi-btn" type="button" aria-label="Fewer bedrooms" disabled={filters.beds === 0} onClick={() => bedsStep(-1)}>−</button>
+                <span className="fbi-val">
+                  {filters.beds === 0 ? 'Any' : (filters.bedsMax ? `${filters.beds}-${filters.bedsMax}` : filters.beds)}
+                </span>
+                <button className="fbi-btn" type="button" aria-label="More bedrooms" disabled={filters.beds === maxBedrooms} onClick={() => bedsStep(1)}>+</button>
+              </div>
             </div>
-          </div>
 
-          {/* A real dropdown, not pills (Francisco's call) — six price
-              bands read more naturally as one menu than as a row of
-              buttons that wrap across multiple lines. */}
-          <div className="mf-section mf-mobile-only">
-            <div className="mf-section-title">Nightly Rate</div>
-            <select
-              className="mf-select"
-              value={filters.price}
-              onChange={(e) => setFilters((f) => ({ ...f, price: e.target.value }))}
-            >
-              <option value="">Any</option>
-              <option value="0-1000">Up to $1,000</option>
-              <option value="1001-2500">$1,001 – $2,500</option>
-              <option value="2501-5000">$2,501 – $5,000</option>
-              <option value="5001-8000">$5,001 – $8,000</option>
-              <option value="8001+">$8,001+</option>
-            </select>
+            {/* A real dropdown, not pills (Francisco's call) — six price
+                bands read more naturally as one menu than as a row of
+                buttons that wrap across multiple lines. Built from the
+                site's own dropdown parts (.ct-dd-trigger/.ct-dd-panel/
+                .ct-dd-opt, the same ones the Contact page's Bedrooms/Budget
+                fields already use) rather than a native <select> — a native
+                select's open menu is rendered by the OS, not the browser,
+                so it can't be restyled at all and always looks like a plain
+                system control dropped into an otherwise fully custom
+                design. This version matches every other dropdown on the
+                site instead. */}
+            <div className="mf-section-col">
+              <div className="mf-section-title">Nightly Rate</div>
+              <div className="mf-dd-wrap">
+                <button className={`ct-dd-trigger${mfPriceOpen ? ' is-open' : ''}`} type="button" onClick={() => setMfPriceOpen((o) => !o)}>
+                  <span className="ct-dd-val">
+                    {{ '': 'Any', '0-1000': 'Up to $1,000', '1001-2500': '$1,001 – $2,500', '2501-5000': '$2,501 – $5,000', '5001-8000': '$5,001 – $8,000', '8001+': '$8,001+' }[filters.price]}
+                  </span>
+                  <svg className="ff-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9" /></svg>
+                </button>
+                {mfPriceOpen && (
+                  <div className="ct-dd-panel">
+                    {[
+                      ['', 'Any'],
+                      ['0-1000', 'Up to $1,000'],
+                      ['1001-2500', '$1,001 – $2,500'],
+                      ['2501-5000', '$2,501 – $5,000'],
+                      ['5001-8000', '$5,001 – $8,000'],
+                      ['8001+', '$8,001+'],
+                    ].map(([v, l]) => (
+                      <div key={v} className={`ct-dd-opt${filters.price === v ? ' is-sel' : ''}`} onClick={() => { setFilters((f) => ({ ...f, price: v })); setMfPriceOpen(false) }}>
+                        {l}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* Amenities — NOT mobile-only. Pool and Staffed used to have

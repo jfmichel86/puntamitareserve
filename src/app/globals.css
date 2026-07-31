@@ -1163,9 +1163,15 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
 .ff-beds-inline:hover { background: var(--cream); opacity: 1; }
 .ff-beds-inline.is-active { opacity: 1; color: var(--deep-ocean); }
 .fbi-label { white-space: nowrap; }
+/* Agreed — every other value shown in the bar (Guests' "3 guests",
+   Nightly Rate's "Up to $1,000", Destination's "Punta Mita") is really
+   just .ff-val text with no styling of its own, so it inherits its
+   trigger's 11px/500/.16em uppercase directly. "Any" sitting here in
+   plain sentence case was the odd one out; matching that same scale now
+   instead of its own smaller, non-uppercase treatment. */
 .fbi-val {
-  font-family: var(--font-inter), sans-serif; font-size: 12px; font-weight: 400;
-  letter-spacing: normal; text-transform: none; color: var(--charcoal);
+  font-family: var(--font-inter), sans-serif; font-size: 11px; font-weight: 500;
+  letter-spacing: .16em; text-transform: uppercase; color: var(--charcoal);
   min-width: 14px; text-align: center;
 }
 .ff-beds-inline.is-active .fbi-val { color: var(--deep-ocean); font-weight: 600; }
@@ -1545,6 +1551,21 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
    chips anywhere, so that section is a normal always-visible .mf-section
    now — see its own comment in VillasClient.tsx.) */
 .mf-mobile-only { display: none; }
+/* Bedrooms + Nightly Rate side by side (Francisco's call — best use of the
+   drawer's width; two fairly compact controls don't each need a full-width
+   row of their own). min-width: 0 lets the dropdown's width:100% trigger
+   actually shrink to its column instead of forcing the flex item wider.
+   No `display` here on purpose — this row is always .mf-mobile-only too,
+   so `display:none` above must stay in charge on desktop. Declaring
+   `display:flex` here as well was a real bug: same specificity as
+   `.mf-mobile-only`, and later in the file, so it silently won at every
+   width, keeping this row visible on desktop even though the bar right
+   above it already shows Bedrooms and Nightly Rate inline — the exact
+   "shows up in both places" duplicate Francisco flagged. The mobile
+   override further down (`.mf-mobile-only.mf-section-row`) is what
+   actually turns flex on, only once .mf-mobile-only itself is visible. */
+.mf-section-row { gap: 20px; }
+.mf-section-row .mf-section-col { flex: 1; min-width: 0; }
 /* Bigger and bolder than the options grouped under it (10px/500) — a
    section heading should read as the top of the hierarchy, not a quiet
    caption smaller than the very options it's introducing. */
@@ -1565,28 +1586,56 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
 .mf-type-chip.is-sel, .mf-coll-chip.is-sel { border-color: var(--deep-ocean); background: var(--deep-ocean); color: var(--text-on-dark); }
 /* Bedrooms stepper inside the drawer — same fbi-btn/fbi-val pieces as the
    inline bar (Francisco's call: it should look like that control, not a
-   grid of pills), just sized up slightly since this row has a full section
-   to itself instead of fighting for space in the bar. */
+   grid of pills). The buttons are sized up slightly since this row has a
+   full section to itself instead of fighting for space in the bar, but the
+   number stays at the same 10px/500/.12em option-scale every other option
+   in the drawer uses (chips, dropdown rows) — bumping it up on its own
+   made "3" read as a different, bigger kind of text than "VILLA" or "UP TO
+   $1,000" right next to it (Francisco's call). */
 .mf-stepper { display: flex; align-items: center; gap: 14px; }
 .mf-stepper .fbi-btn { width: 32px; height: 32px; font-size: 16px; }
-.mf-stepper .fbi-val { font-size: 14px; min-width: 26px; }
-/* Nightly Rate as an actual dropdown (Francisco's call), not pills — a
-   plain native <select> rather than a custom open/close panel, since this
-   sits inside an already-scrolling drawer and a native control sidesteps
-   any positioning/overflow fuss a custom panel would need there. Custom
-   chevron replaces the browser default so it still reads as "this site's"
-   dropdown, matching the .ff-arrow chevron used everywhere else. */
-.mf-select {
-  width: 100%; padding: 12px 40px 12px 16px;
-  border: 1px solid var(--sand); border-radius: 2px; background-color: var(--white);
-  font-family: var(--font-inter), sans-serif; font-size: 12px; font-weight: 500;
-  letter-spacing: .04em; color: var(--charcoal); cursor: pointer;
-  appearance: none; -webkit-appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234D4D4F' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
-  background-repeat: no-repeat; background-position: right 14px center; background-size: 12px;
-  transition: border-color .2s;
+.mf-stepper .fbi-val {
+  font-size: 10px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase;
+  min-width: 26px;
 }
-.mf-select:hover, .mf-select:focus { border-color: var(--ocean-mid); outline: none; }
+/* Nightly Rate as an actual dropdown (Francisco's call), not pills — built
+   from the site's own .ct-dd-trigger/.ct-dd-panel/.ct-dd-opt pieces (see
+   ContactForm.tsx's Bedrooms/Budget fields for the other place these get
+   used), not a native <select>. A native select's open menu is painted by
+   the operating system, not the page — no CSS reaches it — so it always
+   looks like a bare system control dropped into an otherwise fully custom
+   design. This wrapper just gives the reused .ct-dd-panel a positioning
+   parent, since .ct-field (its usual parent on the Contact page) isn't
+   present here. */
+.mf-dd-wrap { position: relative; }
+/* Match the Community dropdown's look (Francisco's call) — .ct-dd-trigger
+   is reused as-is from the Contact page, where it's a standalone control
+   filled with --cream and set at the bigger 11px/.16em trigger scale. In
+   this drawer it sits right next to Community's own accordion trigger
+   (.mf-comm-dest-trigger: no fill, thin border, 10px/.12em option scale,
+   the same scale every other option in this drawer uses), and the
+   difference was obvious side by side. Scoped here so the Contact page's
+   own dropdowns are untouched. */
+.mf-dd-wrap .ct-dd-trigger { background: none; border-color: var(--sand); }
+.mf-dd-wrap .ct-dd-trigger:hover, .mf-dd-wrap .ct-dd-trigger.is-open { background: none; border-color: var(--ocean-mid); }
+.mf-dd-wrap .ct-dd-val { font-size: 10px; font-weight: 500; letter-spacing: .12em; }
+/* Nightly Rate now shares its row with Bedrooms (see .mf-section-row
+   below), so its trigger is only about half the drawer's width — already
+   fixes the "very wide dropdown" complaint on its own, since the trigger
+   is what was reading as oversized. The open panel is still allowed to be
+   wider than that narrow trigger (240px vs. the ~150px column), the same
+   way the inline bar's own Guests/Nightly Rate panels are already wider
+   than their grid cell — a floating panel doesn't need to match its
+   trigger's width, it just needs to sit right next to it. Anchored to the
+   right edge (not the left, the default) since this is the right-hand
+   column — anchoring left would push it past the drawer's outer edge. */
+.mf-dd-wrap .ct-dd-panel { left: auto; right: 0; min-width: 240px; }
+/* Browser default focus outline (a plain blue ring) doesn't belong on a
+   site with its own fully custom visual language — swapped for the same
+   border-color change .is-open already uses, so focusing the trigger with
+   a keyboard reads as "this control is active," not "your browser is
+   selecting a form field." */
+.ct-dd-trigger:focus-visible { outline: none; border-color: var(--deep-ocean); }
 /* Community filter — one independent accordion row per destination, instead
    of a single dropdown that either mixes every destination's communities
    together or has to be disabled until a Destination is chosen elsewhere.
@@ -1912,6 +1961,14 @@ body.on-saved-page .wa, body.on-saved-page .offer-badge { display: none; }
      only in the drawer below this width, since that's the only place they
      show up on a phone; desktop keeps them inline instead, further up. */
   .mf-mobile-only { display: block; }
+  /* .mf-mobile-only and .mf-section-row both sit on the same element and
+     both set `display`, at equal specificity (one class each) — this rule
+     being later in the file made display:block quietly win over the
+     .mf-section-row rule further up, silently breaking the Bedrooms/
+     Nightly Rate side-by-side layout back into a stack every time the
+     screen narrowed enough for .mf-mobile-only to switch on. The extra
+     class here isn't decorative, it's what makes flex win instead. */
+  .mf-mobile-only.mf-section-row { display: flex; }
   .results-bar { padding: 14px 24px 0; }
   .properties-section { padding: 20px 24px 80px; } /* extra bottom for floating btn */
   .prop-grid { grid-template-columns: 1fr; gap: 20px; }

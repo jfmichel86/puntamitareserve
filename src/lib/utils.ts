@@ -158,7 +158,7 @@ export const COLL_LABELS: Record<string, string> = {
 export const COLL_NAMES: Record<string, string> = {
   'exceptional-value': 'Exceptional Value',
   'family-villas':     'Family Villas',
-  'oceanfront':        'Oceanfront Collection',
+  'oceanfront':        'Oceanfront',
 }
 
 export const VIEW_LABELS: Record<string, string> = {
