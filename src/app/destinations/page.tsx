@@ -1,16 +1,21 @@
 import type { Metadata } from 'next'
-import Link from 'next/link'
 import { client, urlFor } from '@/lib/sanity'
 import { DESTINATION_SHOWCASE_QUERY } from '@/lib/queries'
+import { destinationPriceRange, formatPriceRange } from '@/lib/utils'
+import DestinationsRegionalMap, { type RegionalMapDest } from '@/components/DestinationsRegionalMap'
 
 type HeroOnly = { heroImage?: { asset?: { _ref: string }; hotspot?: { x: number; y: number } } }
-type ShowcaseResult = { puntaMita: HeroOnly | null; puntaDeMita: HeroOnly | null; puertoVallarta: HeroOnly | null }
+type RateOnly = { priceOnRequest?: boolean; seasons?: { nightlyRate?: number; bedroomRates?: { nightlyRate?: number }[] }[] }
+type ShowcaseResult = {
+  puntaMita: HeroOnly | null; puntaDeMita: HeroOnly | null; puertoVallarta: HeroOnly | null
+  puntaMitaRates: RateOnly[]; puntaDeMitaRates: RateOnly[]; puertoVallartaRates: RateOnly[]
+}
 
 export async function generateMetadata(): Promise<Metadata> {
   const title = 'Destinations'
   const description = 'Punta Mita, the Punta de Mita area, and Puerto Vallarta — every Mexican Reserve destination, one local team.'
-  // Punta Mita is the flagship destination, so its photo (same one this
-  // page's own showcase row leads with) stands in for the group.
+  // Punta Mita is the flagship destination, so its photo stands in for the
+  // group in social share previews.
   const photos = await client.fetch<ShowcaseResult>(DESTINATION_SHOWCASE_QUERY)
   // Falls back to the sitewide default photo (set in layout.tsx) rather than
   // no image, on the unlikely chance Punta Mita has no hero photo set.
@@ -37,8 +42,12 @@ const DESTINATIONS = [
     href: '/destinations/punta-mita',
     name: 'Punta Mita',
     suffix: 'Inside the Gates',
-    description: 'Mexico’s most exclusive gated peninsula, home to the Four Seasons, St. Regis, and two Jack Nicklaus signature golf courses. Every villa here sits inside that same private gate, with the quiet beaches, security, and polish that come with it — not added on, built in.',
-    tags: ['Gated', 'Golf', 'Beachfront'],
+    // Short hook for the map's hover card — same line Destination.tsx uses
+    // on the homepage, so the two stay consistent.
+    hook: 'Where the Four Seasons, St. Regis, and two Jack Nicklaus courses share one private gate.',
+    // Private Beach Clubs and Dining are more distinctive/valuable to lead
+    // with here than the generic Gated/Beachfront — per Francisco's call.
+    tags: ['Golf', 'Private Beach Clubs', 'Dining'],
     fallback: 'linear-gradient(160deg,#1A6A8A 0%,#0E4A65 55%,#071E2A 100%)',
   },
   {
@@ -46,7 +55,7 @@ const DESTINATIONS = [
     href: '/destinations/punta-de-mita',
     name: 'Punta de Mita Area',
     suffix: undefined as string | undefined,
-    description: 'Just outside the gates, a laid-back village built around some of the Pacific coast’s best surf breaks. Expect open-air seafood, sunset sessions in the water, and a slower, barefoot pace minutes from the private peninsula.',
+    hook: 'Village life and surf breaks, just outside the gates.',
     tags: ['Village', 'Surf', 'Laid-back'],
     fallback: 'linear-gradient(160deg,#2A6040 0%,#163C28 55%,#081A12 100%)',
   },
@@ -55,7 +64,7 @@ const DESTINATIONS = [
     href: '/destinations/puerto-vallarta',
     name: 'Puerto Vallarta',
     suffix: undefined as string | undefined,
-    description: 'A historic beach city with cobblestone streets, a lively malecón, and a livelier pace than the peninsula’s quiet exclusivity. Restaurants, nightlife, and boutique shopping sit alongside beachfront living, minutes south by car or boat.',
+    hook: 'A historic beach city with a livelier pace, minutes south.',
     tags: ['City', 'Dining', 'Nightlife'],
     fallback: 'linear-gradient(160deg,#8A6A1A 0%,#5A4410 55%,#2A2008 100%)',
   },
@@ -64,57 +73,47 @@ const DESTINATIONS = [
 export default async function DestinationsIndexPage() {
   const photos = await client.fetch<ShowcaseResult>(DESTINATION_SHOWCASE_QUERY)
 
+  // Cheapest property's lowest season -> priciest property's highest
+  // season, across every published property in the destination (not just
+  // the one whose photo we show) — see destinationPriceRange in utils.ts.
+  const ratesByKey: Record<RegionalMapDest['key'], RateOnly[]> = {
+    puntaMita: photos.puntaMitaRates,
+    puntaDeMita: photos.puntaDeMitaRates,
+    puertoVallarta: photos.puertoVallartaRates,
+  }
+
+  // One real photo per destination (or its gradient fallback) — shown in
+  // the map's own destination-list panel now, so this is the only photo
+  // size this page needs.
+  const mapDests: RegionalMapDest[] = DESTINATIONS.map((d) => {
+    const doc = photos[d.key]
+    const bg = doc?.heroImage?.asset?._ref
+      ? `url('${urlFor(doc.heroImage!).width(900).height(600).quality(85).url()}')`
+      : d.fallback
+    const priceRange = formatPriceRange(destinationPriceRange(ratesByKey[d.key] || [])) ?? undefined
+    return { key: d.key, href: d.href, name: d.name, suffix: d.suffix, hook: d.hook, tags: d.tags, bg, priceRange }
+  })
+
   return (
     <>
+      {/* Plain .pg-header, same pattern every other simple page on the site
+          uses (villas, experiences, about, etc.) — the map below is the
+          page's real visual centerpiece now, so the header just needs to
+          introduce it in text, not carry its own graphic. */}
       <section className="pg-header">
         <p className="pg-eyebrow">Where We Operate</p>
         <h1 className="pg-title">Our <em>Destinations</em></h1>
-        <p className="pg-sub">Three destinations, one local team — every property is minutes from world-class beaches, golf, and dining.</p>
+        <p className="pg-sub">Three destinations, one local team — every property is minutes from world-class beaches, golf, and dining. Click the map to explore.</p>
       </section>
 
+      {/* Map (right) + destination list (left) in one split, 16:9 frame.
+          Clicking the pin reveals all three destinations at once, each
+          connected to its shape on the map by a thin line — this replaces
+          both the old hover-card popup AND the separate photo/copy grid
+          that used to sit below the map, since the list panel already
+          carries a photo, hook, and tags for every destination. */}
       <div className="destinations-index">
-        <div className="dest-feature-list">
-          {DESTINATIONS.map((d, i) => {
-            const doc = photos[d.key]
-            // .dest-feature-media renders at a 4:3 box (~620px wide max) — the
-            // old 1000x1000 square request didn't match that shape at all,
-            // under-supplying width and over-supplying height. Sized to the
-            // real ratio with retina headroom, plus an explicit quality.
-            const bg = doc?.heroImage?.asset?._ref
-              ? `url('${urlFor(doc.heroImage!).width(1400).height(1050).quality(88).url()}')`
-              : d.fallback
-
-            const media = (
-              <div className="dest-feature-media" key="media">
-                <div className="dest-feature-bg" style={{ background: bg, backgroundSize: 'cover', backgroundPosition: 'center' }} />
-              </div>
-            )
-
-            const content = (
-              <div className="dest-feature-content" key="content">
-                <span className="dest-feature-index">{String(i + 1).padStart(2, '0')}</span>
-                <h2 className="dest-feature-name">
-                  {d.name}
-                  {d.suffix && <span className="dest-card-name-suffix"> — {d.suffix}</span>}
-                </h2>
-                <p className="dest-feature-desc">{d.description}</p>
-                <div className="dest-feature-tags">
-                  {d.tags.map((tag) => <span key={tag} className="dest-feature-tag">{tag}</span>)}
-                </div>
-                <Link href={d.href} className="dest-feature-link">
-                  Explore {d.name}
-                  <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></svg>
-                </Link>
-              </div>
-            )
-
-            return (
-              <div className="dest-feature-row" key={d.key}>
-                {i % 2 === 0 ? <>{media}{content}</> : <>{content}{media}</>}
-              </div>
-            )
-          })}
-        </div>
+        <DestinationsRegionalMap destinations={mapDests} />
       </div>
     </>
   )

@@ -91,11 +91,37 @@ export const PROPERTY_SLUGS_QUERY = `
   *[_type == "property" && status == "published" && defined(slug.current)].slug.current
 `
 
-// Hero background photos (homepage): featured VILLAS only — no condos — so
+// Hero background photos (homepage): driven by the dedicated `homepageHero`
+// checkbox in Sanity, not `featured` — deliberately a smaller, more
+// selective set ("most outstanding," Francisco's words) than every Featured
+// property. Mixes across all destinations on purpose, since the homepage
+// represents the whole brand, not one place. Villas only (no condos), so
 // the very first image a visitor sees is the most aspirational thing we
 // rent, not our broadest inventory.
 export const HERO_PHOTOS_QUERY = `
+  *[_type == "property" && status == "published" && homepageHero == true && propertyType == "villa" && defined(heroImage)] | order(sortOrder asc, title asc) [0...4] {
+    heroImage
+  }
+`
+
+// Safety net for HERO_PHOTOS_QUERY above: `homepageHero` starts unchecked
+// on every property, so right after this field ships, that query returns
+// nothing and the homepage hero would show zero photos until Francisco
+// manually checks a few boxes in Sanity. The homepage falls back to this
+// (the old featured-based criteria) whenever the primary query is empty,
+// so there's no gap in between.
+export const HERO_PHOTOS_FALLBACK_QUERY = `
   *[_type == "property" && status == "published" && featured == true && propertyType == "villa" && defined(heroImage)] | order(sortOrder asc, title asc) [0...4] {
+    heroImage
+  }
+`
+
+// Destination-page hero photos: uses `featured` ("favorites"), not
+// `homepageHero` — a destination page's own hero is scoped to just that
+// destination's featured villas, not a random mix across every destination
+// on the site the way the homepage hero deliberately is.
+export const HERO_PHOTOS_BY_DESTINATION_QUERY = `
+  *[_type == "property" && status == "published" && featured == true && propertyType == "villa" && defined(heroImage) && locationLabel == $locationLabel] | order(sortOrder asc, title asc) [0...4] {
     heroImage
   }
 `
@@ -144,11 +170,25 @@ export const COLLECTION_PHOTOS_QUERY = `{
 }`
 
 // Homepage destination showcase: one representative photo per destination —
-// the same locationLabel values used by /destinations/[slug].
+// the same locationLabel values used by /destinations/[slug]. Deliberately
+// just the single best-ranked photo (not a second one to fill the
+// /destinations hero band too) — sort order has no idea which photos are
+// visually strong once blown up huge, and a second unreviewed photo picked
+// this way came back nearly all sky. Curating a second hero-worthy shot per
+// destination needs a human eye, not a query.
+// The "...Rates" entries below feed the /destinations map's per-destination
+// price range (cheapest property's lowest season -> priciest property's
+// highest season). Deliberately every published property regardless of
+// heroImage/featured — unlike the photo picks above, the range needs to be
+// comprehensive, not just the representative one. Only the two fields
+// destinationPriceRange() actually reads (see utils.ts) are fetched.
 export const DESTINATION_SHOWCASE_QUERY = `{
   "puntaMita": *[_type == "property" && status == "published" && locationLabel == "punta-mita" && defined(heroImage)] | order(featured desc, sortOrder asc, title asc) [0] { heroImage },
   "puntaDeMita": *[_type == "property" && status == "published" && locationLabel == "punta-de-mita-area" && defined(heroImage)] | order(featured desc, sortOrder asc, title asc) [0] { heroImage },
-  "puertoVallarta": *[_type == "property" && status == "published" && locationLabel == "puerto-vallarta" && defined(heroImage)] | order(featured desc, sortOrder asc, title asc) [0] { heroImage }
+  "puertoVallarta": *[_type == "property" && status == "published" && locationLabel == "puerto-vallarta" && defined(heroImage)] | order(featured desc, sortOrder asc, title asc) [0] { heroImage },
+  "puntaMitaRates": *[_type == "property" && status == "published" && locationLabel == "punta-mita"] { priceOnRequest, "seasons": seasons[]{ nightlyRate, "bedroomRates": bedroomRates[]{ nightlyRate } } },
+  "puntaDeMitaRates": *[_type == "property" && status == "published" && locationLabel == "punta-de-mita-area"] { priceOnRequest, "seasons": seasons[]{ nightlyRate, "bedroomRates": bedroomRates[]{ nightlyRate } } },
+  "puertoVallartaRates": *[_type == "property" && status == "published" && locationLabel == "puerto-vallarta"] { priceOnRequest, "seasons": seasons[]{ nightlyRate, "bedroomRates": bedroomRates[]{ nightlyRate } } }
 }`
 
 // Destination pages (/destinations/[slug]): every published property in a

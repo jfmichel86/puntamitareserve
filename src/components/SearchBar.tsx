@@ -46,7 +46,15 @@ function fmtShort(ds: string) {
   return new Date(y, m - 1, d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
-export default function SearchBar() {
+type SearchBarProps = {
+  // Pre-fills the Destination field (e.g. 'punta-mita') instead of leaving
+  // it blank — used on a destination page's own hero, where showing that
+  // destination already selected reads as "search within this place" rather
+  // than an empty, generic search bar. Value must match one of DEST_OPTS.
+  defaultDestination?: string
+}
+
+export default function SearchBar({ defaultDestination }: SearchBarProps = {}) {
   // Mobile only: the full 3-field bar is presented as a single compact
   // trigger pill over the hero photo, and only expands into a full-screen
   // sheet once tapped — desktop always shows the full inline bar and never
@@ -71,7 +79,7 @@ export default function SearchBar() {
 
   const [open, setOpen] = useState<Field>(null)
   const [guests, setGuests] = useState({ adults: 0, children: 0, infants: 0 })
-  const [destination, setDestination] = useState<string>('')
+  const [destination, setDestination] = useState<string>(defaultDestination || '')
   // "" is both the untouched starting value AND what "All Destinations"
   // sets it to, so the label below couldn't tell those two apart — picking
   // "All Destinations" looked like nothing had happened, since the trigger
@@ -79,7 +87,7 @@ export default function SearchBar() {
   // This flips true the moment the visitor makes ANY explicit choice in the
   // dropdown (including "All Destinations" itself), so a deliberate pick of
   // "search everywhere" reads back exactly like picking a specific place.
-  const [destinationTouched, setDestinationTouched] = useState(false)
+  const [destinationTouched, setDestinationTouched] = useState(!!defaultDestination)
   const [checkIn, setCheckIn] = useState<string | null>(null)
   const [checkOut, setCheckOut] = useState<string | null>(null)
   const [viewYear, setViewYear] = useState(new Date().getFullYear())

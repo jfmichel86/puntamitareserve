@@ -413,7 +413,14 @@ body {
    other filter trigger sitewide (.ff-trigger, .iq-dd-val, .ct-dd-val). */
 .sf-label { font-family: var(--font-inter), sans-serif; font-weight: 500; font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--charcoal); white-space: nowrap; line-height: 1; }
 .search-bar .sf-guests { flex: 1.4; }
-.search-bar .sf-destination { flex: 1.2; }
+/* min-width matters more than the flex ratio here: this field starts blank
+   on the homepage (so it was never tight there), but on a destination page
+   it's always pre-filled with that destination's name — some genuinely
+   long ("Punta de Mita Area") — and with no floor, it can get squeezed by
+   the other fields well below what the text needs, forcing the "PUNTA…"
+   ellipsis truncation regardless of flex share. 230px comfortably fits the
+   longest destination label on the site with room to spare. */
+.search-bar .sf-destination { flex: 1.2; min-width: 230px; }
 /* Matches .sf-label's typography exactly (uppercase, tracked, same size/
    weight) so a field doesn't change its whole look the moment you pick
    something — before and after should read as the same field, just with
@@ -706,9 +713,8 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
 .dest-showcase-hdr .s-title { color: var(--text-on-dark); }
 .dest-showcase-hdr .s-title em { color: var(--mist); }
 .dest-showcase-hdr .s-body { max-width: 480px; margin: 0 auto; color: rgba(239,246,251,.62); }
-.about-cta { display: inline-flex; align-items: center; gap: 9px; font-family: var(--font-inter), sans-serif; font-size: 10.5px; letter-spacing: .18em; text-transform: uppercase; color: var(--deep-ocean); text-decoration: none; margin-top: 40px; border-bottom: 1px solid var(--deep-ocean); padding-bottom: 6px; transition: gap .2s, opacity .2s; }
-.about-cta:hover { gap: 15px; opacity: .65; }
-.about-cta svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; }
+/* .about-cta removed — the About page's old "Talk to us" text link was
+   replaced by the .help-cta band at the end of the redesigned page. */
 .dest-grid {
   display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px;
   max-width: 1180px; width: 100%; margin: clamp(20px, 4vh, 48px) auto 0; position: relative; z-index: 1;
@@ -760,38 +766,190 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
    order/rtl) drives the left/right alternation: page.tsx swaps whether
    the photo or the text block renders first per row, and the grid just
    places whatever comes first into the left column. */
-.destinations-index { padding: 8px 64px 100px; }
-.dest-feature-list { display: flex; flex-direction: column; gap: 72px; max-width: 1180px; margin: 0 auto; }
-.dest-feature-row { display: grid; grid-template-columns: 1.1fr 1fr; gap: 56px; align-items: center; }
-.dest-feature-media { position: relative; aspect-ratio: 4/3; border-radius: 4px; overflow: hidden; }
-.dest-feature-bg { position: absolute; inset: 0; }
-.dest-feature-index {
-  display: block; font-family: var(--font-inter), sans-serif; font-size: 11px;
-  font-weight: 400; letter-spacing: .3em; color: var(--gold); margin-bottom: 12px;
+.destinations-index { padding: 40px 64px 76px; }
+
+/* ── Split destinations map (/destinations index) ──────────────────────────
+   Map right, destination list left, both inside one true 16:9 frame — a
+   real "screen" proportion rather than an arbitrary box. One <g> ("camera")
+   still scales/translates between two states: a wide view of Mexico with a
+   single pin, and a "zoomed" view of the 3 destinations near Puerto
+   Vallarta (see DestinationsRegionalMap.tsx for the shared projection
+   math). Clicking the pin reveals all three destinations in the list at
+   once, each linked to its shape on the map by a thin connector line
+   (.dest-split-connectors below) — replaces the old hover-only card popup
+   and the separate photo/copy grid that used to sit below the map. */
+.dest-split {
+  position: relative; display: grid; grid-template-columns: 1fr 1fr; align-items: stretch;
+  max-width: 1180px; margin: 0 auto; aspect-ratio: 16 / 9;
+  background: linear-gradient(160deg,#1A6A8A 0%,#0E4A65 55%,#071E2A 100%);
+  border-radius: 6px; overflow: hidden;
 }
-.dest-feature-name {
+/* justify-content: center used to handle vertical centering here, but a
+   pixel-measured screenshot proved it was consistently leaving ~45px more
+   empty space above the card stack than below — even after two rounds of
+   CSS-only attempts to fix the box sizing (height: 100%, min-height: 0,
+   both kept below since they're still correct/harmless). Rather than keep
+   guessing at the CSS cause, DestinationsRegionalMap.tsx now measures the
+   real padded content height and the real card-stack height after render
+   and sets an exact margin-top on .dest-split-cards — see centerCards()
+   there. justify-content is deliberately NOT centering anymore (flex
+   default / stretch-start), since the two would fight each other. */
+.dest-split-list { position: relative; height: 100%; min-height: 0; padding: 4% 6%; display: flex; flex-direction: column; }
+.dest-split-prompt {
+  /* margin: auto 0 (not justify-content on the parent, removed above) —
+     this is the one place on the page where centering a single flex item
+     by its own auto margins is fine, since there's no measured-bug
+     history here the way there is for the card stack. */
+  margin: auto 0; font-family: var(--font-cormorant), serif; font-style: italic; font-weight: 400;
+  font-size: 24px; color: rgba(239,246,251,.55); line-height: 1.5; max-width: 320px;
+}
+.dest-split-cards { display: flex; flex-direction: column; min-height: 0; }
+/* Rows deliberately generous — at only 3 destinations, a tighter row left
+   empty space top and bottom of the list within the taller 16:9 frame.
+   --dest-color (set per-card inline, see the component) both tints the
+   left accent bar and ties this row to its matching shape/connector line
+   on the map. */
+.dest-split-card {
+  display: flex; align-items: center; gap: 16px; padding: 14px 10px 14px 16px;
+  text-decoration: none; color: inherit; border-bottom: 0.5px solid rgba(255,255,255,.14);
+  border-left: 3px solid var(--dest-color, transparent);
+  transition: padding-left .2s ease, border-left-width .2s ease;
+}
+.dest-split-cards .dest-split-card:first-child { border-top: 0.5px solid rgba(255,255,255,.14); }
+.dest-split-card:hover, .dest-split-card.is-active { padding-left: 22px; border-left-width: 5px; }
+/* 3:2 — same real-estate-photography convention as .prop-photo-wrap and
+   .dest-map-preview-photo used to be. Pushed as large as the row can go
+   (250x167) before the remaining text column gets too narrow and the hook
+   copy starts wrapping tall enough to blow out the row height — the photo
+   is now clearly the dominant element of the card, with the row padding
+   trimmed to 14px to make room. */
+.dest-split-card-photo {
+  width: 250px; height: 167px; flex-shrink: 0; border-radius: 5px;
+  box-shadow: 0 6px 18px rgba(0,0,0,.35);
+}
+.dest-split-card-name {
   font-family: var(--font-cormorant), serif; font-style: italic; font-weight: 400;
-  font-size: 32px; color: var(--deep-ocean); line-height: 1.15; margin-bottom: 16px;
+  font-size: 24px; color: var(--text-on-dark); margin: 0 0 5px;
 }
-.dest-feature-name .dest-card-name-suffix { color: var(--charcoal-light); }
-.dest-feature-desc {
-  font-family: var(--font-inter), sans-serif; font-size: 14px; font-weight: 300;
-  color: var(--charcoal); line-height: 1.8; max-width: 440px; margin: 0 0 22px;
+.dest-split-card-price { margin: 0 0 8px; }
+.dest-split-card-price-main {
+  font-family: var(--font-cormorant), serif; font-weight: 500; font-size: 15px;
+  color: var(--gold); letter-spacing: .01em; margin: 0;
 }
-.dest-feature-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 26px; }
-.dest-feature-tag {
-  font-family: var(--font-inter), sans-serif; font-size: 10px; font-weight: 400;
-  letter-spacing: .1em; text-transform: uppercase; color: var(--charcoal);
-  background: var(--sand); padding: 5px 12px; border-radius: 3px;
+.dest-split-card-price-note {
+  font-family: var(--font-inter), sans-serif; font-weight: 300; font-style: italic;
+  font-size: 10px; color: rgba(239,246,251,.5); margin: 2px 0 0;
 }
-.dest-feature-link {
-  display: inline-flex; align-items: center; gap: 8px;
-  font-family: var(--font-inter), sans-serif; font-size: 10.5px; font-weight: 400;
-  letter-spacing: .16em; text-transform: uppercase; color: var(--gold);
-  text-decoration: none; transition: gap .2s;
+.dest-split-card-hook {
+  font-family: var(--font-inter), sans-serif; font-weight: 300; font-size: 13px;
+  color: rgba(239,246,251,.62); line-height: 1.6; margin: 0 0 10px; max-width: 360px;
 }
-.dest-feature-link:hover { gap: 13px; }
-.dest-feature-link svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2; }
+.dest-split-card-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.dest-split-card-tag {
+  font-family: var(--font-inter), sans-serif; font-size: 8.5px; font-weight: 400;
+  letter-spacing: .08em; text-transform: uppercase; color: rgba(239,246,251,.75);
+  background: rgba(255,255,255,.08); padding: 3.5px 8px; border-radius: 3px;
+}
+.dest-split-map { position: relative; height: 100%; min-height: 0; padding: 4% 4% 4% 0; }
+/* Overlay spanning the whole split (not just one panel) — a connector
+   line has to be drawn in a coordinate space shared by both the list and
+   the map. No viewBox on purpose: without one, an svg's internal units
+   default to matching its own rendered pixel size 1:1, which is exactly
+   what the getBoundingClientRect() math in the component assumes. Color
+   is set inline per-line (matches that destination's DEST_COLOR), not
+   here — a CSS color rule would win over the SVG presentation attribute
+   and flatten every line back to one color. */
+.dest-split-connectors { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 4; }
+.dest-split-connector-line {
+  fill: none; stroke-width: 1; stroke-dasharray: 3 4; opacity: .45;
+  transition: stroke-width .15s ease, opacity .15s ease;
+}
+.dest-split-connectors .is-active .dest-split-connector-line { stroke-width: 2; opacity: 1; }
+/* overflow: hidden (not the SVG default in every browser) so a
+   hover-grown shape or a dropped label position never bleeds messily past
+   the frame's own edge — it clips cleanly here instead of at the outer
+   .dest-split's overflow:hidden, which sits right at the panel boundary
+   with no rounded-corner buffer. */
+.dest-map-svg { display: block; width: 100%; height: 100%; overflow: hidden; }
+/* transform-origin: 0 0 matters — the translate/scale numbers in the
+   component are computed assuming the camera's origin is the svg's own
+   (0,0), not its bounding-box center (the CSS default). */
+.dest-map-camera { transform-origin: 0 0; transition: transform 1.3s cubic-bezier(.16,1,.3,1); }
+.dest-map-country { fill: none; stroke: #C8943A; stroke-width: 1.1; transition: opacity .5s ease; }
+.dest-map-region {
+  fill: rgba(184,200,216,.05); stroke: rgba(184,200,216,.4); stroke-width: 1;
+  transition: opacity .5s ease .35s;
+}
+/* Each zone is 2 overlapping paths now (see the component for the full
+   why): .dest-map-zone-hit is an invisible, NEVER-scaling copy that owns
+   all pointer/hover detection — for a narrow shape, scaling the thing the
+   browser is hit-testing could shrink it out from under the cursor
+   mid-hover, causing a mouseleave -> un-scale -> mouseenter -> rescale
+   flicker loop. Keeping the hit target's geometry stable removes that
+   loop entirely. It's given a bit of extra invisible stroke padding so
+   thin shapes (Punta de Mita Area, Puerto Vallarta) are easier to land
+   the cursor on in the first place. */
+.dest-map-zone-hit {
+  fill: transparent; stroke: transparent; stroke-width: 8px;
+  pointer-events: all;
+}
+/* The actual painted shape — color comes from --dest-color, set per-<a>
+   inline in the component (see DEST_COLORS), so each of the 3 shapes gets
+   its own identity color instead of all three sharing one gold.
+   pointer-events: none because .dest-map-zone-hit above already owns all
+   interaction — this path only exists to be looked at.
+
+   transform-box: view-box (not fill-box) + an explicit per-shape
+   transform-origin set inline in the component — fill-box + "center"
+   looked like it should grow the shape symmetrically in place, but
+   combined with vector-effect="non-scaling-stroke" it visibly didn't: the
+   grown shape rendered offset from the original outline instead of
+   growing over it, worst on Puerto Vallarta's long thin shape. view-box
+   uses the same coordinate system as the path's own `d` data, so the
+   pivot is a plain, unambiguous point instead of something the browser
+   has to derive from the rendered geometry. */
+.dest-map-zone-visible {
+  fill: var(--dest-color, #C8943A); fill-opacity: .22; stroke: var(--dest-color, #C8943A); stroke-width: 1.6;
+  transform-box: view-box;
+  pointer-events: none;
+  transition: fill-opacity .15s ease, stroke-width .15s ease, opacity .5s ease .35s, transform .3s cubic-bezier(.16,1,.3,1);
+}
+.dest-map-zone:hover .dest-map-zone-visible, .dest-map-zone:focus .dest-map-zone-visible, .dest-map-zone.is-active .dest-map-zone-visible {
+  fill-opacity: .42; stroke-width: 2.4; transform: scale(2);
+}
+/* Same reasoning as .dest-map-pin-group above — the fill/stroke change
+   on :focus (right above) is the real focus indicator here, already
+   scale-safe since it's drawn via the path itself. */
+.dest-map-zone { cursor: pointer; transition: opacity .5s ease .35s; outline: none; }
+.dest-map-dest-label {
+  font-family: var(--font-inter), sans-serif; letter-spacing: .06em;
+  fill: #F3D9A8; transition: opacity .5s ease .35s, transform .3s cubic-bezier(.16,1,.3,1);
+  transform-box: view-box;
+}
+.dest-map-zone:hover .dest-map-dest-label, .dest-map-zone:focus .dest-map-dest-label, .dest-map-zone.is-active .dest-map-dest-label {
+  transform: scale(1.35);
+}
+/* outline: none is deliberate — a default browser focus ring here would
+   get scaled up along with everything else in .dest-map-camera (up to
+   ~30x once zoomed), turning a thin 1-2px ring into a huge blue blob.
+   Keyboard focus is still visible: the pulse animation below already
+   draws attention to the pin, and clicking/pressing Enter still zooms in
+   either way. */
+.dest-map-pin-group { cursor: pointer; transition: opacity .4s ease; outline: none; }
+.dest-map-pin-ring { animation: destMapPinPulse 2.4s ease-in-out infinite; }
+@keyframes destMapPinPulse {
+  0%, 100% { opacity: .7; r: 9; }
+  50% { opacity: 0; r: 22; }
+}
+.dest-map-back {
+  position: absolute; top: 14px; left: 14px; z-index: 5;
+  background: #0E2A38; color: #F3D9A8; border: 0.5px solid rgba(243,217,168,.3);
+  border-radius: 6px; padding: 7px 14px; font-family: var(--font-inter), sans-serif;
+  font-size: 10px; letter-spacing: .1em; text-transform: uppercase; cursor: pointer;
+  opacity: 0; transform: translateY(-6px); pointer-events: none;
+  transition: opacity .3s ease .55s, transform .3s ease .55s;
+}
+.dest-map-back.is-visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
 
 /* ── Experiences Catalog (/experiences) ───────────────────────
    Every published experience across every destination, filterable by
@@ -913,21 +1071,131 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
 .t-date { opacity: .7; }
 .t-platform { font-family: var(--font-inter), sans-serif; font-size: 10px; font-weight: 500; letter-spacing: .06em; color: var(--charcoal-light); opacity: .55; text-transform: uppercase; margin-top: 5px; }
 
-/* ── About ────────────────────────────────────────────────── */
+/* ── About / "The Experience" page ───────────────────────────
+   Redesigned from a flat, all-text bio page into a photo-led "guest
+   journey" narrative — see #about-hero below for the new photo header
+   (was the flat .pg-header), .journey-* for the 4-stage sequence,
+   .journey-proof-* for the stats (kept, but reframed as evidence rather
+   than the whole page), .about-founder-* for the new personal-note
+   section, and the page closes with the shared .help-cta band instead
+   of the old small .about-cta text link. */
 #about { background: var(--cream); }
-.about-stats-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 1px; background: var(--sand); border-radius: 2px; overflow: hidden; margin-bottom: 64px; }
+
+/* Photo hero — same recipe as #dest-hero/#pg-header (own scoped ID per
+   this project's "shared classname, different pages" rule) so a future
+   tweak to the destination hero can't accidentally change this one. */
+#about-hero {
+  position: relative;
+  background: url('/images/about/hero.jpg') center/cover no-repeat;
+  min-height: 62vh;
+  display: flex; flex-direction: column; justify-content: flex-end;
+  padding: 140px 64px 64px;
+  overflow: hidden;
+}
+#about-hero::before {
+  content: ''; position: absolute; inset: 0; z-index: 0;
+  background: linear-gradient(108deg, rgba(10,24,32,.90) 0%, rgba(10,24,32,.70) 32%, rgba(10,24,32,.42) 62%, rgba(10,24,32,.20) 100%);
+  pointer-events: none;
+}
+#about-hero .pg-eyebrow { font-size: 10px; font-weight: 400; letter-spacing: .22em; margin: 0 0 16px; opacity: 1; animation: none; position: relative; z-index: 1; }
+#about-hero .pg-title { font-weight: 300; font-size: clamp(42px, 5.2vw, 68px); line-height: 1.08; letter-spacing: normal; color: var(--white); margin: 0 0 20px; animation: none; position: relative; z-index: 1; max-width: 780px; }
+#about-hero .pg-title em { font-style: italic; color: var(--mist); }
+#about-hero .pg-sub { font-size: 14px; color: rgba(255,255,255,.60); max-width: 480px; margin: 0; animation: none; position: relative; z-index: 1; }
+/* Scroll cue — the hero is tall enough that it's worth a quiet nudge to
+   keep scrolling, rather than assuming every visitor tries. */
+.hero-scroll-cue {
+  position: absolute; left: 50%; bottom: 28px; z-index: 1;
+  transform: translateX(-50%); opacity: .55;
+  animation: heroScrollBounce 2.2s ease-in-out infinite;
+}
+.hero-scroll-cue svg { width: 22px; height: 22px; stroke: var(--white); fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+@keyframes heroScrollBounce {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(8px); }
+}
+
+/* The Guest Journey — 4 alternating photo/text rows */
+.journey-wrap { padding: 100px 64px; max-width: 1360px; margin: 0 auto; }
+.journey-lead { text-align: center; max-width: 620px; margin: 0 auto 80px; }
+.journey-eyebrow { font-family: var(--font-inter), sans-serif; font-size: 9.5px; font-weight: 500; letter-spacing: .28em; text-transform: uppercase; color: var(--ocean); margin: 0 0 16px; }
+.journey-heading { font-family: var(--font-cormorant), serif; font-style: italic; font-weight: 400; font-size: clamp(28px, 3vw, 36px); color: var(--deep-ocean); margin: 0 0 14px; }
+.journey-sub { font-family: var(--font-inter), sans-serif; font-weight: 300; font-size: 13px; color: var(--charcoal-light); margin: 0; }
+
+.journey-stage { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; margin-bottom: 88px; }
+.journey-stage:last-child { margin-bottom: 0; }
+.journey-stage.is-reverse { direction: rtl; }
+.journey-stage.is-reverse > * { direction: ltr; }
+.journey-photo { position: relative; aspect-ratio: 4/3; border-radius: 2px; overflow: hidden; }
+/* Only "Upon Arrival" uses this — same source photo, taller box, so
+   next/image's object-fit:cover crops it differently. Breaks up the
+   sequence so it doesn't read as four identical template tiles. */
+.journey-photo--tall { aspect-ratio: 4/5; }
+/* Starts slightly zoomed in; .reveal's own IntersectionObserver adds .in to
+   the parent .journey-stage the moment it scrolls into view (see
+   ScrollReveal.tsx), which we also use here to settle the photo down to its
+   normal size — a slow "Ken Burns" style zoom-out, one-shot per stage. */
+/* next/image's `fill` prop applies its own position:absolute/inset:0 inline
+   style, so this class only needs to add the cover-fit + zoom treatment on
+   top of that. */
+.journey-photo-bg {
+  object-fit: cover; object-position: center;
+  transform: scale(1.12); transition: transform 1.4s cubic-bezier(.16,1,.3,1);
+}
+.journey-stage.in .journey-photo-bg { transform: scale(1); }
+.journey-text { position: relative; }
+/* Large outlined "watermark" numeral behind the stage label — a purely
+   typographic flourish so each stage has presence even before real photos
+   are in place. Hidden on mobile (see responsive block) since there isn't
+   room for it once the layout stacks to one column. */
+.journey-ghost-num {
+  position: absolute; top: -58px; left: -6px; z-index: 0;
+  font-family: var(--font-cormorant), serif; font-style: italic; font-weight: 400;
+  font-size: 176px; line-height: 1; color: transparent;
+  -webkit-text-stroke: 1px rgba(30,58,80,.11);
+  pointer-events: none; user-select: none;
+}
+.journey-num { position: relative; z-index: 1; display: block; font-family: var(--font-cormorant), serif; font-style: italic; font-size: 16px; color: var(--gold); letter-spacing: .08em; margin-bottom: 14px; }
+.journey-title { position: relative; z-index: 1; font-family: var(--font-cormorant), serif; font-weight: 400; font-size: 28px; color: var(--deep-ocean); margin: 0 0 14px; }
+.journey-desc { position: relative; z-index: 1; font-family: var(--font-inter), sans-serif; font-weight: 300; font-size: 13.5px; line-height: 1.75; color: var(--charcoal); max-width: 420px; margin: 0; }
+
+/* Proof — stats, now with a lead-in line. Sits between two photo-rich
+   sections, so a full-bleed, very soft tinted band (rather than flat
+   --cream) gives it a bit of its own visual weight instead of just
+   blending into the page background. */
+.journey-proof {
+  background: linear-gradient(180deg, rgba(30,58,80,.09) 0%, rgba(30,58,80,.05) 45%, transparent 100%);
+  padding: 72px 0 100px;
+}
+.journey-proof-inner { max-width: 1360px; margin: 0 auto; padding: 0 64px; }
+.journey-proof-lead { text-align: center; font-family: var(--font-cormorant), serif; font-style: italic; font-size: 21px; color: var(--charcoal); margin: 0 0 32px; }
+.about-stats-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 1px; background: var(--sand); border-radius: 2px; overflow: hidden; }
 .about-stat { background: var(--cream); padding: 36px 32px; display: flex; flex-direction: column; gap: 10px; align-items: center; text-align: center; }
+.stat-icon { width: 22px; height: 22px; stroke: var(--gold); fill: none; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; opacity: .85; margin-bottom: 2px; }
 .stat-number { font-family: var(--font-cormorant), serif; font-weight: 300; font-size: 52px; line-height: 1; color: var(--gold); letter-spacing: -.01em; display: flex; align-items: center; gap: 6px; }
 .stat-label { font-family: var(--font-inter), sans-serif; font-weight: 300; font-size: 12px; line-height: 1.55; color: var(--charcoal-light); }
-.about-body { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: start; }
-.about-text .s-body + .s-body { margin-top: 18px; }
-.svc-label { font-family: var(--font-inter), sans-serif; font-size: 9.5px; letter-spacing: .28em; text-transform: uppercase; color: var(--ocean); margin-bottom: 28px; }
-.svc-list { display: flex; flex-direction: column; gap: 0; }
-.svc-item { padding: 18px 0; border-bottom: 1px solid var(--sand); display: flex; flex-direction: column; gap: 5px; transition: padding-left .22s; }
-.svc-item:first-child { border-top: 1px solid var(--sand); }
-.svc-item:hover { padding-left: 8px; }
-.svc-name { font-family: var(--font-inter), sans-serif; font-size: 13px; font-weight: 400; color: var(--charcoal); letter-spacing: .02em; }
-.svc-desc { font-family: var(--font-inter), sans-serif; font-size: 12px; font-weight: 300; color: var(--charcoal-light); line-height: 1.60; }
+
+/* Bridge — quiet link deeper into the site before the closing CTA */
+.journey-bridge {
+  text-align: center; font-family: var(--font-inter), sans-serif; font-weight: 300;
+  font-size: 13px; color: var(--charcoal-light); padding: 0 24px 72px; margin: 0;
+}
+.journey-bridge-link {
+  color: var(--deep-ocean); font-weight: 500; text-decoration: underline;
+  text-underline-offset: 3px; transition: color .2s;
+}
+.journey-bridge-link:hover { color: var(--gold); }
+
+/* The People — personal note, one photo + one quote */
+.about-founder { display: grid; grid-template-columns: .8fr 1fr; gap: 64px; align-items: center; padding: 0 64px 100px; max-width: 1360px; margin: 0 auto; }
+.about-founder-photo { position: relative; aspect-ratio: 3/4; border-radius: 2px; overflow: hidden; }
+.about-founder-photo-placeholder {
+  display: flex; align-items: center; justify-content: center; text-align: center; padding: 28px;
+  background: var(--sand); color: var(--charcoal-light);
+  font-family: var(--font-inter), sans-serif; font-size: 11px; font-weight: 400;
+  letter-spacing: .06em; text-transform: uppercase; line-height: 1.6;
+}
+.about-founder-quote { font-family: var(--font-cormorant), serif; font-style: italic; font-weight: 300; font-size: 26px; line-height: 1.5; color: var(--deep-ocean); margin: 0 0 20px; }
+.about-founder-name { font-family: var(--font-inter), sans-serif; font-size: 11px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--charcoal-light); margin: 0; }
 
 /* ── Homepage responsive ──────────────────────────────────────
    Ported verbatim from index.html — none of this existed before,
@@ -941,9 +1209,6 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
   #destination { height: auto; display: block; }
   .dest-grid { grid-template-columns: 1fr 1fr; flex: none; max-height: none; }
   .dest-card { aspect-ratio: 3/4; height: auto; }
-  .dest-feature-row { grid-template-columns: 1fr; gap: 28px; }
-  .dest-feature-media { order: -1; aspect-ratio: 3/2; }
-  .dest-feature-desc { max-width: none; }
 }
 @media (max-width: 960px) {
   section { padding: 80px 40px; }
@@ -954,8 +1219,28 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
   .cc:first-child { grid-row: auto; aspect-ratio: 16/8; }
   .cc { aspect-ratio: 16/7; }
   .properties-grid { grid-template-columns: 1fr; gap: 16px; }
-  .about-body { grid-template-columns: 1fr; gap: 52px; }
   .about-stats-row { grid-template-columns: 1fr; }
+  /* The hero photo was composed for a wide landscape crop — plain wall on
+     the left for the text, the group of people on the right. On a narrow,
+     tall phone screen, background-size:cover's default center crop zooms
+     in on the middle of that photo, which lands on empty wall and cuts the
+     people out of frame. Shifting the focal point right keeps them
+     visible instead. */
+  #about-hero { padding: 110px 24px 56px; min-height: 52vh; background-position: 80% center; }
+  .journey-wrap { padding: 64px 24px; }
+  .journey-lead { margin-bottom: 48px; }
+  .journey-stage { grid-template-columns: 1fr; gap: 24px; margin-bottom: 56px; }
+  .journey-stage.is-reverse { direction: ltr; }
+  .journey-desc { max-width: none; }
+  .journey-ghost-num { display: none; }
+  /* Stacked to one column, a portrait crop just makes "Upon Arrival" a
+     tall block with lots of empty space above/below the people — revert
+     to the same 4:3 shape as the other three here. */
+  .journey-photo--tall { aspect-ratio: 4/3; }
+  .journey-proof { padding: 48px 0 64px; }
+  .journey-proof-inner { padding: 0 24px; }
+  .hero-scroll-cue { display: none; }
+  .about-founder { grid-template-columns: 1fr; gap: 32px; padding: 0 24px 64px; }
   .t-grid { grid-template-columns: 1fr; }
   .wbd-grid { grid-template-columns: 1fr; gap: 32px; }
   .wbd-item { border-left: none; padding: 32px 0 0; border-top: 1px solid rgba(200,148,58,.22); }
@@ -963,9 +1248,21 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
 }
 @media (max-width: 720px) {
   section { padding: 72px 24px; }
-  .destinations-index { padding: 8px 24px 80px; }
-  .dest-feature-list { gap: 48px; }
-  .dest-feature-name { font-size: 26px; }
+  .destinations-index { padding: 28px 24px 48px; }
+  /* Side-by-side doesn't survive a narrow screen — stack map above list
+     instead, and drop the connector lines rather than trying to draw them
+     across two rows that no longer sit in a shared visual frame. */
+  .dest-split { aspect-ratio: auto; grid-template-columns: 1fr; }
+  .dest-split-map { order: -1; aspect-ratio: 700 / 761.98; padding: 20px 20px 12px; }
+  .dest-split-list { padding: 4px 24px 28px; }
+  .dest-split-connectors { display: none; }
+  /* Desktop's 132x88 photo + generous row padding was sized for the extra
+     horizontal room a 50/50 split gives it — too wide once the list is
+     the only thing left at full mobile width. */
+  .dest-split-card { gap: 14px; padding: 18px 4px 18px 12px; }
+  .dest-split-card-photo { width: 92px; height: 62px; }
+  .dest-split-card-name { font-size: 20px; }
+  .dest-split-card-hook { max-width: none; }
   /* ── Compact mobile search: hero shows a single pill instead of the full
      bar; tapping it opens the same fields as a full-screen sheet so nothing
      about the booking logic changes, just how much room it gets. ── */
@@ -1056,6 +1353,11 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
    — meant to disambiguate, not to read as an equally-weighted second
    headline, so it's noticeably smaller and softer than the main title. */
 .pg-title-suffix { font-size: .42em; font-style: italic; color: var(--mist); letter-spacing: .01em; }
+/* Mirrors .pg-title-suffix but sits before the main word instead of after —
+   lets an H1 carry a longer, search-targeted phrase ("Luxury Villa Rentals
+   in Punta Mita") for Google without that phrase visually competing with
+   the one big word (e.g. "Punta Mita") a hero headline should read as. */
+.pg-title-prefix { display: block; font-size: .32em; font-style: italic; color: var(--mist); letter-spacing: .01em; line-height: 1.4; }
 .pg-sub {
   font-family: var(--font-inter), sans-serif; font-weight: 300;
   font-size: 13px; letter-spacing: .04em;
@@ -2912,56 +3214,15 @@ textarea.ct-input { resize: vertical; min-height: 88px; line-height: 1.65; }
 .sv-cmp-inner { padding-top: 0; }
 .sv-cmp-eyebrow { font-family: var(--font-inter), sans-serif; font-size: 10px; font-weight: 400; letter-spacing: .22em; text-transform: uppercase; color: var(--charcoal-light); margin: 0 0 10px; }
 .sv-cmp-inner .sec-title { margin-bottom: 28px; }
-/* Title/eyebrow sit on the left, the season picker bottom-aligns to them on
-   the right — the row itself carries the space down to the photos/table
-   that .sec-title normally provides on its own, since flex-aligning the two
-   sides means .sec-title can't keep its own margin without throwing them
-   out of alignment. */
-.sv-cmp-heading-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; flex-wrap: wrap; margin-bottom: 28px; }
+.sv-cmp-heading-row { margin-bottom: 28px; }
 .sv-cmp-heading-row .sec-title { margin-bottom: 0; }
 
-/* Custom season dropdown for the comparison table — mirrors the search
-   bar's field-trigger/panel/option look (.sf-trigger/.sf-panel/.sf-opt in
-   the Date picker section above) rather than reusing those classes, since
-   this control lives on a different page and styling it separately avoids
-   the two drifting into each other later (see the project's own "shared
-   classname, different pages" rule). */
-.sv-season-select { position: relative; }
-.sv-season-trigger {
-  display: flex; align-items: center; gap: 10px; background: var(--white);
-  border: 1.5px solid var(--sand-dark); border-radius: 6px; padding: 9px 16px;
-  cursor: pointer; transition: border-color .15s;
-}
-.sv-season-trigger:hover { border-color: var(--charcoal-light); }
-.sv-season-select.is-open .sv-season-trigger { border-color: var(--deep-ocean); }
-.sv-season-label {
-  font-family: var(--font-inter), sans-serif; font-size: 10px; font-weight: 500;
-  letter-spacing: .14em; text-transform: uppercase; color: var(--charcoal-light); white-space: nowrap;
-}
-.sv-season-val {
-  font-family: var(--font-inter), sans-serif; font-size: 11px; font-weight: 500; letter-spacing: .16em; text-transform: uppercase; color: var(--charcoal); white-space: nowrap;
-}
-.sv-season-chev {
-  width: 12px; height: 12px; stroke: var(--charcoal-light); fill: none; stroke-width: 1.8;
-  stroke-linecap: round; stroke-linejoin: round; transition: transform .25s cubic-bezier(.16,1,.3,1), stroke .18s;
-}
-.sv-season-select.is-open .sv-season-chev { transform: rotate(180deg); stroke: var(--deep-ocean); }
-.sv-season-panel {
-  position: absolute; top: 100%; right: 0; margin-top: 8px; min-width: 190px;
-  background: var(--white); border-radius: 0 0 8px 8px; overflow: hidden;
-  box-shadow: 0 20px 52px rgba(30,58,80,.16), 0 4px 14px rgba(30,58,80,.08);
-  border-top: 2px solid var(--gold); padding: 6px 0; z-index: 600;
-  animation: dropDown .20s cubic-bezier(.16,1,.3,1) both;
-}
-.sv-season-opt {
-  display: flex; align-items: center; justify-content: space-between; gap: 16px;
-  padding: 10px 16px; font-family: var(--font-inter), sans-serif; font-size: 10px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase;
-  color: var(--charcoal); cursor: pointer; transition: background .13s, color .13s; white-space: nowrap; user-select: none; touch-action: manipulation;
-}
-.sv-season-opt:hover { background: var(--cream); }
-.sv-season-opt.is-sel { color: var(--deep-ocean); font-weight: 700; }
-.sv-season-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gold); flex-shrink: 0; opacity: 0; transition: opacity .15s; }
-.sv-season-opt.is-sel .sv-season-dot { opacity: 1; }
+/* Season picker used to be a dropdown up here next to the headline — moved
+   to visible tabs sitting directly above the Nightly Rate row instead
+   (Francisco's call, after "users still can't tell they can select the
+   season rate" feedback: a closed dropdown far from the numbers it
+   affects wasn't earning its keep). See .sv-season-tabs-row below, inside
+   the comparison table itself. */
 .sv-cmp-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 /* table-layout: fixed makes every property column exactly as wide as its
    `width` below, always — without it, the browser's default "auto" layout
@@ -3005,6 +3266,23 @@ textarea.ct-input { resize: vertical; min-height: 88px; line-height: 1.65; }
 .sv-cmp-val .is-price strong { color: var(--gold); }
 .sv-cmp-val .is-yes { color: var(--gold); font-size: 17px; }
 .sv-cmp-val .is-no { color: rgba(30,58,80,.22); }
+/* Season tabs — sits as its own row directly above Nightly Rate, so the
+   control is physically next to the numbers it changes. The leading empty
+   cell keeps the tabs aligned under the property columns rather than
+   starting under the "Nightly Rate" label gutter; table-layout:fixed means
+   it still takes on that column's width without needing its own class.
+   flex-wrap (not a fixed grid) since availableSeasons can be anywhere from
+   2 to 6+ names (Low/High plus whichever holidays a property defines). */
+.sv-season-tabs-row td { padding: 16px 0 10px; border-top: 1px solid rgba(30,58,80,.07); }
+.sv-season-tabs { display: flex; flex-wrap: wrap; gap: 8px; }
+.sv-season-tab {
+  font-family: var(--font-inter), sans-serif; font-size: 10px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--charcoal); background: none; border: 1px solid var(--sand); border-radius: 3px;
+  padding: 8px 16px; cursor: pointer; transition: border-color .15s, background .15s, color .15s;
+  user-select: none; touch-action: manipulation;
+}
+.sv-season-tab:hover { border-color: var(--ocean-mid); background: var(--mist-light); }
+.sv-season-tab.is-sel { background: var(--deep-ocean); border-color: var(--deep-ocean); color: var(--text-on-dark); }
 @media (max-width: 768px) {
   #sv-compare { padding: 0 24px 60px; }
   .sv-cmp-lbl { width: 110px; min-width: 100px; }
@@ -3116,20 +3394,60 @@ textarea.ct-input { resize: vertical; min-height: 88px; line-height: 1.65; }
    the only genuinely new pieces. */
 #dest-hero {
   position: relative;
-  background-size: cover; background-position: center; background-repeat: no-repeat;
-  /* Matches .pg-header's rhythm exactly, so every dark/photo page-header
-     band on the site breathes the same amount top and bottom. */
-  padding: 140px 64px 48px;
+  /* Taller box than content alone needs, so cover crops far less of the
+     photo away — content still sits low, over the darker part of the
+     gradient, via a large viewport-relative top padding rather than flex.
+     (A flex column + justify-content:flex-end version of this caused the
+     search bar's destination field to mis-size and truncate — plain block
+     layout with padding doesn't have that risk, and this was the layout
+     confirmed working before.) */
+  min-height: 82vh;
+  padding: 44vh 64px 72px;
   overflow: visible;
 }
+/* z-index 1, above the rotating photos (.hero-photos, z-index 0, from
+   HeroBg) — the gradient needs to sit on top of whichever photo is
+   currently showing so the text stays legible through every crossfade,
+   not just the one photo that used to be hardcoded here as a background. */
 #dest-hero::before {
-  content: ''; position: absolute; inset: 0; z-index: 0;
+  content: ''; position: absolute; inset: 0; z-index: 1;
   background: linear-gradient(108deg, rgba(10,24,32,.88) 0%, rgba(10,24,32,.68) 32%, rgba(10,24,32,.42) 65%, rgba(10,24,32,.22) 100%);
   pointer-events: none;
 }
-#dest-hero .pg-eyebrow { font-size: 10px; font-weight: 400; letter-spacing: .22em; margin: 0 0 16px; opacity: 1; animation: none; position: relative; z-index: 1; }
-#dest-hero .pg-title { font-weight: 300; font-size: clamp(42px, 5.2vw, 64px); line-height: 1.08; letter-spacing: normal; color: var(--white); margin: 0 0 20px; animation: none; position: relative; z-index: 1; }
-#dest-hero .pg-sub { font-size: 13px; color: rgba(255,255,255,.55); max-width: 460px; margin: 0; animation: none; position: relative; z-index: 1; }
+/* z-index 2, above both the photos and the gradient above them. */
+#dest-hero .pg-eyebrow { font-size: 10px; font-weight: 400; letter-spacing: .22em; margin: 0 0 16px; opacity: 1; animation: none; position: relative; z-index: 2; }
+#dest-hero .pg-title { font-weight: 300; font-size: clamp(42px, 5.2vw, 64px); line-height: 1.08; letter-spacing: normal; color: var(--white); margin: 0 0 20px; animation: none; position: relative; z-index: 2; }
+#dest-hero .pg-sub { font-size: 13px; color: rgba(255,255,255,.55); max-width: 460px; margin: 0 0 36px; animation: none; position: relative; z-index: 2; }
+/* The search bar was dropped into this hero with no spacing of its own,
+   so it sat flush against .pg-sub above and the container's 48px bottom
+   padding left no real room below it either — fixed by giving .pg-sub a
+   bottom margin (above) and this hero more breathing room underneath. */
+/* Homepage's search bar renders at ~892px because .hero-content wraps it in
+   a 940px-max container with 24px padding — .search-bar's own 1080px
+   max-width never actually binds there. #dest-hero has no such wrapper, so
+   without this override the same component renders up to 1080px wide here
+   — visibly wider than on the homepage despite being identical markup.
+   892px matches the homepage's real rendered width exactly. */
+#dest-hero .search-bar { position: relative; z-index: 2; max-width: 892px; }
+/* .hero-trust's 42%-opacity color was tuned for the homepage's more evenly
+   dark hero — here it sits directly over whatever part of the photo is
+   behind it, which at the bottom of a tall hero is often a lighter area
+   with much less of the dark gradient overlay, so that same faint color
+   reads as barely legible. Brighter color + a text-shadow keeps it legible
+   regardless of what's in the photo underneath. margin-top matches the
+   36px used above the search bar instead of a tighter, inconsistent 20px. */
+#dest-hero .hero-trust {
+  /* Same 892px column and centering as .search-bar right above it, so the
+     two form one matching centered pair — same relationship as the
+     homepage's search bar + trust line, not left-aligned like the
+     headline text elsewhere in this hero. position/z-index added
+     explicitly (its siblings all have this, this was the one exception)
+     so it's guaranteed to stack above the gradient and photo layer rather
+     than relying on default static stacking behavior. */
+  position: relative; z-index: 2;
+  max-width: 892px; margin: 36px auto 0; text-align: center;
+  color: rgba(255,255,255,.75); text-shadow: 0 1px 6px rgba(0,0,0,.55);
+}
 
 .dest-wrap { max-width: 860px; margin: 0 auto; padding: 56px 24px 100px; }
 .dest-wrap .legal-intro { margin-bottom: 36px; }
@@ -3182,6 +3500,8 @@ textarea.ct-input { resize: vertical; min-height: 88px; line-height: 1.65; }
 .dest-numbers-grid { max-width: 812px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); }
 .dest-numbers-item { padding: 0 24px; border-left: 1px solid rgba(200,148,58,.3); }
 .dest-numbers-item:first-child { border-left: none; padding-left: 0; }
+.dest-numbers-icon { display: block; margin-bottom: 10px; }
+.dest-numbers-icon svg { width: 20px; height: 20px; stroke: var(--gold); fill: none; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; opacity: .85; }
 .dest-numbers-value { display: block; font-family: var(--font-cormorant), serif; font-weight: 300; font-size: 30px; color: var(--text-on-dark); }
 .dest-numbers-label { display: block; font-family: var(--font-inter), sans-serif; font-size: 11px; font-weight: 400; letter-spacing: .1em; text-transform: uppercase; color: var(--gold); margin-top: 6px; }
 .dest-numbers-sub { display: block; font-family: var(--font-inter), sans-serif; font-size: 11px; font-weight: 300; color: rgba(239,246,251,.5); margin-top: 4px; line-height: 1.5; }
@@ -3193,6 +3513,105 @@ textarea.ct-input { resize: vertical; min-height: 88px; line-height: 1.65; }
 .dest-find-card-title { font-family: var(--font-cormorant), serif; font-weight: 400; font-size: 17px; color: var(--deep-ocean); margin: 0 0 8px; }
 .dest-find-card-text { font-family: var(--font-inter), sans-serif; font-weight: 300; font-size: 12px; line-height: 1.65; color: var(--charcoal); margin: 0 0 12px; }
 .dest-find-card-communities { font-family: var(--font-cormorant), serif; font-style: italic; font-size: 12.5px; color: var(--charcoal-light); margin: 0; }
+
+/* Banner linking from the main Punta Mita page to the dedicated "Explore
+   the Communities" map page — sits between the Find Villa tiles and Where
+   to Stay. Dark band (matches .dest-cinematic-band's tone) so it reads as
+   a deliberate signpost, not another white content card. */
+.dest-comm-banner {
+  display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap;
+  background: var(--deep-ocean); border-radius: 2px; padding: 32px 36px; margin-bottom: 36px;
+  text-decoration: none; transition: transform .18s;
+}
+.dest-comm-banner:hover { transform: translateY(-1px); }
+.dest-comm-banner-eyebrow {
+  display: block; font-family: var(--font-inter), sans-serif; font-size: 9px; font-weight: 400;
+  letter-spacing: .28em; text-transform: uppercase; color: var(--gold); margin-bottom: 10px;
+}
+.dest-comm-banner-title { font-family: var(--font-cormorant), serif; font-weight: 400; font-size: 22px; color: var(--white); margin: 0 0 8px; line-height: 1.2; }
+.dest-comm-banner-sub { font-family: var(--font-inter), sans-serif; font-weight: 300; font-size: 12.5px; color: rgba(255,255,255,.62); margin: 0; max-width: 460px; }
+.dest-comm-banner-cta {
+  display: inline-flex; align-items: center; gap: 10px; flex-shrink: 0;
+  font-family: var(--font-inter), sans-serif; font-size: 11px; font-weight: 400; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--gold); border-bottom: 1px solid var(--gold); padding-bottom: 2px;
+}
+.dest-comm-banner-cta svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2; }
+@media (max-width: 700px) {
+  .dest-comm-banner { padding: 26px 24px; }
+}
+
+/* ── Explore the Communities page (Punta Mita) ───────────────────────
+   Interactive satellite map (CommunityMap.tsx, loads Leaflet from a CDN)
+   plus a plain-text fallback grid underneath — the grid isn't decorative,
+   it's what search engines and screen readers see, since neither can
+   interact with a JS-driven map. */
+.community-map-wrap { display: flex; flex-direction: column; gap: 16px; }
+.community-map {
+  width: 100%; aspect-ratio: 16 / 10; border-radius: 3px; overflow: hidden;
+  background: var(--sand); border: 1px solid var(--sand);
+}
+/* Leaflet needs real pixel dimensions on its own tile panes — this keeps
+   them filling the rounded container above instead of Leaflet's default
+   unstyled full-bleed look. */
+.community-map .leaflet-container { width: 100%; height: 100%; font-family: var(--font-inter), sans-serif; }
+.community-pin span {
+  display: block; width: 22px; height: 22px; border-radius: 50% 50% 50% 0;
+  background: var(--gold); border: 2px solid var(--white); transform: rotate(-45deg);
+  box-shadow: 0 1px 4px rgba(10,24,32,.35);
+}
+.community-map-card {
+  display: flex; gap: 16px; align-items: flex-start; background: var(--white);
+  border: 1px solid var(--sand); border-top: 2px solid var(--gold); border-radius: 0 0 2px 2px;
+  padding: 18px 22px;
+}
+.community-map-card-photo {
+  position: relative; flex: 0 0 140px; height: 96px; border-radius: 2px; overflow: hidden;
+  background: var(--sand); display: flex; align-items: center; justify-content: center; text-align: center;
+}
+.community-map-card-img { object-fit: cover; }
+.community-map-card-photo-label { font-family: var(--font-inter), sans-serif; font-size: 10.5px; color: var(--charcoal-light); padding: 0 10px; }
+.community-map-card-body { flex: 1; min-width: 0; }
+.community-map-card-name { font-family: var(--font-cormorant), serif; font-weight: 400; font-size: 18px; color: var(--deep-ocean); margin: 0 0 6px; }
+.community-map-card-desc { font-family: var(--font-inter), sans-serif; font-weight: 300; font-size: 12.5px; line-height: 1.7; color: var(--charcoal-light); margin: 0 0 10px; }
+.community-map-card-link {
+  display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-inter), sans-serif;
+  font-size: 11px; font-weight: 400; letter-spacing: .12em; text-transform: uppercase; color: var(--deep-ocean);
+  text-decoration: none; border-bottom: 1px solid var(--ocean); padding-bottom: 2px; transition: color .18s, border-color .18s;
+}
+.community-map-card-link:hover { color: var(--gold); border-color: var(--gold); }
+.community-map-card-link svg { width: 11px; height: 11px; stroke: currentColor; fill: none; stroke-width: 2; }
+@media (max-width: 600px) {
+  .community-map-card { flex-direction: column; }
+  .community-map-card-photo { width: 100%; flex-basis: auto; }
+}
+
+/* Calibrate mode (?calibrate=1) — a setup tool, not a visitor-facing
+   view. Deliberately plain/utilitarian rather than styled to match the
+   rest of the site, so it reads as "this is a tool" not "this is the
+   page." */
+.community-pin-tooltip {
+  background: rgba(10,24,32,.92); color: var(--white); border: none; border-radius: 2px;
+  font-family: var(--font-inter), sans-serif; font-size: 11px; padding: 3px 8px; box-shadow: none;
+}
+.community-pin-tooltip::before { display: none; }
+.community-map-calibrate {
+  background: var(--white); border: 1px dashed var(--charcoal-light); border-radius: 2px; padding: 16px 20px;
+}
+.community-map-calibrate-hint { font-family: var(--font-inter), sans-serif; font-size: 12.5px; color: var(--charcoal-light); margin: 0 0 10px; }
+.community-map-calibrate-code {
+  font-family: var(--font-mono, monospace); font-size: 11px; line-height: 1.6; color: var(--deep-ocean);
+  background: var(--cream); border-radius: 2px; padding: 12px 14px; overflow-x: auto; margin: 0 0 12px; white-space: pre;
+}
+.community-map-calibrate-copy {
+  font-family: var(--font-inter), sans-serif; font-size: 11px; font-weight: 400; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--deep-ocean); background: var(--sand); border: none; border-radius: 2px; padding: 8px 16px; cursor: pointer;
+}
+.community-map-calibrate-copy:hover { background: var(--gold); color: var(--white); }
+
+.comm-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+.comm-grid-card { background: var(--white); border: 1px solid var(--sand); border-radius: 2px; padding: 20px 22px; }
+.comm-grid-card-name { font-family: var(--font-cormorant), serif; font-weight: 400; font-size: 17px; color: var(--deep-ocean); margin: 0 0 8px; }
+.comm-grid-card-desc { font-family: var(--font-inter), sans-serif; font-weight: 300; font-size: 12px; line-height: 1.65; color: var(--charcoal); margin: 0 0 12px; }
 
 .dest-subgroup { margin-bottom: 28px; }
 .dest-subgroup:last-child { margin-bottom: 0; }
@@ -3206,11 +3625,20 @@ textarea.ct-input { resize: vertical; min-height: 88px; line-height: 1.65; }
 .dest-cinematic-stack { display: flex; flex-direction: column; gap: 12px; }
 .dest-cinematic-band {
   position: relative; height: 475px; border-radius: 2px; overflow: hidden;
-  background: var(--sand); background-size: cover; background-position: center;
+  background: var(--sand);
   display: flex; align-items: flex-end;
 }
+/* Photo is now a real next/image child (was a CSS background-image),
+   which means it's a normal stacking participant instead of always
+   painting behind everything automatically — the gradient below needs an
+   explicit z-index to stay above it, same reasoning as .journey-photo-bg
+   on the About page. Starts slightly zoomed in; .reveal's own
+   IntersectionObserver adds .in to this band the moment it scrolls into
+   view, which we reuse here to settle the photo down to size. */
+.dest-cinematic-img { object-fit: cover; transform: scale(1.12); transition: transform 1.4s cubic-bezier(.16,1,.3,1); }
+.dest-cinematic-band.in .dest-cinematic-img { transform: scale(1); }
 .dest-cinematic-band::before {
-  content: ''; position: absolute; inset: 0;
+  content: ''; position: absolute; inset: 0; z-index: 1;
   background: linear-gradient(0deg, rgba(30,58,80,.88) 0%, rgba(30,58,80,.35) 45%, rgba(30,58,80,0) 70%);
 }
 .dest-cinematic-photo-label {
@@ -3243,9 +3671,10 @@ textarea.ct-input { resize: vertical; min-height: 88px; line-height: 1.65; }
    before and after real photography goes in. */
 .dest-showcase-mosaic { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 4px; width: 100%; height: 100%; }
 .dest-showcase-mosaic-item {
-  background: var(--sand); background-size: cover; background-position: center;
+  position: relative; overflow: hidden; background: var(--sand);
   display: flex; align-items: center; justify-content: center;
 }
+.dest-showcase-mosaic-img { object-fit: cover; object-position: center; }
 .dest-showcase-mosaic-label { font-family: var(--font-inter), sans-serif; font-size: 11px; color: var(--charcoal-light); }
 .dest-showcase-body { padding: 26px 30px 30px; }
 .dest-showcase-vibe { font-family: var(--font-cormorant), serif; font-weight: 400; font-size: 21px; color: var(--deep-ocean); margin: 0 0 14px; }
@@ -3260,9 +3689,11 @@ textarea.ct-input { resize: vertical; min-height: 88px; line-height: 1.65; }
 
 .dest-photo-break {
   position: relative; margin: 0 calc(50% - 50vw) 48px; padding: 0 32px;
-  min-height: 425px; background: var(--ocean-mid); background-size: cover; background-position: center;
+  min-height: 425px; background: var(--ocean-mid); overflow: hidden;
   display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
 }
+.dest-photo-break-img { object-fit: cover; z-index: 0; transform: scale(1.12); transition: transform 1.4s cubic-bezier(.16,1,.3,1); }
+.dest-photo-break.in .dest-photo-break-img { transform: scale(1); }
 .dest-photo-break-label {
   position: absolute; top: 16px; right: 16px; background: rgba(255,255,255,.85); color: var(--deep-ocean);
   font-family: var(--font-inter), sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: .06em;
@@ -3291,7 +3722,11 @@ textarea.ct-input { resize: vertical; min-height: 88px; line-height: 1.65; }
 @media (max-width: 700px) {
   .dest-soon { padding: 120px 24px 100px; }
   .dest-soon-tagline { font-size: 17px; }
-  #dest-hero { padding: 132px 24px 40px; }
+  /* Shorter than desktop's 82vh on purpose — on a narrow, already-tall
+     mobile viewport, matching the desktop ratio would push the search bar
+     and everything after it below the fold before a visitor sees any real
+     content. */
+  #dest-hero { padding: 132px 24px 40px; min-height: 68vh; }
   /* Desktop's gradient goes dark-on-the-left, light-on-the-right — it works
      there because the text sits in a distinct left column next to open
      photo on the right. On one narrow mobile column there's no such split;

@@ -26,6 +26,7 @@ export type Property = {
   fullDescription?: unknown[]
   propertyType: 'condo' | 'villa' | 'estate'
   featured?: boolean
+  homepageHero?: boolean
   collection?: string[]
   locationLabel: 'punta-mita' | 'punta-de-mita-area' | 'puerto-vallarta'
   communityPuntaMita?: string
@@ -352,6 +353,46 @@ export function rateForSeason(p: Property, seasonName: string): number | null {
     if (br.nightlyRate) rates.push(br.nightlyRate)
   }
   return rates.length ? Math.min(...rates) : null
+}
+
+// Lighter shape than Property — just the two fields a price range needs
+// (see DESTINATION_SHOWCASE_QUERY), so callers don't have to fetch or fake
+// an entire Property object just to compute a range across many of them.
+type RateSource = {
+  priceOnRequest?: boolean
+  seasons?: { nightlyRate?: number; bedroomRates?: { nightlyRate?: number }[] }[]
+}
+
+/** Price range across every property in a destination — from the single
+ *  cheapest rate (lowest season, any property) to the single most expensive
+ *  rate (highest season, any property). Properties marked priceOnRequest
+ *  are skipped entirely, same reasoning as everywhere else priceOnRequest
+ *  is checked: there's no real number there to pull into either end of the
+ *  range. Returns null if nothing priced turned up at all. */
+export function destinationPriceRange(properties: RateSource[]): { min: number; max: number } | null {
+  const rates: number[] = []
+  for (const p of properties) {
+    if (p.priceOnRequest) continue
+    for (const s of p.seasons || []) {
+      if (s.nightlyRate) rates.push(s.nightlyRate)
+      for (const br of s.bedroomRates || []) {
+        if (br.nightlyRate) rates.push(br.nightlyRate)
+      }
+    }
+  }
+  if (!rates.length) return null
+  return { min: Math.min(...rates), max: Math.max(...rates) }
+}
+
+/** "From $700 to $4,200 / night", or just "From $700 / night" in the edge
+ *  case where every property in the destination happens to share the exact
+ *  same single rate (a real range would otherwise read as a redundant
+ *  "From $700 to $700"). No "Villas"/"Properties" noun here on purpose —
+ *  the caller pairs this with its own "(Depending on the season)" note. */
+export function formatPriceRange(range: { min: number; max: number } | null): string | null {
+  if (!range) return null
+  if (range.min === range.max) return `From ${formatPrice(range.min)} / night`
+  return `From ${formatPrice(range.min)} to ${formatPrice(range.max)} / night`
 }
 
 /** Format price as $1,800. Guards against a missing rate (a season entered in

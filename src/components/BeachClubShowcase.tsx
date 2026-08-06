@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 
 type ClubItem = {
   title: string
@@ -48,13 +49,18 @@ export default function BeachClubShowcase({ items }: { items: ClubItem[] }) {
             {[0, 1, 2, 3].map((i) => {
               const src = club.images?.[i]
               return (
-                <div
-                  key={i}
-                  className="dest-showcase-mosaic-item"
-                  style={src ? { backgroundImage: `url('${src}')` } : undefined}
-                  {...(src ? { role: 'img', 'aria-label': `${club.title} — photo ${i + 1}` } : {})}
-                >
-                  {!src && <span className="dest-showcase-mosaic-label">Photo placeholder</span>}
+                <div key={i} className="dest-showcase-mosaic-item">
+                  {src ? (
+                    <Image
+                      src={src}
+                      alt={`${club.title} — photo ${i + 1}`}
+                      fill
+                      sizes="(max-width: 700px) 50vw, 25vw"
+                      className="dest-showcase-mosaic-img"
+                    />
+                  ) : (
+                    <span className="dest-showcase-mosaic-label">Photo placeholder</span>
+                  )}
                 </div>
               )
             })}

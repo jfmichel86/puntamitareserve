@@ -16,6 +16,32 @@ const CONTACT_EMAIL = 'rentals@mexicanreserve.com'
 // after these, since there's no fixed place for it in the calendar year.
 const SEASON_ORDER = ['Low Season', 'High Season', 'Thanksgiving', 'Easter', 'Christmas', 'New Year']
 
+// Seasons some properties don't price separately — "Sept & Oct" is a
+// special discount a handful of villas offer on what's otherwise ordinary
+// Low Season, "Spring Break" is a premium a handful charge on top of
+// ordinary High Season, and Easter (pre-loaded on every property, but not
+// every owner sets a rate for it) is priced as part of High Season when
+// left blank. None of these are a real separate rate for a property that
+// doesn't set one, so comparing rates for one of these tabs shouldn't show
+// "—" for every property that just prices it as part of the regular
+// season — it should fall back to the standard season those dates
+// actually belong to. Relies on the season being named exactly this in
+// Sanity (per the schema's own example text for the custom ones); a
+// differently-worded custom season on some other property won't match and
+// won't fall back.
+const SEASON_FALLBACK: Record<string, string> = {
+  'Sept & Oct': 'Low Season',
+  'Spring Break': 'High Season',
+  'Easter': 'High Season',
+}
+
+function rateForSeasonOrFallback(p: Property, seasonName: string): number | null {
+  const rate = rateForSeason(p, seasonName)
+  if (rate !== null) return rate
+  const fallback = SEASON_FALLBACK[seasonName]
+  return fallback ? rateForSeason(p, fallback) : null
+}
+
 const VIEW_KEYS_C: Record<string, string> = {
   'ocean-view': 'Ocean View',
   'golf-course-view': 'Golf Course View',
@@ -156,20 +182,6 @@ export default function SavedClient({ properties }: { properties: Property[] }) 
   if (availableSeasons.length > 0 && !availableSeasons.includes(selectedSeason)) {
     setSelectedSeason(availableSeasons[0])
   }
-
-  // Custom season dropdown (styled to match the site instead of a bare
-  // native <select>) — same click-outside-to-close pattern Nav.tsx uses for
-  // its Properties/Destinations menus.
-  const [seasonOpen, setSeasonOpen] = useState(false)
-  const seasonRef = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    if (!seasonOpen) return
-    const handleClickOutside = (e: MouseEvent) => {
-      if (seasonRef.current && !seasonRef.current.contains(e.target as Node)) setSeasonOpen(false)
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [seasonOpen])
 
   // Same unsave mechanism PropertyCard's heart button uses (remove the
   // localStorage flag, fire the shared 'saved-changed' event) — the
@@ -458,7 +470,7 @@ export default function SavedClient({ properties }: { properties: Property[] }) 
       // Quotes whichever season is selected in the comparison table above,
       // not always the Low Season floor — so the email matches what was
       // actually being compared when this button was clicked.
-      const rate = rateForSeason(p, selectedSeason)
+      const rate = rateForSeasonOrFallback(p, selectedSeason)
       body += `• ${p.title} — ${p.bedrooms} ${p.bedrooms === 1 ? 'bedroom' : 'bedrooms'}`
       if (rate) body += `, from ${formatPrice(rate)}/night`
       body += '\n'
@@ -594,29 +606,6 @@ export default function SavedClient({ properties }: { properties: Property[] }) 
                 <p className="sv-cmp-eyebrow">Comparison</p>
                 <h2 className="sec-title">See your wishlist side by side</h2>
               </div>
-              {availableSeasons.length > 1 && (
-                <div className={`sv-season-select${seasonOpen ? ' is-open' : ''}`} ref={seasonRef}>
-                  <button type="button" className="sv-season-trigger" onClick={() => setSeasonOpen((o) => !o)}>
-                    <span className="sv-season-label">Rate shown for</span>
-                    <span className="sv-season-val">{selectedSeason}</span>
-                    <svg className="sv-season-chev" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9" /></svg>
-                  </button>
-                  {seasonOpen && (
-                    <div className="sv-season-panel">
-                      {availableSeasons.map((s) => (
-                        <div
-                          key={s}
-                          className={`sv-season-opt${s === selectedSeason ? ' is-sel' : ''}`}
-                          onClick={() => { setSelectedSeason(s); setSeasonOpen(false) }}
-                        >
-                          {s}
-                          <span className="sv-season-dot" />
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
             <div className="sv-cmp-scroll">
               <table className="sv-cmp-table">
@@ -652,10 +641,36 @@ export default function SavedClient({ properties }: { properties: Property[] }) 
                   </tr>
                 </thead>
                 <tbody>
+                  {/* Season picker moved from a dropdown up by the headline
+                      (easy to miss, far from the numbers it affects — see
+                      the "still can't tell it's clickable" feedback) to
+                      visible tabs directly above the row they control.
+                      Every available season shows at once — 2 or 6, they
+                      wrap instead of hiding options behind a click, and
+                      there's no ambiguity about whether this is interactive. */}
+                  {availableSeasons.length > 1 && (
+                    <tr className="sv-season-tabs-row">
+                      <td></td>
+                      <td colSpan={orderedProps.length}>
+                        <div className="sv-season-tabs">
+                          {availableSeasons.map((s) => (
+                            <button
+                              key={s}
+                              type="button"
+                              className={`sv-season-tab${s === selectedSeason ? ' is-sel' : ''}`}
+                              onClick={() => setSelectedSeason(s)}
+                            >
+                              {s}
+                            </button>
+                          ))}
+                        </div>
+                      </td>
+                    </tr>
+                  )}
                   <tr>
                     <td className="sv-cmp-lbl">Nightly rate</td>
                     {orderedProps.map((p) => {
-                      const r = rateForSeason(p, selectedSeason)
+                      const r = rateForSeasonOrFallback(p, selectedSeason)
                       return <td className="sv-cmp-val" key={p.slug}>{r ? <span className="is-price">From <strong>{formatPrice(r)}</strong>&thinsp;/&thinsp;night</span> : no()}</td>
                     })}
                   </tr>

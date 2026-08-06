@@ -1,12 +1,15 @@
 import type { Metadata } from 'next'
+import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { client, urlFor } from '@/lib/sanity'
-import { PROPERTIES_BY_DESTINATION_QUERY, ACTIVITIES_BY_DESTINATION_QUERY } from '@/lib/queries'
+import { PROPERTIES_BY_DESTINATION_QUERY, ACTIVITIES_BY_DESTINATION_QUERY, HERO_PHOTOS_BY_DESTINATION_QUERY } from '@/lib/queries'
 import { Property, communityLabel, startingRate, Activity, LOCATION_LABEL_BY_SLUG } from '@/lib/utils'
 import PropertyCard from '@/components/PropertyCard'
 import BeachClubShowcase from '@/components/BeachClubShowcase'
 import ExperienceCard from '@/components/ExperienceCard'
+import SearchBar from '@/components/SearchBar'
+import HeroBg from '@/components/HeroBg'
 
 export const revalidate = 60
 
@@ -22,6 +25,16 @@ type Destination = {
   // into the many places `title` gets embedded in a sentence ("Properties
   // in Punta Mita", "Why Punta Mita") where it would read awkwardly repeated.
   titleSuffix?: string
+  // SEO-only overrides. `title` stays the short place name because it gets
+  // reused in plain sentences all over this page ("Why Punta Mita", "Ready
+  // to experience Punta Mita?") where a long keyword phrase would read
+  // broken. heroTitlePrefix renders small, right before the big `title` in
+  // the H1 (mirrors titleSuffix, which renders small right after it) — the
+  // full search-targeted phrase is still in the H1's text for Google, it
+  // just doesn't visually compete with the one big word a hero headline
+  // should read as. metaTitle carries the same phrase into the <title> tag.
+  heroTitlePrefix?: string
+  metaTitle?: string
   heroSub: string
   // "redesigned" pages use the newer template below (Why statement + dark
   // In Numbers band) instead of the older paragraph/fact-card layout.
@@ -82,6 +95,12 @@ type Destination = {
   // "sits inside the gates" is only true for Punta Mita, so every
   // redesigned page sets its own.
   findVillaIntro?: string
+  // Only set for Punta Mita: links a banner (rendered right after the Find
+  // Villa tiles) to the dedicated "Explore the Communities" page. Left
+  // unset for Punta de Mita/Puerto Vallarta since neither has that page
+  // (or the community-based property data) yet — the banner just doesn't
+  // render for them.
+  communitiesHref?: string
   // Only used by non-redesigned pages' fallback "Experiences" section.
   // Redesigned pages keep everything scoped to the destination itself
   // (see insideGroups) — regional/other-destination content belongs on
@@ -104,19 +123,43 @@ type Destination = {
   comingSoon?: boolean
 }
 
+// Small gold line-icons for the dark "In Numbers" facts band, keyed by
+// fact label — matches the icon treatment on the About page's stats row.
+// Only labels in this map get an icon; any future destination's fact with
+// a label not listed here (e.g. a custom stat for a new region) simply
+// renders without one rather than showing a generic placeholder icon.
+const FACT_ICONS: Record<string, React.ReactNode> = {
+  'Getting Here': (
+    <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>
+  ),
+  'Best Time to Visit': (
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5" /><path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1l2.1-2.1M17 7l2.1-2.1" /></svg>
+  ),
+  'Whale Season': (
+    <svg viewBox="0 0 24 24"><path d="M2 12c2-3 4-3 6 0s4 3 6 0 4-3 6 0" /><path d="M2 17c2-3 4-3 6 0s4 3 6 0 4-3 6 0" /></svg>
+  ),
+}
+
 const DESTINATIONS: Record<string, Destination> = {
   'punta-mita': {
     slug: 'punta-mita',
     eyebrow: 'Riviera Nayarit, Mexico',
     title: 'Punta Mita',
     titleSuffix: 'Inside the Gates',
-    heroSub: 'A private, guard-gated peninsula on Mexico’s Pacific coast — golf, beaches, and every villa in this collection sits inside the gates.',
+    // Nearly all current inventory is Punta Mita, and this is the page that
+    // should own the "luxury villa rentals in Punta Mita" search phrase
+    // specifically — the homepage stays broader/national on purpose as the
+    // brand expands to other destinations.
+    heroTitlePrefix: 'Luxury Villa Rentals in',
+    metaTitle: 'Luxury Villa Rentals in Punta Mita',
+    heroSub: 'Villas, houses, estates, and condos across Punta Mita, Mexico, each booked direct with local experts for the best rate and true concierge service.',
     redesigned: true,
     whyStatement: {
       headline: 'A 1,500-acre guard-gated peninsula — home to two Jack Nicklaus Signature golf courses, the Four Seasons, and the St. Regis.',
       support: 'Every villa in this collection sits inside that private gate, with the security, service, and amenities that come with it. Guests choose Punta Mita for privacy as much as scenery — quiet, uncrowded beaches and a level of service that’s built into the villas themselves, not added on.',
     },
     findVillaIntro: 'Every villa in this collection sits inside the gates — filtered here by what matters most when choosing where to stay.',
+    communitiesHref: '/destinations/punta-mita/communities',
     insideGroups: [
       {
         label: 'Golf Courses',
@@ -417,6 +460,12 @@ async function getExperiences(destination: string): Promise<Activity[]> {
   return client.fetch(ACTIVITIES_BY_DESTINATION_QUERY, { destination })
 }
 
+type HeroPhotoDoc = { heroImage?: { asset?: { _ref: string }; hotspot?: { x: number; y: number } } }
+
+async function getHeroPhotos(locationLabel: Property['locationLabel']): Promise<HeroPhotoDoc[]> {
+  return client.fetch(HERO_PHOTOS_BY_DESTINATION_QUERY, { locationLabel })
+}
+
 export async function generateStaticParams() {
   return Object.keys(DESTINATIONS).map((slug) => ({ slug }))
 }
@@ -426,7 +475,7 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   const dest = DESTINATIONS[slug]
   if (!dest) return {}
 
-  const title = dest.comingSoon ? `${dest.title} — Coming Soon` : `${dest.title} Guide`
+  const title = dest.comingSoon ? `${dest.title} — Coming Soon` : (dest.metaTitle || `${dest.title} Guide`)
   const description = dest.heroSub
 
   // Same photo the page itself uses for its hero background (the first
@@ -482,15 +531,25 @@ export default async function DestinationPage({ params }: { params: Promise<Para
   }
 
   const locationLabel = LOCATION_LABEL_BY_SLUG[slug]
-  const [properties, experiences] = await Promise.all([
+  const [properties, experiences, heroPhotoDocs] = await Promise.all([
     getProperties(locationLabel),
     getExperiences(locationLabel),
+    getHeroPhotos(locationLabel),
   ])
-  // This is a full-width page hero, same visual role as the homepage hero —
-  // matching that same quality(92) standard rather than leaving it unset.
+  // Same rotating-photo treatment as the homepage hero, same "favorites"
+  // criteria (featured villas), just scoped to this destination instead of
+  // the whole site — via the shared HeroBg component so both stay in sync
+  // if that crossfade behavior ever changes. Falls back to a single static
+  // photo (first property's hero image, or the sitewide default) for a
+  // destination with no featured villas yet, so the hero never renders as
+  // an empty dark box.
+  const heroPhotos = heroPhotoDocs
+    .filter((d) => d.heroImage?.asset?._ref)
+    .map((d) => urlFor(d.heroImage!).width(2400).height(1400).quality(92).url())
   const heroUrl = properties[0]?.heroImage?.asset?._ref
     ? urlFor(properties[0].heroImage!).width(2400).height(1400).quality(92).url()
     : '/og-image-1.jpg'
+  const heroPhotosOrFallback = heroPhotos.length > 0 ? heroPhotos : [heroUrl]
 
   // Only computed for redesigned pages — each tile's community list and
   // count come straight from this destination's already-fetched properties,
@@ -566,18 +625,24 @@ export default async function DestinationPage({ params }: { params: Promise<Para
 
   return (
     <>
-      <div id="dest-hero" style={{ backgroundImage: `url('${heroUrl}')` }}>
+      <div id="dest-hero">
+        <HeroBg photos={heroPhotosOrFallback} />
         <p className="pg-eyebrow">{dest.eyebrow}</p>
         <h1 className="pg-title">
+          {dest.heroTitlePrefix && <span className="pg-title-prefix">{dest.heroTitlePrefix} </span>}
           {dest.title}
           {dest.titleSuffix && <span className="pg-title-suffix"> — {dest.titleSuffix}</span>}
         </h1>
         <p className="pg-sub">{dest.heroSub}</p>
+        <SearchBar defaultDestination={dest.slug} />
+        {properties.length > 0 && (
+          <p className="hero-trust">{properties.length} {dest.title} properties · Local experts</p>
+        )}
       </div>
 
       <div className={`dest-wrap${dest.redesigned ? ' dest-wrap--redesigned' : ''}`}>
         {dest.redesigned && dest.whyStatement ? (
-          <div className="dest-why">
+          <div className="dest-why reveal">
             <span className="dest-why-eyebrow">Why {dest.title}</span>
             <p className="dest-why-headline">{dest.whyStatement.headline}</p>
             <span className="dest-why-rule" />
@@ -590,10 +655,11 @@ export default async function DestinationPage({ params }: { params: Promise<Para
         )}
 
         {dest.redesigned && (
-          <div className="dest-numbers">
+          <div className="dest-numbers reveal">
             <div className="dest-numbers-grid">
               {dest.facts.map((f) => (
                 <div key={f.label} className="dest-numbers-item">
+                  {FACT_ICONS[f.label] && <span className="dest-numbers-icon">{FACT_ICONS[f.label]}</span>}
                   <span className="dest-numbers-value">{f.value}</span>
                   <span className="dest-numbers-label">{f.label}</span>
                   <span className="dest-numbers-sub">{f.sub}</span>
@@ -613,27 +679,70 @@ export default async function DestinationPage({ params }: { params: Promise<Para
 
         {dest.redesigned && (dest.insideExperiences || dest.insideGroups) ? (
           <>
+            {findVillaTiles.length > 0 && (
+              <div className="detail-section reveal">
+                <span className="sec-label">01</span>
+                <h2 className="sec-title">Villas to Match the Way You Travel</h2>
+                <p className="dest-section-intro">{dest.findVillaIntro}</p>
+                <div className="dest-find-grid">
+                  {findVillaTiles.map((t) => (
+                    <Link key={t.key} href={`/villas?destination=${dest.slug}${t.query ? `&${t.query}` : ''}`} className="dest-find-card">
+                      <h3 className="dest-find-card-title">{t.title}</h3>
+                      <p className="dest-find-card-text">{t.text}</p>
+                      <p className="dest-find-card-communities">
+                        {t.communities.length > 0 ? t.communities.join(', ') : `Available in ${dest.title}`}
+                      </p>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {dest.communitiesHref && (
+              <Link href={dest.communitiesHref} className="dest-comm-banner reveal">
+                <div className="dest-comm-banner-text">
+                  <span className="dest-comm-banner-eyebrow">Interactive Map</span>
+                  <h3 className="dest-comm-banner-title">Explore Every Community on the Peninsula</h3>
+                  <p className="dest-comm-banner-sub">From beachfront enclaves to fairway estates — find the corner of Punta Mita that fits how you travel.</p>
+                </div>
+                <span className="dest-comm-banner-cta">
+                  Explore the Communities
+                  <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></svg>
+                </span>
+              </Link>
+            )}
+
             <div className="detail-section">
-              <span className="sec-label">01</span>
+              <span className="sec-label">{findVillaTiles.length > 0 ? '02' : '01'}</span>
+              <h2 className="sec-title">Where to Stay</h2>
+              {propertiesBody}
+            </div>
+
+            <div className="detail-section reveal">
+              <span className="sec-label">{findVillaTiles.length > 0 ? '03' : '02'}</span>
               <h2 className="sec-title">{dest.insideSectionTitle || 'Inside the Gates'}</h2>
               <p className="dest-section-intro">{dest.insideSectionIntro || 'Reserved for guests and residents inside the gates — not open to the public.'}</p>
               {dest.insideGroups ? (
                 dest.insideGroups.map((g) => (
-                  <div key={g.label} className="dest-subgroup">
+                  <div key={g.label} className="dest-subgroup reveal">
                     <p className="dest-subgroup-label">{g.label}</p>
 
                     {g.layout === 'cinematic' && (
                       <div className="dest-cinematic-stack">
                         {g.items.map((e) => (
-                          <div
-                            key={e.title}
-                            className="dest-cinematic-band"
-                            style={e.imageUrl ? {
-                              backgroundImage: `url('${e.imageUrl}')`,
-                              backgroundPosition: e.imagePosition || 'center',
-                            } : undefined}
-                          >
-                            {!e.imageUrl && <span className="dest-cinematic-photo-label">Photo placeholder</span>}
+                          <div key={e.title} className="dest-cinematic-band reveal">
+                            {e.imageUrl ? (
+                              <Image
+                                src={e.imageUrl}
+                                alt={e.title}
+                                fill
+                                sizes="(max-width: 700px) 100vw, 1240px"
+                                style={{ objectPosition: e.imagePosition || 'center' }}
+                                className="dest-cinematic-img"
+                              />
+                            ) : (
+                              <span className="dest-cinematic-photo-label">Photo placeholder</span>
+                            )}
                             {e.stat && <span className="dest-cinematic-stat">{e.stat}</span>}
                             <div className="dest-cinematic-text">
                               <h3 className="dest-cinematic-title">{e.title}</h3>
@@ -683,42 +792,22 @@ export default async function DestinationPage({ params }: { params: Promise<Para
             </div>
 
             {dest.photoBreak && (
-              <div
-                className="dest-photo-break"
-                style={dest.photoBreak.imageUrl ? {
-                  backgroundImage: `url('${dest.photoBreak.imageUrl}')`,
-                  backgroundPosition: dest.photoBreak.imagePosition || 'center',
-                } : undefined}
-              >
-                {!dest.photoBreak.imageUrl && <span className="dest-photo-break-label">Photo placeholder</span>}
+              <div className="dest-photo-break reveal">
+                {dest.photoBreak.imageUrl ? (
+                  <Image
+                    src={dest.photoBreak.imageUrl}
+                    alt={dest.photoBreak.caption}
+                    fill
+                    sizes="100vw"
+                    style={{ objectPosition: dest.photoBreak.imagePosition || 'center' }}
+                    className="dest-photo-break-img"
+                  />
+                ) : (
+                  <span className="dest-photo-break-label">Photo placeholder</span>
+                )}
                 <p className="dest-photo-break-caption">{dest.photoBreak.caption}</p>
               </div>
             )}
-
-            {findVillaTiles.length > 0 && (
-              <div className="detail-section">
-                <span className="sec-label">02</span>
-                <h2 className="sec-title">Villas to Match the Way You Travel</h2>
-                <p className="dest-section-intro">{dest.findVillaIntro}</p>
-                <div className="dest-find-grid">
-                  {findVillaTiles.map((t) => (
-                    <Link key={t.key} href={`/villas?destination=${dest.slug}${t.query ? `&${t.query}` : ''}`} className="dest-find-card">
-                      <h3 className="dest-find-card-title">{t.title}</h3>
-                      <p className="dest-find-card-text">{t.text}</p>
-                      <p className="dest-find-card-communities">
-                        {t.communities.length > 0 ? t.communities.join(', ') : `Available in ${dest.title}`}
-                      </p>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="detail-section">
-              <span className="sec-label">{findVillaTiles.length > 0 ? '03' : '02'}</span>
-              <h2 className="sec-title">Where to Stay</h2>
-              {propertiesBody}
-            </div>
           </>
         ) : (
           <div className="detail-section">
