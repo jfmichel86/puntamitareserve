@@ -4,17 +4,30 @@
 // Powers the "Explore the Communities" page (/destinations/punta-mita/
 // communities) — one pin per gated community on the peninsula.
 //
-// IMPORTANT — every lat/lng below is still a placeholder, not a verified
-// position. The first version of this file only guessed at 15 of the ~31
-// communities in COMM_LABELS (src/lib/utils.ts) and got several visibly
-// wrong (pins landing in open water, Kupuri in the wrong spot). This
-// version lists every Punta Mita slug so nothing is silently missing from
-// the page, but the coordinates themselves still need to come from
-// Francisco, not another guess — see the drag-to-correct "calibrate" mode
-// in CommunityMap.tsx, reached by adding ?calibrate=1 to the page's URL.
-// Slugs here must match `communityPuntaMita` in Sanity exactly — a
-// community only actually appears on the page once it has at least one
-// published property (computed live, not hardcoded).
+// Positions marked "verified" below came from Francisco dragging each pin
+// to its real spot in the drag-to-correct "calibrate" mode
+// (CommunityMap.tsx, ?calibrate=1 on the page URL) — trustworthy.
+// Everything in the second group has never had a live listing to show a
+// pin for yet, so its position is still an unverified first-draft guess —
+// needs the same calibrate pass once that community has real inventory.
+//
+// This file only holds what can't be derived from real listing data:
+// where the pin sits, and the one-paragraph description (which Francisco
+// corrected by hand for communities that split into multiple distinct
+// products under one Sanity label — Iyari, Porta Fortuna, El Encanto,
+// Kupuri, Las Palmas). The 4 feature pills (location, views, pool,
+// bedroom range) are NOT stored here — per Francisco's direction
+// (2026-08-06), those come straight from each community's actual
+// published properties in Sanity (the `viewsAndPool` and `bedrooms`
+// fields), computed live in the page itself. See aggregateLocation /
+// aggregateViews / aggregatePool / aggregateBedrooms in
+// src/app/destinations/punta-mita/communities/page.tsx.
+//
+// This list is checked directly against Sanity's real community dropdown
+// (29 entries, confirmed by Francisco on 2026-08-06). Slugs must match
+// `communityPuntaMita` in Sanity exactly (see COMM_LABELS in
+// src/lib/utils.ts) — a community only actually appears on the page once
+// it has at least one published property (computed live, not hardcoded).
 export type CommunityGeo = {
   slug: string
   name: string
@@ -24,37 +37,38 @@ export type CommunityGeo = {
 }
 
 export const PUNTA_MITA_COMMUNITIES: CommunityGeo[] = [
-  { slug: '7-eight-bahia-golf-residences', name: '7 Eight Bahia', lat: 20.7605, lng: -105.5275, description: 'Placeholder position — needs to be set via the calibrate tool.' },
-  { slug: '7-eight', name: '7 Eight', lat: 20.7608, lng: -105.5278, description: 'Placeholder position — needs to be set via the calibrate tool.' },
-  { slug: 'bahia-signature-estates', name: 'Bahia Signature Estates', lat: 20.7600, lng: -105.5290, description: 'Homes along the Bahia course, on the peninsula’s eastern side facing toward Banderas Bay.' },
-  { slug: 'bellavista-residences', name: 'Bellavista Residences', lat: 20.7695, lng: -105.5370, description: 'Elevated, hillside homes on the peninsula’s west side, above the golf course.' },
-  { slug: 'bellavista', name: 'Bellavista', lat: 20.7697, lng: -105.5372, description: 'Placeholder position — needs to be set via the calibrate tool.' },
-  { slug: 'cuora', name: 'Cuora', lat: 20.7680, lng: -105.5340, description: 'On the western side of the peninsula, near the Pacifico course.' },
-  { slug: 'el-encanto', name: 'El Encanto', lat: 20.7670, lng: -105.5360, description: 'Set back from the beach clubs toward the interior of the peninsula, closer to the golf courses than the sand.' },
-  { slug: 'el-encanto-villas', name: 'El Encanto Villas', lat: 20.7672, lng: -105.5362, description: 'Placeholder position — needs to be set via the calibrate tool.' },
-  { slug: 'four-seasons-residences', name: 'Four Seasons Residences', lat: 20.7715, lng: -105.5390, description: 'Beachfront residences on the northwest point of the peninsula, within the Four Seasons resort grounds and its full-service amenities.' },
-  { slug: 'hacienda-de-mita', name: 'Hacienda de Mita', lat: 20.7590, lng: -105.5250, description: 'A residential pocket on the peninsula’s eastern side, closer to the entrance gate than the beach clubs.' },
-  { slug: 'iyari-estates', name: 'Iyari Estates', lat: 20.7635, lng: -105.5330, description: 'Estates bordering the Pacifico course fairways, with views over the greens rather than the ocean.' },
-  { slug: 'iyari-villas', name: 'Iyari Villas', lat: 20.7637, lng: -105.5332, description: 'Placeholder position — needs to be set via the calibrate tool.' },
-  { slug: 'iyari', name: 'Iyari', lat: 20.7639, lng: -105.5334, description: 'Placeholder position — needs to be set via the calibrate tool.' },
-  { slug: 'kupuri', name: 'Kupuri', lat: 20.7745, lng: -105.5300, description: 'A beachfront enclave on the peninsula’s north shore, closest to Kupuri Beach Club and its kids’ and teens’ clubs.' },
-  { slug: 'kupuri-beach-residences', name: 'Kupuri Beach Residences', lat: 20.7747, lng: -105.5302, description: 'Placeholder position — needs to be set via the calibrate tool.' },
-  { slug: 'la-punta-estates', name: 'La Punta Estates', lat: 20.7565, lng: -105.5395, description: 'Near the southern tip of the peninsula, closest to the surf breaks just outside the gates.' },
-  { slug: 'la-serenata', name: 'La Serenata', lat: 20.7567, lng: -105.5397, description: 'Placeholder position — needs to be set via the calibrate tool.' },
-  { slug: 'lagos-del-mar', name: 'Lagos del Mar', lat: 20.7660, lng: -105.5305, description: 'Set among the lagoons at the heart of the golf course, in the middle of the peninsula.' },
-  { slug: 'las-marietas', name: 'Las Marietas', lat: 20.7615, lng: -105.5340, description: 'Toward the southern half of the peninsula, near the Bahia course.' },
-  { slug: 'las-palmas', name: 'Las Palmas', lat: 20.7650, lng: -105.5345, description: 'Placeholder position — needs to be set via the calibrate tool.' },
-  { slug: 'las-palmas-golf-estates', name: 'Las Palmas Golf Estates', lat: 20.7652, lng: -105.5347, description: 'Placeholder position — needs to be set via the calibrate tool.' },
-  { slug: 'las-palmas-selva', name: 'Las Palmas Selva', lat: 20.7654, lng: -105.5349, description: 'Placeholder position — needs to be set via the calibrate tool.' },
-  { slug: 'las-terrazas', name: 'Las Terrazas', lat: 20.7645, lng: -105.5350, description: 'Central to the peninsula, near the golf course’s midpoint.' },
-  { slug: 'las-vistas-estates', name: 'Las Vistas Estates', lat: 20.7647, lng: -105.5352, description: 'Placeholder position — needs to be set via the calibrate tool.' },
-  { slug: 'pacifico-estates', name: 'Pacifico Estates', lat: 20.7665, lng: -105.5320, description: 'Placeholder position — needs to be set via the calibrate tool.' },
-  { slug: 'porta-fortuna', name: 'Porta Fortuna', lat: 20.7620, lng: -105.5320, description: 'Toward the center of the peninsula, inland from both coastlines.' },
-  { slug: 'porta-fortuna-golf', name: 'Porta Fortuna Golf', lat: 20.7622, lng: -105.5322, description: 'Placeholder position — needs to be set via the calibrate tool.' },
-  { slug: 'porta-fortuna-zen-casitas', name: 'Porta Fortuna Zen Casitas', lat: 20.7624, lng: -105.5324, description: 'Placeholder position — needs to be set via the calibrate tool.' },
-  { slug: 'ranchos-estates', name: 'Ranchos Estates', lat: 20.7625, lng: -105.5310, description: 'Placeholder position — needs to be set via the calibrate tool.' },
-  { slug: 'signature-estates', name: 'Signature Estates', lat: 20.7605, lng: -105.5270, description: 'On the eastern side of the peninsula, near the Bahia course.' },
-  { slug: 'tau-residences', name: 'TAU Residences', lat: 20.7580, lng: -105.5370, description: 'Near the southern point of the peninsula, between the Pacific side and Banderas Bay.' },
-  { slug: 'tau', name: 'TAU Residences', lat: 20.7582, lng: -105.5372, description: 'Placeholder position — needs to be set via the calibrate tool.' },
-  { slug: 'the-surf-residences', name: 'The Surf Residences', lat: 20.7570, lng: -105.5390, description: 'Placeholder position — needs to be set via the calibrate tool.' },
+  // ── Verified positions (from the calibrate tool) ──────────────────
+  { slug: '7-eight-bahia-golf-residences', name: '7 Eight Bahia', lat: 20.7781, lng: -105.5280, description: 'Four low-rise buildings on the 7th and 8th fairways of the Bahia course — four-bedroom residences with a private plunge pool on every terrace, an easy walk to Pacifico Beach Club.' },
+  { slug: 'el-encanto', name: 'El Encanto', lat: 20.7662, lng: -105.5301, description: 'Condominiums within El Encanto, most looking out over the Pacifico course’s fairways or the community’s lakes rather than the ocean.' },
+  { slug: 'el-encanto-villas', name: 'El Encanto Villas', lat: 20.7651, lng: -105.5295, description: 'Sixteen standalone villas within El Encanto — the community’s only ocean-facing homes, each with its own pool.' },
+  { slug: 'hacienda-de-mita', name: 'Hacienda de Mita', lat: 20.7708, lng: -105.5219, description: 'Punta Mita’s only true beachfront condominium community — low-rise buildings with their own infinity pool, direct beach access, and Pacifico fairway views.' },
+  { slug: 'iyari-estates', name: 'Iyari Estates', lat: 20.7850, lng: -105.5134, description: 'Large private lots on Litibu Bay, each with its own custom-built villa — no two homes alike, from the footprint to the architecture.' },
+  { slug: 'iyari-villas', name: 'Iyari Villas', lat: 20.7843, lng: -105.5148, description: 'A single matched collection of villas in Iyari, all sharing the same architecture and layout — four bedrooms, a private plunge pool, and access to the community’s cabana on Playa Iyari.' },
+  { slug: 'kupuri', name: 'Kupuri', lat: 20.7819, lng: -105.5115, description: 'Forty-one home sites sold individually across Kupuri — every villa custom-built and different from the next, near the Kupuri Beach Club’s sushi counter, Ka restaurant, and treehouse spa.' },
+  { slug: 'kupuri-beach-residences', name: 'Kupuri Beach Residences', lat: 20.7803, lng: -105.5086, description: 'A single matched collection of condominiums within Kupuri, all built to the same design, a short walk from the Kupuri Beach Club.' },
+  { slug: 'la-punta-estates', name: 'La Punta Estates', lat: 20.7599, lng: -105.5348, description: 'Thirty-one oceanfront lots on the peninsula’s western tip next to the St. Regis, each with 270-degree views and a second, separately gated entrance.' },
+  { slug: 'lagos-del-mar', name: 'Lagos del Mar', lat: 20.7686, lng: -105.5259, description: 'Contemporary homes built around the golf course’s interior lagoons, with cantilevered rooflines and floor-to-ceiling glass framing the water on both sides.' },
+  { slug: 'las-marietas', name: 'Las Marietas', lat: 20.7634, lng: -105.5350, description: 'An ultra-private enclave at the peninsula’s edge, named for the Marietas Islands visible from nearly every residence — five to eight bedrooms, minimal density.' },
+  { slug: 'las-palmas', name: 'Las Palmas', lat: 20.7742, lng: -105.5313, description: 'Twenty-eight houses in Las Palmas’ original phase, nearly all facing the golf course — three and four bedrooms, built to a small set of very similar layouts.' },
+  { slug: 'las-palmas-selva', name: 'Las Palmas Selva', lat: 20.7748, lng: -105.5301, description: 'Larger four-bedroom villas than Las Palmas’ original phase, set back among dense tropical planting rather than facing a view — nearly all built to the same architecture and layout.' },
+  { slug: 'las-terrazas', name: 'Las Terrazas', lat: 20.7732, lng: -105.5258, description: 'A 27-unit boutique condominium on the Pacifico course’s 14th fairway, centered on twin pools linked by a 160-meter saltwater swimming canal.' },
+  { slug: 'las-vistas-estates', name: 'Las Vistas Estates', lat: 20.7794, lng: -105.5238, description: 'Punta Mita’s newest hillside community, on Careyeros hill, with homesites looking out over the entire peninsula, the Four Seasons, and the Tail of the Whale.' },
+  { slug: 'pacifico-estates', name: 'Pacifico Estates', lat: 20.7710, lng: -105.5374, description: 'West-facing homes near the Pacifico course built for sunset — horizontal architecture and extensive glazing framing the Pacific’s golden hour.' },
+  { slug: 'porta-fortuna', name: 'Porta Fortuna', lat: 20.7628, lng: -105.5313, description: 'Porta Fortuna’s original ocean-facing villas, in two rows — first-row homes sit beachfront with five real bedrooms, second-row villas hold four bedrooms and their own ocean views.' },
+  { slug: 'porta-fortuna-golf', name: 'Porta Fortuna Golf', lat: 20.7636, lng: -105.5328, description: 'The newest villas in Porta Fortuna — a matched set of four-plus-bedroom homes facing the golf course, sharing a consistent layout and architecture.' },
+  { slug: 'ranchos-estates', name: 'Ranchos Estates', lat: 20.7684, lng: -105.4999, description: 'One of Punta Mita’s original beachfront communities — some of the peninsula’s largest oceanfront estates, set in mature tropical gardens near the Pacifico course.' },
+  { slug: 'tau-residences', name: 'TAU Residences', lat: 20.7622, lng: -105.5351, description: 'Punta Mita’s newest enclave, at the peninsula’s southern point, built for sunset views with modern, smart-home-equipped two- to five-bedroom residences.' },
+  { slug: 'the-surf-residences', name: 'The Surf Residences', lat: 20.7639, lng: -105.4900, description: 'Forty condos by architects Sordo Madaleno, set directly in front of the La Lancha surf break with views of the Marietas Islands and Banderas Bay.' },
+
+  // ── Not yet verified — no live listing yet, so never shown a pin to
+  //    calibrate. Positions are still rough first-draft guesses; will
+  //    need the calibrate tool once a property lists in one of these. ──
+  { slug: 'bahia-signature-estates', name: 'Bahia Signature Estates', lat: 20.7600, lng: -105.5290, description: 'Estates set between the Bahia fairways and the open Pacific, most with a private infinity pool angled toward the water — three to six bedrooms, no two homes alike.' },
+  { slug: 'bellavista-residences', name: 'Bellavista Residences', lat: 20.7695, lng: -105.5370, description: 'Eleven hillside homes above the golf courses, each with floor-to-ceiling glass, a private pool, and sweeping views over the Pacific and both fairways below.' },
+  { slug: 'cuora', name: 'Cuora', lat: 20.7680, lng: -105.5340, description: 'A beachfront enclave with its own private beach club, pools, and spa — residences range from garden villas to rooftop penthouses, all oceanfront.' },
+  { slug: 'four-seasons-residences', name: 'Four Seasons Residences', lat: 20.7715, lng: -105.5390, description: 'Private villas and residences inside the Four Seasons Resort grounds, with full access to the hotel’s dining, spa, and daily service standards.' },
+  { slug: 'la-serenata', name: 'La Serenata', lat: 20.7567, lng: -105.5397, description: 'A secluded, low-density enclave designed around quiet — spa-style finishes and generous grounds on four- to seven-bedroom homes.' },
+  { slug: 'las-palmas-golf-estates', name: 'Las Palmas Golf Estates', lat: 20.7742, lng: -105.5313, description: 'Large home sites in Las Palmas, sold as lots rather than finished houses — every future villa here will be custom-built and different from its neighbors.' },
+  { slug: 'porta-fortuna-zen-casitas', name: 'Porta Fortuna Zen Casitas', lat: 20.7628, lng: -105.5313, description: 'Three-bedroom casitas within Porta Fortuna built for quiet — private pool, ocean and golf views, and a short walk to Sufi Ocean Club’s fire pit and restaurant.' },
+  { slug: 'signature-estates', name: 'Signature Estates', lat: 20.7605, lng: -105.5270, description: 'Oceanfront homes between the Pacific and the golf course fairways, many with cliffside infinity pools — no two residences built alike.' },
 ]

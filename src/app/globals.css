@@ -253,6 +253,66 @@ body {
   font-family: var(--font-inter), sans-serif; font-size: 11px; font-weight: 300;
   letter-spacing: .18em; text-transform: uppercase; color: var(--text-on-dark);
 }
+
+/* Global search — collapsed icon by default, same visual weight as the
+   other nav icons (heart, hamburger). Clicking it opens a small dropdown
+   card below the icon instead of reshaping the nav bar itself — the rest
+   of the nav (links, wishlist, Inquire) never moves or hides. Unlike the
+   Destinations/Collections panels (which stay flush against the nav so
+   they read as a continuation of it), this one floats a few pixels clear
+   with a full rounded-card treatment and its own elevation — since it's
+   detached rather than flush, a little pointer/caret (::before) ties it
+   back visually to the icon it opened from. */
+/* align-self:stretch (not the nav row's own align-items:center) is what
+   makes the panel sit cleanly under the WHOLE nav bar instead of
+   overlapping "Exclusive Deals"/"The Experience" — without it, this box is
+   only as tall as the icon itself, vertically centered inside a much
+   taller nav, so "top: 100%" (the panel's anchor point) lands partway up
+   through the still-visible link row instead of below it. */
+.nav-search { position: relative; display: flex; align-items: center; align-self: stretch; flex-shrink: 0; }
+.nav-search-toggle {
+  appearance: none; -webkit-appearance: none;
+  background: none; border: none; padding: 3px; margin: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--text-on-dark); opacity: .7; cursor: pointer; transition: opacity .22s;
+}
+.nav-search-toggle:hover { opacity: 1; }
+.nav-search-toggle svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.6; }
+.nav-search-form {
+  display: flex; align-items: flex-end; gap: 12px;
+  position: absolute; top: calc(100% + 16px); right: 0;
+  /* Capped so it can never overflow the viewport at any width — 48px
+     matches the mobile nav's own 24px-per-side edge padding exactly. */
+  width: 320px; max-width: calc(100vw - 48px);
+  background: rgba(20,42,60,.99); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+  border-radius: 12px;
+  box-shadow: 0 20px 36px -16px rgba(4,10,16,.4);
+  padding: 22px 22px 24px; z-index: 500; animation: fadeIn .18s ease both;
+}
+/* The pointer — a small rotated square peeking out above the card's top
+   edge, positioned under where the icon sits (14px in from the card's own
+   right edge, which is anchored flush with the icon via right:0 above). */
+.nav-search-form::before {
+  content: ''; position: absolute; top: -5px; right: 14px;
+  width: 11px; height: 11px; background: rgba(20,42,60,.99);
+  border-radius: 2px; transform: rotate(45deg);
+}
+.nav-search-input {
+  flex: 1; min-width: 0; background: none; border: none; outline: none;
+  padding: 0 0 9px; border-bottom: 1px solid var(--gold);
+  font-family: var(--font-cormorant), serif; font-style: italic; font-weight: 400;
+  font-size: 16px; letter-spacing: .01em; color: var(--text-on-dark); caret-color: var(--gold);
+}
+.nav-search-input::placeholder { color: var(--text-on-dark); opacity: .45; font-style: italic; }
+.nav-search-close {
+  appearance: none; -webkit-appearance: none;
+  background: none; border: none; padding: 0 0 9px; margin: 0; flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--text-on-dark); opacity: .7; cursor: pointer; transition: opacity .22s;
+}
+.nav-search-close:hover { opacity: 1; }
+.nav-search-close svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+
 .nav-hamburger {
   display: none; flex-direction: column; justify-content: center;
   gap: 5px; width: 36px; height: 36px; padding: 6px;
@@ -899,23 +959,23 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
    pointer-events: none because .dest-map-zone-hit above already owns all
    interaction — this path only exists to be looked at.
 
-   transform-box: view-box (not fill-box) + an explicit per-shape
-   transform-origin set inline in the component — fill-box + "center"
-   looked like it should grow the shape symmetrically in place, but
-   combined with vector-effect="non-scaling-stroke" it visibly didn't: the
-   grown shape rendered offset from the original outline instead of
-   growing over it, worst on Puerto Vallarta's long thin shape. view-box
-   uses the same coordinate system as the path's own `d` data, so the
-   pivot is a plain, unambiguous point instead of something the browser
-   has to derive from the rendered geometry. */
+   The hover-grow itself is NOT done here anymore. Two rounds of CSS
+   transform-box approaches (fill-box, then view-box, both with an
+   explicit transform-origin) grew the compact Punta Mita shape correctly
+   but visibly off-center for the two elongated shapes, worse the more
+   elongated (Punta de Mita Area, then Puerto Vallarta badly enough to
+   shift past the frame edge) — a browser transform-box/pivot quirk that
+   two different CSS-only fixes both ran into. DestinationsRegionalMap.tsx
+   now computes the exact translate+scale matrix by hand and sets it as
+   the SVG element's own `transform` attribute (growTransform()), which
+   sidesteps transform-box entirely. Only the transition stays here. */
 .dest-map-zone-visible {
   fill: var(--dest-color, #C8943A); fill-opacity: .22; stroke: var(--dest-color, #C8943A); stroke-width: 1.6;
-  transform-box: view-box;
   pointer-events: none;
   transition: fill-opacity .15s ease, stroke-width .15s ease, opacity .5s ease .35s, transform .3s cubic-bezier(.16,1,.3,1);
 }
 .dest-map-zone:hover .dest-map-zone-visible, .dest-map-zone:focus .dest-map-zone-visible, .dest-map-zone.is-active .dest-map-zone-visible {
-  fill-opacity: .42; stroke-width: 2.4; transform: scale(2);
+  fill-opacity: .42; stroke-width: 2.4;
 }
 /* Same reasoning as .dest-map-pin-group above — the fill/stroke change
    on :focus (right above) is the real focus indicator here, already
@@ -3573,6 +3633,11 @@ textarea.ct-input { resize: vertical; min-height: 88px; line-height: 1.65; }
 .community-map-card-body { flex: 1; min-width: 0; }
 .community-map-card-name { font-family: var(--font-cormorant), serif; font-weight: 400; font-size: 18px; color: var(--deep-ocean); margin: 0 0 6px; }
 .community-map-card-desc { font-family: var(--font-inter), sans-serif; font-weight: 300; font-size: 12.5px; line-height: 1.7; color: var(--charcoal-light); margin: 0 0 10px; }
+
+/* Feature pills — shared by the map's hover card and the "Every
+   Community" grid below it. */
+.comm-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 10px; }
+.comm-tag { font-family: var(--font-inter), sans-serif; font-size: 10.5px; color: var(--charcoal-light); background: var(--sand); padding: 4px 10px; border-radius: 20px; }
 .community-map-card-link {
   display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-inter), sans-serif;
   font-size: 11px; font-weight: 400; letter-spacing: .12em; text-transform: uppercase; color: var(--deep-ocean);
@@ -3608,10 +3673,38 @@ textarea.ct-input { resize: vertical; min-height: 88px; line-height: 1.65; }
 }
 .community-map-calibrate-copy:hover { background: var(--gold); color: var(--white); }
 
-.comm-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
-.comm-grid-card { background: var(--white); border: 1px solid var(--sand); border-radius: 2px; padding: 20px 22px; }
+/* align-items: stretch (the grid default) makes every card in a row the
+   same height, matching the tallest one — the flex column + margin-top:
+   auto on the link below is what then pins "View N villas" to the same
+   bottom edge across a row, regardless of how long that card's
+   description happens to run. */
+.comm-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; align-items: stretch; }
+/* .comm-grid-card is a <button>, not a <div> — clicking anywhere on the
+   card opens it on the map above (see CommunityExplorer.tsx). The reset
+   rules undo the browser's default button chrome so it still reads as a
+   card, not a form control; the "View N villas" link inside stops its
+   own click from bubbling up so it navigates normally instead of
+   double-firing the card's click handler. */
+.comm-grid-card {
+  display: flex; flex-direction: column; width: 100%; height: 100%; text-align: left; font: inherit; cursor: pointer;
+  background: var(--white); border: 1px solid var(--sand); border-radius: 2px; padding: 20px 22px;
+  transition: border-color .18s, transform .18s;
+}
+.comm-grid-card:hover { border-color: var(--gold); transform: translateY(-1px); }
 .comm-grid-card-name { font-family: var(--font-cormorant), serif; font-weight: 400; font-size: 17px; color: var(--deep-ocean); margin: 0 0 8px; }
 .comm-grid-card-desc { font-family: var(--font-inter), sans-serif; font-weight: 300; font-size: 12px; line-height: 1.65; color: var(--charcoal); margin: 0 0 12px; }
+/* Pins the CTA to the same bottom edge on every card in a row, no matter
+   how many lines the tags or description above it take up. */
+.comm-grid-card .legal-cta { margin-top: auto; }
+
+.comm-filter-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 20px; }
+.comm-filter-chip {
+  font-family: var(--font-inter), sans-serif; font-size: 11px; font-weight: 400; letter-spacing: .06em;
+  color: var(--charcoal-light); background: var(--white); border: 1px solid var(--sand); border-radius: 20px;
+  padding: 7px 16px; cursor: pointer; transition: border-color .18s, color .18s, background .18s;
+}
+.comm-filter-chip:hover { border-color: var(--gold); color: var(--deep-ocean); }
+.comm-filter-chip.is-active { background: var(--deep-ocean); border-color: var(--deep-ocean); color: var(--white); }
 
 .dest-subgroup { margin-bottom: 28px; }
 .dest-subgroup:last-child { margin-bottom: 0; }

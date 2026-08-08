@@ -24,6 +24,10 @@ export type CommunityPin = {
   lat: number
   lng: number
   description: string
+  location: string
+  views: string
+  pool: string
+  bedrooms: string
   count: number
   photoUrl?: string
 }
@@ -42,6 +46,8 @@ export default function CommunityMap({
   pins,
   destinationSlug,
   calibrate = false,
+  active,
+  onActiveChange,
 }: {
   pins: CommunityPin[]
   destinationSlug: string
@@ -53,11 +59,16 @@ export default function CommunityMap({
   // — he drags, copies the list, and sends it back to be pasted into
   // src/data/puntaMitaCommunities.ts.
   calibrate?: boolean
+  // Which pin's card is showing — owned by the parent (CommunityExplorer)
+  // rather than this component, so clicking a card in the "Every
+  // Community" grid below can open the same pin here too, not just
+  // hovering/clicking directly on the map.
+  active: CommunityPin | null
+  onActiveChange: (p: CommunityPin) => void
 }) {
   const mapElRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<any>(null)
   const [ready, setReady] = useState(false)
-  const [active, setActive] = useState<CommunityPin | null>(null)
   const [positions, setPositions] = useState<Record<string, { lat: number; lng: number }>>({})
   const [copied, setCopied] = useState(false)
 
@@ -135,12 +146,13 @@ export default function CommunityMap({
           setPositions((prev) => ({ ...prev, [p.slug]: { lat: pos.lat, lng: pos.lng } }))
         })
       } else {
-        marker.on('mouseover', () => setActive(p))
-        marker.on('click', () => setActive(p))
+        marker.on('mouseover', () => onActiveChange(p))
+        marker.on('click', () => onActiveChange(p))
       }
       return marker
     })
     return () => { markers.forEach((m: any) => map.removeLayer(m)) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, pins, calibrate])
 
   const shown = active || pins[0]
@@ -182,6 +194,11 @@ export default function CommunityMap({
           </div>
           <div className="community-map-card-body">
             <p className="community-map-card-name">{shown.name}</p>
+            <div className="comm-tags">
+              {[shown.location, shown.views, shown.pool, shown.bedrooms].filter(Boolean).map((t) => (
+                <span key={t} className="comm-tag">{t}</span>
+              ))}
+            </div>
             <p className="community-map-card-desc">{shown.description}</p>
             <Link href={`/villas?destination=${destinationSlug}&community=${shown.slug}`} className="community-map-card-link">
               View {shown.count} {shown.count === 1 ? 'villa' : 'villas'}

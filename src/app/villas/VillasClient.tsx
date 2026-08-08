@@ -31,6 +31,11 @@ interface FilterState {
   community: string
   featured: boolean
   sort: string
+  // Free-text search, set only via the nav bar's search field
+  // (/villas?q=...) — matched against villa name, community, and
+  // destination. Never has its own UI control on this page, only the
+  // "Clear" on its active-chip and the sitewide "Clear" button.
+  q: string
 }
 
 const DEFAULT_FILTERS: FilterState = {
@@ -48,6 +53,7 @@ const DEFAULT_FILTERS: FilterState = {
   community: '',
   featured: false,
   sort: 'popular',
+  q: '',
 }
 
 // Matches the threshold used by the destination page's "Fully Staffed" tile.
@@ -87,6 +93,7 @@ type CountOverrides = Partial<{
   locationType: string
   views: string[]
   featured: boolean
+  q: string
 }>
 
 // Reads the filter-relevant fields straight off a URLSearchParams object —
@@ -96,6 +103,7 @@ function filtersFromParams(searchParams: URLSearchParams): FilterState {
   return {
     ...DEFAULT_FILTERS,
     destination: searchParams.get('destination') || '',
+    community: searchParams.get('community') || '',
     collection: searchParams.get('collection') || '',
     price: searchParams.get('price') || '',
     beds: Number(searchParams.get('beds')) || 0,
@@ -103,6 +111,7 @@ function filtersFromParams(searchParams: URLSearchParams): FilterState {
     pool: searchParams.get('pool') === '1',
     staff: searchParams.get('staff') === '1',
     featured: searchParams.get('featured') === '1',
+    q: searchParams.get('q') || '',
     views: searchParams.getAll('view'),
     guests: {
       adults: Number(searchParams.get('adults')) || 0,
@@ -225,12 +234,19 @@ export default function VillasClient({ properties }: { properties: Property[] })
     const locTypeVal  = overrides.locationType  !== undefined ? overrides.locationType  : filters.locationType
     const effViews    = overrides.views         !== undefined ? overrides.views         : filters.views
     const featuredVal = overrides.featured      !== undefined ? overrides.featured      : filters.featured
+    const qVal        = overrides.q             !== undefined ? overrides.q             : filters.q
     const ltEffective = locTypeVal ? LOC_TYPE_VIEW_MAP[locTypeVal] : ''
     const range = priceVal ? PRICE_RANGES[priceVal] : null
+    const qNorm = qVal.trim().toLowerCase()
 
     return properties.filter((p) => {
       const g = totalGuests(p)
       const r = startingRate(p) ?? 0
+      // Search matches villa name, community, and destination — a simple
+      // substring test (no fuzzy matching/typo tolerance yet) against
+      // whatever came in on ?q= from the nav bar's search field.
+      const dest = destinationOf(p)
+      const haystack = `${p.title} ${communityLabel(p)} ${dest ? DEST_LABELS[dest] : ''}`.toLowerCase()
       return (
         (!destVal || destinationOf(p) === destVal) &&
         (!commVal || p.communityPuntaMita === commVal || p.communityPuntaDeMita === commVal) &&
@@ -244,7 +260,8 @@ export default function VillasClient({ properties }: { properties: Property[] })
         (!poolVal || hasPool(p)) &&
         (!staffVal || (p.staffServices?.length || 0) >= FULLY_STAFFED_MIN) &&
         (!featuredVal || !!p.featured) &&
-        (!ltEffective || (p.viewsAndPool || []).includes(ltEffective))
+        (!ltEffective || (p.viewsAndPool || []).includes(ltEffective)) &&
+        (!qNorm || haystack.includes(qNorm))
       )
     })
   }
@@ -312,9 +329,10 @@ export default function VillasClient({ properties }: { properties: Property[] })
   const hasActiveFilters =
     filters.destination || totalGuestCount > 0 || filters.beds || filters.price || filters.pool || filters.staff ||
     filters.type || filters.locationType || filters.views.length > 0 || filters.collection || filters.community ||
-    filters.featured
+    filters.featured || filters.q
 
   const activeChips: { label: string; clear: () => void }[] = []
+  if (filters.q) activeChips.push({ label: `"${filters.q}"`, clear: () => setFilters((f) => ({ ...f, q: '' })) })
   if (filters.destination) activeChips.push({ label: DEST_LABELS[filters.destination], clear: () => setFilters((f) => ({ ...f, destination: '' })) })
   if (totalGuestCount > 0) activeChips.push({ label: `${totalGuestCount} guests`, clear: () => setFilters((f) => ({ ...f, guests: DEFAULT_FILTERS.guests })) })
   if (filters.beds) activeChips.push({

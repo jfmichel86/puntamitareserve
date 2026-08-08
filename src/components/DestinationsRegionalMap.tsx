@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import Link from 'next/link'
 
 export type RegionalMapDest = {
@@ -78,15 +78,20 @@ const PV_DEST_PATH = 'M 274.51,305.47 L 274.43,305.63 L 274.36,305.72 L 274.35,3
 // panel already explains each destination.
 const PIN_X = 271.6
 const PIN_Y = 301.9
-// Same "shapes-only bbox, filled to 85% then shrunk 20%" sizing as before,
-// recomputed against the corrected WIDE_H above — see /tmp/calc6.py during
-// development. TX/TY center that bbox's own midpoint in the canvas, which
-// guarantees the top/bottom and left/right margins around the 3 shapes are
-// mathematically equal (verified: 121.92 viewBox units on both top and
-// bottom, 114.87 on both left and right).
-const ZOOM_SCALE = 66.51
-const ZOOM_TX = -17683.00
-const ZOOM_TY = -19831.02
+// ZOOM_SCALE is 15% smaller than the original 66.51 (unchanged from the
+// last two rounds). TX/TY, though, now center on the bounding box of the
+// REGION OUTLINES (BAHIA_REGION + PV_REGION) plus the 3 destination
+// shapes — not the destinations alone. The region outline extends
+// noticeably further above the destination cluster than below it (its own
+// bbox: y 295.3-308.14, vs the destinations' 299.98-307.77) — centering on
+// destinations alone left THAT visible content asymmetric even though the
+// small colored shapes themselves were dead center, which is exactly what
+// was being seen as "cropped at the top." Centering on the full visible
+// bbox instead (verified: 15.88 viewBox units on every side) fixes both
+// at once.
+const ZOOM_SCALE = 56.87
+const ZOOM_TX = -15098.45
+const ZOOM_TY = -16777.83
 // Labels only need to read correctly once zoomed in, at which point the
 // camera has already scaled everything up by ZOOM_SCALE — so their
 // declared font-size is the on-screen size divided by that scale.
@@ -110,20 +115,24 @@ const DEST_COLORS: Record<RegionalMapDest['key'], string> = {
 
 // Explicit bounding-box-center pivots for the hover-grow scale, one per
 // destination (in the same local path coordinates as the `d` strings
-// above). `transform-origin: center` with `transform-box: fill-box` LOOKS
-// like it should do the same thing automatically, but combined with
-// `vector-effect="non-scaling-stroke"` it visibly doesn't — the grown
-// shape rendered offset from the original instead of growing in place,
-// worst on Puerto Vallarta's long thin shape. Pairing an explicit
-// transform-origin (in real coordinates) with `transform-box: view-box`
-// sidesteps whatever's going on with fill-box entirely, since the pivot is
-// no longer something the browser has to compute from the rendered
-// geometry at all.
-const SHAPE_ORIGIN: Record<RegionalMapDest['key'], string> = {
-  puntaMita: '268.195px 301.08px',
-  puntaDeMita: '269.7px 301.035px',
-  puertoVallarta: '273.625px 306.62px',
+// above). Two earlier attempts at this — `transform-origin: center` with
+// `transform-box: fill-box`, then `transform-box: view-box` with an
+// explicit pixel origin — both looked right for the compact Punta Mita
+// shape but grew off-center for the two elongated ones (Punta de Mita
+// Area, worse on Puerto Vallarta), consistent with a browser computing the
+// CSS transform-box pivot from rendered geometry despite the declared
+// value, rather than a mistake in these numbers. Both are still used, but
+// no longer as a CSS transform-origin — see growTransform() below, which
+// builds the whole translate+scale matrix by hand and applies it as the
+// SVG element's own `transform` attribute, sidestepping transform-box
+// entirely.
+const SHAPE_ORIGIN: Record<RegionalMapDest['key'], { x: number; y: number }> = {
+  puntaMita: { x: 268.195, y: 301.08 },
+  puntaDeMita: { x: 269.7, y: 301.035 },
+  puertoVallarta: { x: 273.625, y: 306.62 },
 }
+// Matches the old CSS `transform: scale(2)` on hover/focus/active.
+const HOVER_SCALE = 2
 
 function parsePoints(d: string): [number, number][] {
   const pts: [number, number][] = []
@@ -266,13 +275,7 @@ export default function DestinationsRegionalMap({ destinations }: { destinations
   const [zoomed, setZoomed] = useState(false)
   const [activeKey, setActiveKey] = useState<string | null>(null)
   const [lines, setLines] = useState<ConnectorLine[]>([])
-  // Real, measured top margin for the card stack (px) — see the layout
-  // effect below for why this is computed in JS instead of trusted to
-  // CSS's `justify-content: center`.
-  const [cardsMarginTop, setCardsMarginTop] = useState<number | undefined>(undefined)
   const wrapRef = useRef<HTMLDivElement>(null)
-  const listPanelRef = useRef<HTMLDivElement>(null)
-  const cardsWrapRef = useRef<HTMLDivElement>(null)
   const cardRefs = useRef<Record<string, HTMLAnchorElement | null>>({})
   // Refs point at the tiny invisible visual-center markers below (not the
   // visible outline paths) — see visualCenter() above for why.
@@ -281,52 +284,60 @@ export default function DestinationsRegionalMap({ destinations }: { destinations
 
   const highlight = (key: string | null) => () => setActiveKey(key)
 
-  // `justify-content: center` on .dest-split-list SHOULD center the card
-  // stack exactly — the padding is symmetric, the box stretches to the
-  // full frame height — but a live screenshot proved it wasn't: roughly
-  // 45px more empty space above the cards than below, consistently,
-  // regardless of several CSS-only attempts to fix it. Rather than keep
-  // guessing at the CSS cause, this measures the panel's real padded
-  // content area and the card stack's real height (both from actual
-  // rendered geometry, not assumptions about how the percentages resolve)
-  // and sets an exact top margin so the two gaps are forced equal by
-  // construction — this can't drift out of sync with reality the way a
-  // CSS-only rule apparently can. Runs via useLayoutEffect (before the
-  // browser paints) so there's no visible jump.
-  const centerCards = () => {
-    const panel = listPanelRef.current
-    const cards = cardsWrapRef.current
-    if (!panel || !cards) return
-    const panelRect = panel.getBoundingClientRect()
-    const cs = window.getComputedStyle(panel)
-    const padTop = parseFloat(cs.paddingTop) || 0
-    const padBottom = parseFloat(cs.paddingBottom) || 0
-    const contentHeight = panelRect.height - padTop - padBottom
-    // Measure the cards' own natural height without any margin-top
-    // influencing it, so repeated runs (e.g. on resize) converge instead
-    // of compounding.
-    const prevMargin = cards.style.marginTop
-    cards.style.marginTop = '0px'
-    const cardsHeight = cards.getBoundingClientRect().height
-    cards.style.marginTop = prevMargin
-    const margin = Math.max(0, (contentHeight - cardsHeight) / 2)
-    setCardsMarginTop(margin)
+  // The SVG `transform` attribute (not CSS transform-origin) for a
+  // destination's visible shape — identity when it isn't the hovered/
+  // focused one, otherwise the explicit "scale by HOVER_SCALE around its
+  // own bbox center" matrix: translate(cx(1-k), cy(1-k)) scale(k). Setting
+  // this directly avoids transform-box entirely, so there's no browser
+  // pivot-computation quirk left to go wrong.
+  const growTransform = (key: RegionalMapDest['key']) => {
+    if (activeKey !== key) return undefined
+    const { x, y } = SHAPE_ORIGIN[key]
+    const k = HOVER_SCALE
+    return `translate(${x * (1 - k)}, ${y * (1 - k)}) scale(${k})`
   }
-
-  useLayoutEffect(() => {
-    if (!zoomed) return
-    centerCards()
-    window.addEventListener('resize', centerCards)
-    return () => window.removeEventListener('resize', centerCards)
-  }, [zoomed])
 
   // Draws a thin line from each list card's right edge to the visual
   // center of its shape on the map — measured from real rendered
   // positions (not hardcoded offsets) so it stays correct at any
-  // container width.
-  const measureLines = () => {
+  // container width. Also centers the card stack in real pixels first
+  // (see the .dest-split-list of globals.css for the full history) —
+  // `.dest-split-list`/`.dest-split-cards` are found via querySelector on
+  // the existing wrapRef rather than dedicated refs, and the margin is
+  // applied straight to the DOM rather than through React state,
+  // deliberately keeping this component's hook list unchanged from the
+  // version that was already known to work, in case a hook-signature
+  // change was itself getting lost on hot-reload.
+  // `includeLines` defaults to true; the very first call (fired
+  // immediately when zoomed becomes true, before the map's 1.3s camera
+  // transition has even started moving) passes false. Card centering is
+  // safe to run immediately since the cards themselves don't animate, but
+  // measuring the destination dots that early captures them mid-transition
+  // — the connector dots were rendering way off from their shapes because
+  // of exactly this: a screenshot taken quickly after clicking the pin
+  // catches that stale, pre-settled measurement. Skipping the line/dot
+  // update on the immediate call means nothing renders at the wrong
+  // position even for a moment — the first line-worthy measurement is the
+  // one at CAMERA_MS, once the transition has actually finished.
+  const layoutList = (includeLines = true) => {
     const wrap = wrapRef.current
     if (!wrap) return
+
+    const panel = wrap.querySelector<HTMLElement>('.dest-split-list')
+    const cards = wrap.querySelector<HTMLElement>('.dest-split-cards')
+    if (panel && cards) {
+      const panelRect = panel.getBoundingClientRect()
+      const cs = window.getComputedStyle(panel)
+      const padTop = parseFloat(cs.paddingTop) || 0
+      const padBottom = parseFloat(cs.paddingBottom) || 0
+      const contentHeight = panelRect.height - padTop - padBottom
+      cards.style.marginTop = '0px'
+      const cardsHeight = cards.getBoundingClientRect().height
+      cards.style.marginTop = `${Math.max(0, (contentHeight - cardsHeight) / 2)}px`
+    }
+
+    if (!includeLines) return
+
     const wrapRect = wrap.getBoundingClientRect()
     const next: ConnectorLine[] = []
     destinations.forEach((d) => {
@@ -350,9 +361,21 @@ export default function DestinationsRegionalMap({ destinations }: { destinations
     // state synchronously inside an effect body (even in an early-return
     // branch) risks a cascading extra render.
     if (!zoomed) return
-    const t = setTimeout(measureLines, CAMERA_MS)
-    window.addEventListener('resize', measureLines)
-    return () => { clearTimeout(t); window.removeEventListener('resize', measureLines) }
+    const relayout = () => layoutList()
+    layoutList(false)
+    const t1 = setTimeout(relayout, CAMERA_MS)
+    // A second, later re-check — the first live test of this (hooks
+    // removed, same math) measured real progress, an ~9px residual gap
+    // instead of the ~22px one before, but not a perfect zero. document
+    // .fonts.ready is a promise, not a hook, so this doesn't change the
+    // component's hook signature the way the earlier attempt did.
+    document.fonts?.ready?.then(relayout)
+    const t2 = setTimeout(relayout, 3000)
+    window.addEventListener('resize', relayout)
+    return () => {
+      clearTimeout(t1); clearTimeout(t2)
+      window.removeEventListener('resize', relayout)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [zoomed])
 
@@ -361,11 +384,11 @@ export default function DestinationsRegionalMap({ destinations }: { destinations
 
   return (
     <div className="dest-split" ref={wrapRef}>
-      <div className="dest-split-list" ref={listPanelRef}>
+      <div className="dest-split-list">
         {!zoomed ? (
           <p className="dest-split-prompt">Click the pin to see all three destinations.</p>
         ) : (
-          <div className="dest-split-cards" ref={cardsWrapRef} style={{ marginTop: cardsMarginTop }}>
+          <div className="dest-split-cards">
             {destinations.map((d) => (
               <Link
                 key={d.key}
@@ -446,7 +469,7 @@ export default function DestinationsRegionalMap({ destinations }: { destinations
               onMouseEnter={highlight('puntaDeMita')} onMouseLeave={highlight(null)}
               onFocus={highlight('puntaDeMita')} onBlur={highlight(null)}>
               <path d={PDM_PATH} fillRule="evenodd" className="dest-map-zone-hit" vectorEffect="non-scaling-stroke" />
-              <path d={PDM_PATH} fillRule="evenodd" className="dest-map-zone-visible" vectorEffect="non-scaling-stroke" style={{ transformOrigin: SHAPE_ORIGIN.puntaDeMita }} />
+              <path d={PDM_PATH} fillRule="evenodd" className="dest-map-zone-visible" vectorEffect="non-scaling-stroke" transform={growTransform('puntaDeMita')} />
               <text x="269.8" y="299.55" textAnchor="middle" fontSize={LABEL_SIZE} className="dest-map-dest-label" style={{ pointerEvents: 'none', transformOrigin: '269.8px 299.55px' }}>Punta de Mita Area</text>
             </a>
             <a href={byKey.puntaMita.href} className={`dest-map-zone${activeKey === 'puntaMita' ? ' is-active' : ''}`} aria-label={`Explore ${byKey.puntaMita.name}`}
@@ -454,7 +477,7 @@ export default function DestinationsRegionalMap({ destinations }: { destinations
               onMouseEnter={highlight('puntaMita')} onMouseLeave={highlight(null)}
               onFocus={highlight('puntaMita')} onBlur={highlight(null)}>
               <path d={PUNTA_MITA_PATH} fillRule="evenodd" className="dest-map-zone-hit" vectorEffect="non-scaling-stroke" />
-              <path d={PUNTA_MITA_PATH} fillRule="evenodd" className="dest-map-zone-visible" vectorEffect="non-scaling-stroke" style={{ transformOrigin: SHAPE_ORIGIN.puntaMita }} />
+              <path d={PUNTA_MITA_PATH} fillRule="evenodd" className="dest-map-zone-visible" vectorEffect="non-scaling-stroke" transform={growTransform('puntaMita')} />
               <text x="267.6" y="300.25" textAnchor="middle" fontSize={LABEL_SIZE} className="dest-map-dest-label" style={{ pointerEvents: 'none', transformOrigin: '267.6px 300.25px' }}>Punta Mita</text>
             </a>
             <a href={byKey.puertoVallarta.href} className={`dest-map-zone${activeKey === 'puertoVallarta' ? ' is-active' : ''}`} aria-label={`Explore ${byKey.puertoVallarta.name}`}
@@ -462,7 +485,7 @@ export default function DestinationsRegionalMap({ destinations }: { destinations
               onMouseEnter={highlight('puertoVallarta')} onMouseLeave={highlight(null)}
               onFocus={highlight('puertoVallarta')} onBlur={highlight(null)}>
               <path d={PV_DEST_PATH} fillRule="evenodd" className="dest-map-zone-hit" vectorEffect="non-scaling-stroke" />
-              <path d={PV_DEST_PATH} fillRule="evenodd" className="dest-map-zone-visible" vectorEffect="non-scaling-stroke" style={{ transformOrigin: SHAPE_ORIGIN.puertoVallarta }} />
+              <path d={PV_DEST_PATH} fillRule="evenodd" className="dest-map-zone-visible" vectorEffect="non-scaling-stroke" transform={growTransform('puertoVallarta')} />
               <text x="274.6" y="305.0" textAnchor="middle" fontSize={LABEL_SIZE} className="dest-map-dest-label" style={{ pointerEvents: 'none', transformOrigin: '274.6px 305px' }}>Puerto Vallarta</text>
             </a>
 

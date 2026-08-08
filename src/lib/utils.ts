@@ -85,10 +85,8 @@ export type Property = {
 export const COMM_LABELS: Record<string, string> = {
   // Inside the gates — Punta Mita
   '7-eight-bahia-golf-residences': '7 Eight Bahia',
-  '7-eight':                       '7 Eight',
   'bahia-signature-estates':       'Bahia Signature Estates',
   'bellavista-residences':         'Bellavista Residences',
-  'bellavista':                    'Bellavista',
   'cuora':                         'Cuora',
   'el-encanto':                    'El Encanto',
   'el-encanto-villas':             'El Encanto Villas',
@@ -96,7 +94,6 @@ export const COMM_LABELS: Record<string, string> = {
   'hacienda-de-mita':              'Hacienda de Mita',
   'iyari-estates':                 'Iyari Estates',
   'iyari-villas':                  'Iyari Villas',
-  'iyari':                         'Iyari',
   'kupuri':                        'Kupuri',
   'kupuri-beach-residences':       'Kupuri Beach Residences',
   'la-punta-estates':              'La Punta Estates',
@@ -115,7 +112,6 @@ export const COMM_LABELS: Record<string, string> = {
   'ranchos-estates':               'Ranchos Estates',
   'signature-estates':             'Signature Estates',
   'tau-residences':                'TAU Residences',
-  'tau':                           'TAU Residences',
   'the-surf-residences':           'The Surf Residences',
   // Outside the gates — Punta de Mita area
   'bolongo':                       'Bolongo',

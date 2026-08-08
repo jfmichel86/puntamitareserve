@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, type FormEvent } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import Logo from './Logo'
 
 export default function Nav() {
@@ -17,6 +17,17 @@ export default function Nav() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [savedCount, setSavedCount] = useState(0)
 
+  // Global property search — collapses to a single icon in the nav bar;
+  // clicking it opens a small dropdown panel below it, same pattern as the
+  // Destinations/Collections menus. Submitting routes to /villas?q=...
+  // where VillasClient does the actual matching against villa name /
+  // community / destination.
+  const router = useRouter()
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
+  const searchRef = useRef<HTMLDivElement>(null)
+  const searchInputRef = useRef<HTMLInputElement>(null)
+
   useEffect(() => {
     if (alwaysDark) return
     const handleScroll = () => setScrolled(window.scrollY > 60)
@@ -24,11 +35,13 @@ export default function Nav() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [alwaysDark])
 
-  // While the mobile menu is open: lock background scroll (same reasoning
-  // as the search sheet), and mark <body> so the floating WhatsApp/offer
-  // buttons — which sit outside the nav entirely, at a higher effective
-  // z-index than anything inside the nav's own dropdown — can be hidden via
-  // CSS instead of rendering on top of the drawer's own links.
+  // While the mobile menu is open: lock background scroll, and mark <body>
+  // so the floating WhatsApp/offer buttons — which sit outside the nav
+  // entirely, at a higher effective z-index than anything inside the nav's
+  // own dropdown — can be hidden via CSS instead of rendering on top of the
+  // drawer's own links. The search panel doesn't need this: like the
+  // Destinations/Collections dropdowns, it's a small anchored panel that
+  // never covers the page.
   useEffect(() => {
     document.body.classList.toggle('nav-drawer-open', menuOpen)
     document.body.style.overflow = menuOpen ? 'hidden' : ''
@@ -37,6 +50,26 @@ export default function Nav() {
       document.body.style.overflow = ''
     }
   }, [menuOpen])
+
+  // Focus the field the moment it appears, and close on an outside click —
+  // same pattern as the Destinations/Collections dropdowns below.
+  useEffect(() => {
+    if (!searchOpen) return
+    searchInputRef.current?.focus()
+    const handleClickOutside = (e: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) setSearchOpen(false)
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [searchOpen])
+
+  const submitSearch = (e: FormEvent) => {
+    e.preventDefault()
+    const term = searchTerm.trim()
+    if (!term) return
+    router.push(`/villas?q=${encodeURIComponent(term)}`)
+    setSearchOpen(false)
+  }
 
   useEffect(() => {
     const refreshSaved = () => {
@@ -85,6 +118,8 @@ export default function Nav() {
     setDestOpenForPath(pathname)
     setDestOpen(false)
     setPropsOpen(false)
+    setSearchOpen(false)
+    setSearchTerm('')
   }
 
   const closeMenu = () => { setMenuOpen(false); setMobileDestOpen(false); setMobilePropsOpen(false) }
@@ -181,6 +216,38 @@ export default function Nav() {
             content, not a company bio, so the old label undersold it. */}
         <li><Link href="/about" className={pathname === '/about' ? 'active' : ''}>The Experience</Link></li>
       </ul>
+
+      {/* Global search — collapsed to an icon by default. Expanding it opens
+          a small dropdown panel below the icon (same visual language as the
+          Destinations/Collections panels above), so the rest of the nav —
+          links, wishlist, Inquire — stays exactly as it is; nothing shifts
+          or hides to make room. A small pointer/caret (::before on
+          .nav-search-form) visually connects the panel back to the icon it
+          came from, and there's just the one close (X) action — pressing
+          Enter in the single text field submits the form on its own, no
+          separate magnifying-glass button needed. */}
+      <div className="nav-search" ref={searchRef}>
+        {searchOpen ? (
+          <form className="nav-search-form" onSubmit={submitSearch}>
+            <input
+              ref={searchInputRef}
+              type="text"
+              className="nav-search-input"
+              placeholder="Search villas, communities, destinations…"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Escape') setSearchOpen(false) }}
+            />
+            <button type="button" className="nav-search-close" aria-label="Close search" onClick={() => setSearchOpen(false)}>
+              <svg viewBox="0 0 24 24"><line x1="5" y1="5" x2="19" y2="19" /><line x1="19" y1="5" x2="5" y2="19" /></svg>
+            </button>
+          </form>
+        ) : (
+          <button type="button" className="nav-search-toggle" aria-label="Search properties" onClick={() => setSearchOpen(true)}>
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+          </button>
+        )}
+      </div>
 
       {/* WhatsApp was removed from here — redundant with the Inquire button
           right next to it, and with the floating sticky WhatsApp button that
