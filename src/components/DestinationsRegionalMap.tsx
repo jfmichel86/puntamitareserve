@@ -39,6 +39,22 @@ const WIDE_W = 700
 // space. Matching WIDE_H to the true content-box aspect (700 / 0.9187)
 // removes that residual letterboxing entirely.
 const WIDE_H = 761.98
+// The wide (pre-zoom) Mexico view was rendered at identity scale — no
+// translate, no scale — which just happens to put the country outline's
+// own bounding box (0-700 wide, 0-458.2 tall in its own coordinates) flush
+// against the panel's left/right edges but only 60% of its height, sitting
+// in the upper portion rather than centered (the outline's own vertical
+// midpoint, 229, is nowhere near the panel's, 381). WIDE_SCALE grows the
+// outline until its height fills 75% of WIDE_H — the binding constraint,
+// since the outline is landscape-shaped but the panel is portrait, so
+// filling height this way pushes width slightly past WIDE_W. WIDE_TX/TY
+// center the result on both axes, cropping that overflow evenly off the
+// left and right (verified: 95.25 viewBox units top AND bottom, ~86.5
+// cropped off each side) rather than leaving the outline pinned to one
+// edge — the same look as any "zoomed in a bit" country map crop.
+const WIDE_SCALE = 1.2472
+const WIDE_TX = -86.53
+const WIDE_TY = 95.25
 
 const COUNTRY_PATH = 'M 461.5,172.7 L 452.6,194.8 L 448.5,212.9 L 446.8,246.7 L 444.6,259.0 L 448.6,272.8 L 455.8,285.0 L 460.4,304.6 L 475.7,323.4 L 481.1,337.7 L 490.1,350.1 L 514.7,356.8 L 524.2,367.4 L 544.4,360.3 L 562.1,357.8 L 579.3,353.3 L 593.9,348.9 L 608.6,338.7 L 614.1,324.0 L 616.0,302.8 L 620.0,295.4 L 635.6,288.8 L 660.0,283.0 L 680.5,283.8 L 694.5,281.7 L 700.0,287.1 L 699.2,299.2 L 686.8,314.2 L 681.3,329.5 L 685.6,333.9 L 682.1,344.8 L 676.3,364.5 L 670.5,358.0 L 665.6,358.4 L 661.3,358.7 L 653.0,374.0 L 648.8,371.0 L 646.0,372.1 L 646.2,375.8 L 624.8,375.6 L 603.3,375.6 L 603.2,389.8 L 592.8,389.9 L 601.4,398.3 L 610.0,404.1 L 612.5,409.6 L 616.3,411.1 L 615.7,419.7 L 586.0,419.7 L 574.9,440.3 L 578.2,445.0 L 575.5,450.9 L 574.9,458.2 L 548.8,431.1 L 536.9,422.9 L 518.1,416.4 L 505.2,418.2 L 486.6,427.7 L 475.0,430.2 L 458.7,423.5 L 441.4,418.7 L 419.8,407.2 L 402.5,403.6 L 376.3,391.9 L 357.0,379.9 L 351.2,373.1 L 338.3,371.6 L 314.6,363.6 L 305.0,352.1 L 280.2,337.8 L 268.6,322.0 L 263.1,309.7 L 270.8,307.2 L 268.5,300.0 L 273.8,293.5 L 273.9,284.8 L 266.1,273.4 L 264.0,263.4 L 256.3,250.7 L 235.9,225.6 L 212.7,206.0 L 201.5,190.2 L 181.7,180.0 L 177.4,173.8 L 180.9,158.2 L 169.2,152.3 L 155.5,140.1 L 149.8,122.5 L 137.4,120.5 L 124.0,107.2 L 113.1,94.9 L 112.1,87.1 L 99.7,68.0 L 91.5,48.7 L 91.9,39.1 L 75.2,29.1 L 67.5,30.2 L 54.3,23.2 L 50.6,33.5 L 54.4,45.5 L 56.7,64.5 L 64.6,74.9 L 81.7,92.2 L 85.5,98.2 L 89.0,100.0 L 92.1,108.6 L 96.2,108.3 L 100.8,124.5 L 107.8,130.9 L 112.7,139.9 L 127.3,152.7 L 134.9,176.1 L 141.8,187.2 L 148.2,199.0 L 149.5,212.3 L 160.6,213.1 L 169.9,224.6 L 178.2,235.8 L 177.7,240.3 L 167.9,249.6 L 163.9,249.5 L 157.8,234.1 L 142.7,219.8 L 126.0,207.6 L 114.2,201.2 L 115.0,182.7 L 111.5,169.1 L 100.5,161.3 L 84.6,150.0 L 81.5,153.3 L 75.7,146.7 L 61.5,140.6 L 47.9,126.0 L 49.5,124.1 L 59.1,125.5 L 67.6,116.1 L 68.5,104.7 L 50.7,86.7 L 37.2,79.8 L 28.6,64.0 L 20.1,47.5 L 9.4,27.3 L 0.0,4.7 L 26.2,2.7 L 55.6,0.0 L 53.4,4.9 L 88.3,17.2 L 140.9,34.9 L 186.9,34.8 L 205.2,34.7 L 205.2,24.3 L 245.2,24.4 L 253.6,33.3 L 265.4,41.3 L 279.2,52.3 L 286.8,65.5 L 292.6,79.4 L 304.5,87.0 L 323.7,94.5 L 338.2,74.6 L 357.1,74.1 L 373.4,84.2 L 385.0,101.4 L 392.9,116.2 L 406.6,130.6 L 411.6,148.2 L 418.1,160.1 L 436.1,167.9 L 452.5,173.4 L 461.5,172.7 Z'
 
@@ -126,13 +142,29 @@ const DEST_COLORS: Record<RegionalMapDest['key'], string> = {
 // builds the whole translate+scale matrix by hand and applies it as the
 // SVG element's own `transform` attribute, sidestepping transform-box
 // entirely.
+// Puerto Vallarta's pivot is deliberately NOT its bbox center (306.62) —
+// it's shifted down to 307.11 (about 71% of the way toward its own bottom
+// edge), so growing pulls mostly from ABOVE the shape, where there's
+// plenty of room, instead of pushing down into the tight ~37px margin
+// below it. Punta de Mita Area's pivot is similarly shifted — x moved
+// from its true center (269.7) to 268.58, only about a tenth of the way
+// in from its LEFT edge (268.3), so growth pulls almost entirely from the
+// right, where there's plenty of room (~381 vs ~160 to the left) — same
+// idea as Puerto Vallarta, just a design preference here rather than
+// something clipping. Punta Mita has plenty of headroom in every
+// direction, so its pivot stays at true bbox center.
 const SHAPE_ORIGIN: Record<RegionalMapDest['key'], { x: number; y: number }> = {
   puntaMita: { x: 268.195, y: 301.08 },
-  puntaDeMita: { x: 269.7, y: 301.035 },
-  puertoVallarta: { x: 273.625, y: 306.62 },
+  puntaDeMita: { x: 268.58, y: 301.035 },
+  puertoVallarta: { x: 273.625, y: 307.11 },
 }
-// Matches the old CSS `transform: scale(2)` on hover/focus/active.
-const HOVER_SCALE = 2
+// Back up to a more noticeable 1.8 (was 2 originally, dropped to 1.4 last
+// round) — safe now that Puerto Vallarta's pivot bias keeps its downward
+// growth to about 30px, well inside the ~37px available there (verified:
+// new bottom edge lands at 755 of 761.98 available). Punta Mita and Punta
+// de Mita Area both have far more headroom (safe past 3x) so 1.8 is no
+// issue for them either.
+const HOVER_SCALE = 1.8
 
 function parsePoints(d: string): [number, number][] {
   const pts: [number, number][] = []
@@ -427,7 +459,7 @@ export default function DestinationsRegionalMap({ destinations }: { destinations
         <svg viewBox={`0 0 ${WIDE_W} ${WIDE_H}`} className="dest-map-svg">
           <g
             className="dest-map-camera"
-            style={{ transform: zoomed ? `translate(${ZOOM_TX}px, ${ZOOM_TY}px) scale(${ZOOM_SCALE})` : 'translate(0px, 0px) scale(1)' }}
+            style={{ transform: zoomed ? `translate(${ZOOM_TX}px, ${ZOOM_TY}px) scale(${ZOOM_SCALE})` : `translate(${WIDE_TX}px, ${WIDE_TY}px) scale(${WIDE_SCALE})` }}
           >
             <path d={COUNTRY_PATH} className="dest-map-country" style={{ opacity: zoomed ? 0 : 0.3 }} vectorEffect="non-scaling-stroke" />
 

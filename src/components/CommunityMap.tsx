@@ -42,12 +42,15 @@ declare global {
   }
 }
 
+export type BeachClubPin = { slug: string; name: string; lat: number; lng: number }
+
 export default function CommunityMap({
   pins,
   destinationSlug,
   calibrate = false,
   active,
   onActiveChange,
+  beachClubs,
 }: {
   pins: CommunityPin[]
   destinationSlug: string
@@ -65,11 +68,18 @@ export default function CommunityMap({
   // hovering/clicking directly on the map.
   active: CommunityPin | null
   onActiveChange: (p: CommunityPin) => void
+  // Only used in calibrate mode — the 5 real beach clubs, rendered as
+  // draggable navy pins alongside the gold community pins, so Francisco
+  // can place them once and I can compute each community's distance to
+  // its closest club (for the compare-communities table) from real
+  // coordinates instead of a guess.
+  beachClubs?: BeachClubPin[]
 }) {
   const mapElRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<any>(null)
   const [ready, setReady] = useState(false)
   const [positions, setPositions] = useState<Record<string, { lat: number; lng: number }>>({})
+  const [beachClubPositions, setBeachClubPositions] = useState<Record<string, { lat: number; lng: number }>>({})
   const [copied, setCopied] = useState(false)
 
   // Load Leaflet's CSS + JS from the CDN once, then create the map.
@@ -155,6 +165,32 @@ export default function CommunityMap({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, pins, calibrate])
 
+  // Beach club pins — only added to the map in calibrate mode. Navy,
+  // draggable, permanently labeled, same drag-then-copy pattern as the
+  // community pins above but tracked in a separate positions state so
+  // the two copyable lists stay independent.
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !ready || !calibrate || !beachClubs) return
+    const L = window.L
+    const markers = beachClubs.map((b) => {
+      const icon = L.divIcon({
+        className: 'beach-club-pin',
+        html: '<span></span>',
+        iconSize: [22, 26],
+        iconAnchor: [11, 26],
+      })
+      const marker = L.marker([b.lat, b.lng], { icon, draggable: true }).addTo(map)
+      marker.bindTooltip(b.name, { permanent: true, direction: 'left', className: 'community-pin-tooltip beach-club-tooltip' })
+      marker.on('dragend', () => {
+        const pos = marker.getLatLng()
+        setBeachClubPositions((prev) => ({ ...prev, [b.slug]: { lat: pos.lat, lng: pos.lng } }))
+      })
+      return marker
+    })
+    return () => { markers.forEach((m: any) => map.removeLayer(m)) }
+  }, [ready, calibrate, beachClubs])
+
   const shown = active || pins[0]
 
   if (calibrate) {
@@ -162,16 +198,21 @@ export default function CommunityMap({
     const codeBlock = effective
       .map((p) => `  { slug: '${p.slug}', lat: ${p.lat.toFixed(4)}, lng: ${p.lng.toFixed(4)} },`)
       .join('\n')
+    const beachEffective = (beachClubs || []).map((b) => ({ ...b, ...(beachClubPositions[b.slug] || {}) }))
+    const beachCodeBlock = beachEffective
+      .map((b) => `  { slug: '${b.slug}', lat: ${b.lat.toFixed(4)}, lng: ${b.lng.toFixed(4)} },`)
+      .join('\n')
+    const fullCodeBlock = `// Communities\n${codeBlock}\n\n// Beach clubs\n${beachCodeBlock}`
     return (
       <div className="community-map-wrap">
         <div ref={mapElRef} className="community-map" />
         <div className="community-map-calibrate">
-          <p className="community-map-calibrate-hint">Drag each pin to its real spot, then copy the list below and send it back.</p>
-          <pre className="community-map-calibrate-code">{codeBlock}</pre>
+          <p className="community-map-calibrate-hint">Drag each gold community pin and each navy beach-club pin to its real spot, then copy the full list below and send it back.</p>
+          <pre className="community-map-calibrate-code">{fullCodeBlock}</pre>
           <button
             type="button"
             className="community-map-calibrate-copy"
-            onClick={() => { navigator.clipboard.writeText(codeBlock); setCopied(true); setTimeout(() => setCopied(false), 1500) }}
+            onClick={() => { navigator.clipboard.writeText(fullCodeBlock); setCopied(true); setTimeout(() => setCopied(false), 1500) }}
           >
             {copied ? 'Copied' : 'Copy list'}
           </button>

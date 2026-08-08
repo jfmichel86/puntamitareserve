@@ -3619,6 +3619,15 @@ textarea.ct-input { resize: vertical; min-height: 88px; line-height: 1.65; }
   background: var(--gold); border: 2px solid var(--white); transform: rotate(-45deg);
   box-shadow: 0 1px 4px rgba(10,24,32,.35);
 }
+/* Beach club pins — calibrate mode only. Navy instead of gold so they're
+   instantly distinguishable from community pins while dragging both on
+   the same map. */
+.beach-club-pin span {
+  display: block; width: 22px; height: 22px; border-radius: 50% 50% 50% 0;
+  background: var(--deep-ocean); border: 2px solid var(--white); transform: rotate(-45deg);
+  box-shadow: 0 1px 4px rgba(10,24,32,.35);
+}
+.beach-club-tooltip { background: var(--deep-ocean); }
 .community-map-card {
   display: flex; gap: 16px; align-items: flex-start; background: var(--white);
   border: 1px solid var(--sand); border-top: 2px solid var(--gold); border-radius: 0 0 2px 2px;

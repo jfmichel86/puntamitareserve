@@ -4,6 +4,7 @@ import { client, urlFor } from '@/lib/sanity'
 import { PROPERTIES_BY_DESTINATION_QUERY } from '@/lib/queries'
 import { Property, LOC_TYPE_LABELS } from '@/lib/utils'
 import { PUNTA_MITA_COMMUNITIES } from '@/data/puntaMitaCommunities'
+import { PUNTA_MITA_BEACH_CLUBS } from '@/data/puntaMitaBeachClubs'
 import { CommunityPin } from '@/components/CommunityMap'
 import CommunityExplorer from '@/components/CommunityExplorer'
 
@@ -120,7 +121,12 @@ export default async function CommunitiesPage({
       </section>
 
       <div className="dest-wrap dest-wrap--redesigned">
-        <CommunityExplorer pins={pins} destinationSlug="punta-mita" calibrate={calibrate === '1'} />
+        <CommunityExplorer
+          pins={pins}
+          destinationSlug="punta-mita"
+          calibrate={calibrate === '1'}
+          beachClubs={calibrate === '1' ? PUNTA_MITA_BEACH_CLUBS : undefined}
+        />
 
         <div className="bottom-cta">
           <div className="bottom-cta-inner">

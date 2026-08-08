@@ -12,7 +12,7 @@
 // — this component only manages on-page interaction state.
 import { useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
-import CommunityMap, { CommunityPin } from './CommunityMap'
+import CommunityMap, { CommunityPin, BeachClubPin } from './CommunityMap'
 
 // Matches the exact "-view" tags a property can carry in Sanity
 // (VIEW_LABELS in utils.ts: ocean-view, golf-course-view, lake-view) —
@@ -27,10 +27,13 @@ export default function CommunityExplorer({
   pins,
   destinationSlug,
   calibrate,
+  beachClubs,
 }: {
   pins: CommunityPin[]
   destinationSlug: string
   calibrate: boolean
+  // Only rendered/used in calibrate mode — see CommunityMap's beachClubs prop.
+  beachClubs?: BeachClubPin[]
 }) {
   const [active, setActive] = useState<CommunityPin | null>(null)
   const [filter, setFilter] = useState<string | null>(null)
@@ -58,6 +61,7 @@ export default function CommunityExplorer({
             calibrate={calibrate}
             active={active}
             onActiveChange={setActive}
+            beachClubs={beachClubs}
           />
         </div>
       )}
