@@ -158,6 +158,21 @@ export default function VillasClient({ properties }: { properties: Property[] })
   // part of the page (the drawer) with no shared positioning/outside-click
   // logic to piggyback on.
   const [mfPriceOpen, setMfPriceOpen] = useState(false)
+  // Sort control on the results row (see .results-bar in the JSX below,
+  // now its home at every width) — its own open state and outside-click
+  // handling, same reasoning as mfPriceOpen just above: it lives in a
+  // different part of the page than the filter bar's openPanel/closeAll,
+  // with no shared positioning logic to piggyback on.
+  const [sortMenuOpen, setSortMenuOpen] = useState(false)
+  const sortMenuRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!sortMenuOpen) return
+    const handleClickOutside = (e: MouseEvent) => {
+      if (sortMenuRef.current && !sortMenuRef.current.contains(e.target as Node)) setSortMenuOpen(false)
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [sortMenuOpen])
   const filterBarRef = useRef<HTMLDivElement>(null)
 
   // Auto-loads the next batch as the "Show more properties" wrap scrolls
@@ -512,23 +527,13 @@ export default function VillasClient({ properties }: { properties: Property[] })
             {drawerFilterCount > 0 && <span className="mf-badge">{drawerFilterCount}</span>}
           </button>
 
-          <div className="fb-sep" />
-
-          {/* Sort */}
-          <div className={`ff ff-sort${openPanel === 'sort' ? ' is-open' : ''}`}>
-            <button className="ff-trigger" onClick={() => toggle('sort')}>
-              <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" fill="none" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="14" y2="12"/><line x1="3" y1="18" x2="8" y2="18"/></svg>
-              <span className="ff-val">
-                {{ popular: 'Popular', 'price-asc': 'Price ↑', 'price-desc': 'Price ↓', 'beds-desc': 'Bedrooms' }[filters.sort]}
-              </span>
-              <svg className="ff-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
-            </button>
-            <div className="ff-panel">
-              {[['popular', 'Most popular'], ['price-asc', 'Price: Low to high'], ['price-desc', 'Price: High to low'], ['beds-desc', 'Most bedrooms']].map(([v, l]) => (
-                <div key={v} className={`ff-opt${filters.sort === v ? ' is-sel' : ''}`} onClick={() => { setFilters((f) => ({ ...f, sort: v })); closeAll() }}>{l}</div>
-              ))}
-            </div>
-          </div>
+          {/* Sort used to live here, as the bar's trailing control — moved
+              out entirely (both mobile and desktop now, per Francisco
+              2026-08-10) onto the results row next to "Showing N
+              properties" instead (search "Sort — now lives here" below).
+              It reorders what's already showing rather than narrowing it,
+              so grouping it with the real filters read as "one more
+              filter," which it isn't. */}
 
           {hasActiveFilters && (
             <button className="fb-clear visible" onClick={clearAll}>
@@ -746,6 +751,30 @@ export default function VillasClient({ properties }: { properties: Property[] })
             ))}
           </div>
         )}
+        {/* Sort — now lives here at every width (desktop included, per
+            Francisco 2026-08-10), next to the count instead of inside the
+            filter bar above: it reorders what's already showing rather
+            than narrowing it, so it reads more like "here's what you
+            have and how it's ordered" paired with the count than like
+            one more filter. Reuses .ff/.ff-trigger/.ff-panel/.ff-opt for
+            visual consistency with the real filters above, but with its
+            own open state (sortMenuOpen) — this row has no shared
+            positioning/outside-click logic to piggyback on the way the
+            filter bar's openPanel does. */}
+        <div className={`ff ff-sort${sortMenuOpen ? ' is-open' : ''}`} ref={sortMenuRef}>
+          <button className="ff-trigger" onClick={() => setSortMenuOpen((o) => !o)}>
+            <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" fill="none" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="14" y2="12"/><line x1="3" y1="18" x2="8" y2="18"/></svg>
+            <span className="ff-val">
+              {{ popular: 'Popular', 'price-asc': 'Price ↑', 'price-desc': 'Price ↓', 'beds-desc': 'Bedrooms' }[filters.sort]}
+            </span>
+            <svg className="ff-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div className="ff-panel">
+            {[['popular', 'Most popular'], ['price-asc', 'Price: Low to high'], ['price-desc', 'Price: High to low'], ['beds-desc', 'Most bedrooms']].map(([v, l]) => (
+              <div key={v} className={`ff-opt${filters.sort === v ? ' is-sel' : ''}`} onClick={() => { setFilters((f) => ({ ...f, sort: v })); setSortMenuOpen(false) }}>{l}</div>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* GRID */}

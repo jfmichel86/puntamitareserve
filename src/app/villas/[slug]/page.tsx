@@ -9,6 +9,7 @@ import {
   AMENITY_CATS, AMENITY_LABELS, pickAmenityHighlights, STAFF_NAMES, STAFF_SERVICE_LABELS,
 } from '@/lib/propertyDetailData'
 import { renderPortableText } from '@/lib/portableText'
+import { PUNTA_MITA_COMMUNITIES } from '@/data/puntaMitaCommunities'
 import Gallery from '@/components/detail/Gallery'
 import AnchorNav from '@/components/detail/AnchorNav'
 import Sidebar from '@/components/detail/Sidebar'
@@ -142,8 +143,21 @@ export default async function PropertyDetailPage({ params }: { params: Promise<P
   else if (views.includes('oceanfront')) locationPills.push({ text: 'Oceanfront community' })
   else if (views.includes('golf-course-view')) locationPills.push({ text: 'On the golf course' })
   if (commLabel) locationPills.push({ text: commLabel })
-  const mapQuery = encodeURIComponent((commLabel ? commLabel + ', ' : '') + locStr)
-  const mapSrc = `https://maps.google.com/maps?q=${mapQuery}&t=&z=14&ie=UTF8&iwloc=&output=embed`
+  // Prefer the community's real pin — Francisco personally dragged each one
+  // to its actual spot using the Communities page's "calibrate" tool (see
+  // puntaMitaCommunities.ts) — over a Google text search on the community
+  // name, which was the previous approach and could resolve to the wrong
+  // place entirely for a generic or ambiguous community name. Punta de
+  // Mita and Puerto Vallarta properties have no equivalent verified pin
+  // data yet, so they still fall back to the old text-search query.
+  const communityGeo = prop.communityPuntaMita
+    ? PUNTA_MITA_COMMUNITIES.find((c) => c.slug === prop.communityPuntaMita)
+    : undefined
+  const mapQuery = communityGeo
+    ? `${communityGeo.lat},${communityGeo.lng}`
+    : encodeURIComponent((commLabel ? commLabel + ', ' : '') + locStr)
+  const mapZoom = communityGeo ? 15 : 14
+  const mapSrc = `https://maps.google.com/maps?q=${mapQuery}&t=&z=${mapZoom}&ie=UTF8&iwloc=&output=embed`
 
   // Title with italic on all but the first word: "Villa <em>Cielo Azul</em>"
   const titleParts = prop.title.split(' ')

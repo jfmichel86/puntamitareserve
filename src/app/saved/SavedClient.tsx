@@ -625,6 +625,49 @@ export default function SavedClient({ properties }: { properties: Property[] }) 
                 <h2 className="sec-title">See your wishlist side by side</h2>
               </div>
             </div>
+            {/* Mobile-only season control, rendered outside the
+                horizontally-scrolling table entirely — it used to live in
+                its own <tr> inside the table below, but that meant it
+                scrolled away with everything else once you scrolled right
+                to see later columns (Francisco's report, 2026-08-10). It
+                doesn't belong to any one column — choosing a season changes
+                every column's Nightly Rate row at once — so keeping it
+                outside the scroll container means it's always visible no
+                matter how far right you've scrolled, without needing a
+                sticky-positioning hack inside a border-collapsed,
+                fixed-layout table. See .sv-season-tabs-row inside the table
+                below for the desktop equivalent, which stays there since
+                desktop's tabs never had this scrolling problem. */}
+            {availableSeasons.length > 1 && (
+              <div className="sv-season-dropdown-bar">
+                <p className="sv-season-dropdown-hint">Tap to see rates for other seasons</p>
+                <div className="sv-season-dropdown" ref={seasonDropdownRef}>
+                  <button
+                    type="button"
+                    className="sv-season-dropdown-trigger"
+                    onClick={() => setSeasonDropdownOpen((o) => !o)}
+                    aria-expanded={seasonDropdownOpen}
+                  >
+                    {selectedSeason}
+                    <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9" /></svg>
+                  </button>
+                  {seasonDropdownOpen && (
+                    <div className="sv-season-dropdown-panel">
+                      {availableSeasons.map((s) => (
+                        <button
+                          key={s}
+                          type="button"
+                          className={s === selectedSeason ? 'is-sel' : ''}
+                          onClick={() => { setSelectedSeason(s); setSeasonDropdownOpen(false) }}
+                        >
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
             <div className="sv-cmp-scroll">
               <table className="sv-cmp-table">
                 <thead>
@@ -667,11 +710,12 @@ export default function SavedClient({ properties }: { properties: Property[] }) 
                       wrap instead of hiding options behind a click, and
                       there's no ambiguity about whether this is interactive.
                       Desktop-only now (see .sv-season-tabs-row in
-                      globals.css) — on mobile this row lives inside the
-                      same horizontally-scrolling table as the property
-                      columns, so past 2-3 seasons the tabs scroll off with
-                      no hint there's more; the dropdown row right below
-                      this one replaces it below that width. */}
+                      globals.css) — the mobile equivalent used to be a
+                      second <tr> right here, but it lived inside this same
+                      horizontally-scrolling table and scrolled out of view
+                      past the first couple of columns; it's now rendered
+                      once, outside the table, right above .sv-cmp-scroll
+                      (see up near sv-cmp-heading-row). */}
                   {availableSeasons.length > 1 && (
                     <tr className="sv-season-tabs-row">
                       <td></td>
@@ -687,43 +731,6 @@ export default function SavedClient({ properties }: { properties: Property[] }) 
                               {s}
                             </button>
                           ))}
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                  {/* Mobile-only dropdown (CSS-toggled, see comment above) —
-                      a single tap instead of scrolling the whole table
-                      sideways, with an explicit instruction line so it's
-                      never ambiguous that this opens something. */}
-                  {availableSeasons.length > 1 && (
-                    <tr className="sv-season-dropdown-row">
-                      <td></td>
-                      <td colSpan={orderedProps.length}>
-                        <p className="sv-season-dropdown-hint">Tap to see rates for other seasons</p>
-                        <div className="sv-season-dropdown" ref={seasonDropdownRef}>
-                          <button
-                            type="button"
-                            className="sv-season-dropdown-trigger"
-                            onClick={() => setSeasonDropdownOpen((o) => !o)}
-                            aria-expanded={seasonDropdownOpen}
-                          >
-                            {selectedSeason}
-                            <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9" /></svg>
-                          </button>
-                          {seasonDropdownOpen && (
-                            <div className="sv-season-dropdown-panel">
-                              {availableSeasons.map((s) => (
-                                <button
-                                  key={s}
-                                  type="button"
-                                  className={s === selectedSeason ? 'is-sel' : ''}
-                                  onClick={() => { setSelectedSeason(s); setSeasonDropdownOpen(false) }}
-                                >
-                                  {s}
-                                </button>
-                              ))}
-                            </div>
-                          )}
                         </div>
                       </td>
                     </tr>

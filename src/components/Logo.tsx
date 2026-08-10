@@ -13,7 +13,7 @@
 export default function Logo({ size = 'default' }: { size?: 'default' | 'lg' }) {
   return (
     <div className={`brand-logo${size === 'lg' ? ' brand-logo--lg' : ''}`}>
-      <span className="brand-logo-top">Mexican</span>
+      <span className="brand-logo-top"><span className="brand-logo-top-text">Mexican</span></span>
       <span className="brand-logo-bottom">Reserve</span>
       <span className="brand-logo-rule" />
     </div>

@@ -272,15 +272,27 @@ export default function Nav() {
       </button>
 
       <div className={`mobile-drawer${menuOpen ? ' open' : ''}`}>
-        <button
-          type="button"
-          className={`mobile-dropdown-trigger${isDestActive ? ' active' : ''}`}
-          onClick={() => setMobileDestOpen((o) => !o)}
-          aria-expanded={mobileDestOpen}
-        >
-          Destinations
-          <svg className={mobileDestOpen ? 'open' : ''} viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
-        </button>
+        {/* Split into a real link (the word itself, so tapping it goes
+            straight to /destinations) plus a separate small caret button
+            for expand/collapse — this used to be one <button> that only
+            ever toggled the list, so there was no way to actually get to
+            the Destinations overview page from the mobile menu at all
+            (Francisco's report, 2026-08-09). Same split desktop's
+            .nav-dropdown-trigger already uses, for the same reason. */}
+        <div className={`mobile-dropdown-trigger${isDestActive ? ' active' : ''}`}>
+          <Link href="/destinations" className="mobile-dropdown-trigger-label" onClick={closeMenu}>
+            Destinations
+          </Link>
+          <button
+            type="button"
+            className="mobile-dropdown-trigger-caret"
+            onClick={() => setMobileDestOpen((o) => !o)}
+            aria-expanded={mobileDestOpen}
+            aria-label="Toggle destinations list"
+          >
+            <svg className={mobileDestOpen ? 'open' : ''} viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+        </div>
         {mobileDestOpen && (
           <div className="mobile-dropdown-list">
             {DESTINATIONS.map((d) => (
@@ -291,15 +303,20 @@ export default function Nav() {
             ))}
           </div>
         )}
-        <button
-          type="button"
-          className={`mobile-dropdown-trigger${isActive('/villas') ? ' active' : ''}`}
-          onClick={() => setMobilePropsOpen((o) => !o)}
-          aria-expanded={mobilePropsOpen}
-        >
-          Collections
-          <svg className={mobilePropsOpen ? 'open' : ''} viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
-        </button>
+        <div className={`mobile-dropdown-trigger${isActive('/villas') ? ' active' : ''}`}>
+          <Link href="/villas" className="mobile-dropdown-trigger-label" onClick={closeMenu}>
+            Collections
+          </Link>
+          <button
+            type="button"
+            className="mobile-dropdown-trigger-caret"
+            onClick={() => setMobilePropsOpen((o) => !o)}
+            aria-expanded={mobilePropsOpen}
+            aria-label="Toggle collections list"
+          >
+            <svg className={mobilePropsOpen ? 'open' : ''} viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+        </div>
         {mobilePropsOpen && (
           <div className="mobile-dropdown-list">
             {PROPERTIES_MENU.map((p) => (
