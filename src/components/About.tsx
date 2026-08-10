@@ -98,14 +98,17 @@ export default function About() {
 
       {/* ── The People ───────────────────────────────────────────────
           Draft quote — this is the one section that should sound like
-          you, not a copywriter. Swap the placeholder photo for a real
-          one of you or the team, and edit the quote to match your own
-          voice before this goes live. */}
-      <div className="about-founder reveal">
-        <div className="about-founder-photo about-founder-photo-placeholder">
-          <span>Photo placeholder — you or your team, on-site at a property</span>
-        </div>
+          you, not a copywriter. Edit the quote to match your own voice
+          before this goes live. No photo for now (Francisco's call — a
+          placeholder box looked worse than just centering the quote on
+          its own); .about-founder--no-photo below is that centered
+          treatment. Once a real photo is ready, add back an
+          .about-founder-photo <div> as the first child (see
+          .about-founder-photo-placeholder in globals.css, still intact)
+          and drop the --no-photo class to restore the two-column layout. */}
+      <div className="about-founder about-founder--no-photo reveal">
         <div className="about-founder-text">
+          <span className="s-div" />
           <p className="about-founder-quote">&ldquo;Personally&rdquo; isn&rsquo;t a tagline for us — it&rsquo;s how we work. We&rsquo;ve walked through every property on this site, met the people who care for them, and built relationships we&rsquo;d trust with our own family&rsquo;s trip. That&rsquo;s what we bring to yours.</p>
           <p className="about-founder-name">Francisco Michel, Founder</p>
         </div>

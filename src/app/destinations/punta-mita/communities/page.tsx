@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { client, urlFor } from '@/lib/sanity'
 import { PROPERTIES_BY_DESTINATION_QUERY } from '@/lib/queries'
-import { Property, LOC_TYPE_LABELS } from '@/lib/utils'
+import { Property, LOC_TYPE_LABELS, startingRate, formatPriceRange } from '@/lib/utils'
 import { PUNTA_MITA_COMMUNITIES } from '@/data/puntaMitaCommunities'
 import { PUNTA_MITA_BEACH_CLUBS } from '@/data/puntaMitaBeachClubs'
 import { CommunityPin } from '@/components/CommunityMap'
@@ -59,8 +59,88 @@ function aggregateBedrooms(props: Property[]): string {
   return min === max ? `${min} Bedroom${min === 1 ? '' : 's'}` : `${min}–${max} Bedrooms`
 }
 
+// What to call this community's listings in "View N ___" (Francisco's
+// call — "villas" was wrong for condo-only communities like TAU
+// Residences). Only names a specific type when every property in the
+// community is that same type; a community that mixes villas, condos,
+// and/or estates falls back to the generic "property"/"properties"
+// rather than guessing which type to lead with.
+function aggregatePropertyType(props: Property[]): CommunityPin['propertyTypeWord'] {
+  const types = new Set(props.map((p) => p.propertyType))
+  if (types.size === 1) {
+    const only = [...types][0]
+    if (only === 'villa' || only === 'condo' || only === 'estate') return only
+  }
+  return 'property'
+}
+
+// ── Compare-communities table facts ─────────────────────────────────
+// These 4 only feed the compare table (see the "3 extra facts" comment
+// on CommunityPin in CommunityMap.tsx) — the map hover card and grid
+// pills above stay exactly as they were.
+
+// Direct beach access: Sanity's own schema note distinguishes the two
+// tags this reads — "oceanfront" = ocean-facing, no beach access,
+// "beachfront" = direct beach access. Same tags aggregateLocation()
+// above already reads, just interpreted for a different question.
+function aggregateBeachAccess(props: Property[]): string {
+  const all = new Set(props.flatMap((p) => p.viewsAndPool || []))
+  if (all.has('beachfront')) return 'Direct beach access'
+  if (all.has('oceanfront')) return 'Ocean-facing, no direct access'
+  return 'No ocean frontage'
+}
+
+// Sunrise/Sunset/Both/None — not tracked in Sanity at all. Francisco
+// confirmed each community's orientation by hand (2026-08-07); see the
+// sunOrientation comment in puntaMitaCommunities.ts for the full story.
+const SUN_LABELS: Record<string, string> = {
+  sunset: 'Sunset',
+  sunrise: 'Sunrise',
+  both: 'Sunrise & Sunset',
+  none: 'Neither',
+}
+
+// Price range: the real "starting from" rate on every property in the
+// community, lowest to highest — not a single average, so a community
+// with both entry-level and flagship villas shows its actual spread.
+function aggregatePriceRange(props: Property[]): string {
+  const rates = props.map((p) => startingRate(p)).filter((n): n is number => n != null)
+  if (rates.length === 0) return ''
+  return formatPriceRange({ min: Math.min(...rates), max: Math.max(...rates) }) || ''
+}
+
+// Straight-line ("as the pelican flies") distance in meters between two
+// coordinates — plenty accurate for a same-peninsula "how close is the
+// beach club" comparison, without needing a real routing/directions API.
+function haversineMeters(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371000
+  const toRad = (d: number) => (d * Math.PI) / 180
+  const dLat = toRad(lat2 - lat1)
+  const dLng = toRad(lng2 - lng1)
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2
+  return 2 * R * Math.asin(Math.sqrt(a))
+}
+
+// Closest of the 5 real beach clubs to a community's pin, shown as an
+// estimated walk time (~80 meters/minute, a relaxed pace) — every
+// distance on the peninsula comes out under 20 minutes, so a walk-time
+// estimate reads more useful here than raw meters or kilometers would.
+function closestBeachClub(lat: number, lng: number): string {
+  if (PUNTA_MITA_BEACH_CLUBS.length === 0) return ''
+  let best = PUNTA_MITA_BEACH_CLUBS[0]
+  let bestMeters = haversineMeters(lat, lng, best.lat, best.lng)
+  for (const b of PUNTA_MITA_BEACH_CLUBS.slice(1)) {
+    const d = haversineMeters(lat, lng, b.lat, b.lng)
+    if (d < bestMeters) { best = b; bestMeters = d }
+  }
+  const minutes = Math.max(1, Math.round(bestMeters / 80))
+  return `${minutes} min walk to ${best.name}`
+}
+
 const TITLE = 'Explore the Communities — Punta Mita'
-const DESCRIPTION = 'Punta Mita is made up of distinct gated communities, each with its own character. Explore the peninsula and find the one that fits how you travel.'
+const DESCRIPTION = 'Punta Mita is made up of distinct communities, each with its own character. Explore the peninsula and find the one that fits how you travel.'
 
 export const metadata: Metadata = {
   title: TITLE,
@@ -104,10 +184,33 @@ export default async function CommunitiesPage({
         views: aggregateViews(matches),
         pool: aggregatePool(matches),
         bedrooms: aggregateBedrooms(matches),
+        propertyTypeWord: aggregatePropertyType(matches),
         count: matches.length,
+        // Sized for the map hover card's full-width 16:9 photo: up to
+        // 380px wide on screen, doubled to 760px+ to stay sharp on
+        // retina/high-DPI displays (the previous 600x400 fetch was both
+        // too small at full size and the wrong aspect ratio — a 3:2 crop
+        // being stretched into a 16:9 box — which is what was reading as
+        // blurry/soft).
         photoUrl: withPhoto?.heroImage?.asset?._ref
-          ? urlFor(withPhoto.heroImage!).width(280).height(200).quality(85).url()
+          ? urlFor(withPhoto.heroImage!).width(800).height(450).quality(90).url()
           : undefined,
+        // A separate, larger fetch — now used in two places: the "Every
+        // Community" grid card's full-width photo (CommunityExplorer.tsx)
+        // and the compare table's thumbnail (up to ~650px wide at a
+        // 2-column comparison). Sized to match the sitewide PropertyCard's
+        // own villa-photo fetch (1300x867 @ quality 90) rather than a
+        // smaller one-off size, so a community photo stays sharp on a
+        // retina display at both of those widths — a single-column grid
+        // card (a rare case, but possible when a view filter narrows the
+        // results to one community) can stretch close to this ceiling.
+        comparePhotoUrl: withPhoto?.heroImage?.asset?._ref
+          ? urlFor(withPhoto.heroImage!).width(1300).height(867).quality(90).url()
+          : undefined,
+        beachAccess: aggregateBeachAccess(matches),
+        sunOrientation: SUN_LABELS[c.sunOrientation || ''] || '',
+        priceRange: aggregatePriceRange(matches),
+        beachClubDistance: closestBeachClub(c.lat, c.lng),
       }
     })
     .filter((p): p is CommunityPin => p !== null)
@@ -117,7 +220,7 @@ export default async function CommunitiesPage({
       <section className="pg-header">
         <p className="pg-eyebrow">Punta Mita — Inside the Gates</p>
         <h1 className="pg-title">Explore the Communities</h1>
-        <p className="pg-sub">A 1,500-acre peninsula made up of distinct gated communities — each with its own character, its own view, its own pace.</p>
+        <p className="pg-sub">A 1,500-acre peninsula made up of distinct communities — each with its own character, its own view, its own pace.</p>
       </section>
 
       <div className="dest-wrap dest-wrap--redesigned">

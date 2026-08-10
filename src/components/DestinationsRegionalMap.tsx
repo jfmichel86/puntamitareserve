@@ -39,22 +39,24 @@ const WIDE_W = 700
 // space. Matching WIDE_H to the true content-box aspect (700 / 0.9187)
 // removes that residual letterboxing entirely.
 const WIDE_H = 761.98
-// The wide (pre-zoom) Mexico view was rendered at identity scale — no
-// translate, no scale — which just happens to put the country outline's
-// own bounding box (0-700 wide, 0-458.2 tall in its own coordinates) flush
-// against the panel's left/right edges but only 60% of its height, sitting
-// in the upper portion rather than centered (the outline's own vertical
-// midpoint, 229, is nowhere near the panel's, 381). WIDE_SCALE grows the
-// outline until its height fills 75% of WIDE_H — the binding constraint,
-// since the outline is landscape-shaped but the panel is portrait, so
-// filling height this way pushes width slightly past WIDE_W. WIDE_TX/TY
-// center the result on both axes, cropping that overflow evenly off the
-// left and right (verified: 95.25 viewBox units top AND bottom, ~86.5
-// cropped off each side) rather than leaving the outline pinned to one
-// edge — the same look as any "zoomed in a bit" country map crop.
-const WIDE_SCALE = 1.2472
-const WIDE_TX = -86.53
-const WIDE_TY = 95.25
+// The map panel is now wider on the wide (pre-zoom) view specifically — the
+// "Click the pin" column shrinks to 1/4 width and the map grows to 3/4 (see
+// .dest-split:not(.is-zoomed) in globals.css, desktop only; the zoomed
+// card view keeps the original even 1/1 split untouched, and mobile always
+// stacks to a single column regardless). That resize only ever happens on
+// the WIDE side of the toggle — the shared <svg> and its viewBox stay
+// exactly as they were (locked, per "keep the region shape there"), so the
+// zoomed map is pixel-for-pixel unaffected.
+// WIDE_SCALE/TX/TY are computed to land the country outline centered in
+// that new, wider panel — filling 75% of its width and about 70% of its
+// height (the outline itself is more landscape-shaped than the panel, so
+// hitting 75% on both at once isn't possible without cropping; width was
+// chosen as the fill target since that's the dimension that actually grew).
+// Verified: 106px margin left/right, 88px margin top/bottom — symmetric on
+// each axis, no cropping.
+const WIDE_SCALE = 1.1698
+const WIDE_TX = -59.42
+const WIDE_TY = 112.99
 
 const COUNTRY_PATH = 'M 461.5,172.7 L 452.6,194.8 L 448.5,212.9 L 446.8,246.7 L 444.6,259.0 L 448.6,272.8 L 455.8,285.0 L 460.4,304.6 L 475.7,323.4 L 481.1,337.7 L 490.1,350.1 L 514.7,356.8 L 524.2,367.4 L 544.4,360.3 L 562.1,357.8 L 579.3,353.3 L 593.9,348.9 L 608.6,338.7 L 614.1,324.0 L 616.0,302.8 L 620.0,295.4 L 635.6,288.8 L 660.0,283.0 L 680.5,283.8 L 694.5,281.7 L 700.0,287.1 L 699.2,299.2 L 686.8,314.2 L 681.3,329.5 L 685.6,333.9 L 682.1,344.8 L 676.3,364.5 L 670.5,358.0 L 665.6,358.4 L 661.3,358.7 L 653.0,374.0 L 648.8,371.0 L 646.0,372.1 L 646.2,375.8 L 624.8,375.6 L 603.3,375.6 L 603.2,389.8 L 592.8,389.9 L 601.4,398.3 L 610.0,404.1 L 612.5,409.6 L 616.3,411.1 L 615.7,419.7 L 586.0,419.7 L 574.9,440.3 L 578.2,445.0 L 575.5,450.9 L 574.9,458.2 L 548.8,431.1 L 536.9,422.9 L 518.1,416.4 L 505.2,418.2 L 486.6,427.7 L 475.0,430.2 L 458.7,423.5 L 441.4,418.7 L 419.8,407.2 L 402.5,403.6 L 376.3,391.9 L 357.0,379.9 L 351.2,373.1 L 338.3,371.6 L 314.6,363.6 L 305.0,352.1 L 280.2,337.8 L 268.6,322.0 L 263.1,309.7 L 270.8,307.2 L 268.5,300.0 L 273.8,293.5 L 273.9,284.8 L 266.1,273.4 L 264.0,263.4 L 256.3,250.7 L 235.9,225.6 L 212.7,206.0 L 201.5,190.2 L 181.7,180.0 L 177.4,173.8 L 180.9,158.2 L 169.2,152.3 L 155.5,140.1 L 149.8,122.5 L 137.4,120.5 L 124.0,107.2 L 113.1,94.9 L 112.1,87.1 L 99.7,68.0 L 91.5,48.7 L 91.9,39.1 L 75.2,29.1 L 67.5,30.2 L 54.3,23.2 L 50.6,33.5 L 54.4,45.5 L 56.7,64.5 L 64.6,74.9 L 81.7,92.2 L 85.5,98.2 L 89.0,100.0 L 92.1,108.6 L 96.2,108.3 L 100.8,124.5 L 107.8,130.9 L 112.7,139.9 L 127.3,152.7 L 134.9,176.1 L 141.8,187.2 L 148.2,199.0 L 149.5,212.3 L 160.6,213.1 L 169.9,224.6 L 178.2,235.8 L 177.7,240.3 L 167.9,249.6 L 163.9,249.5 L 157.8,234.1 L 142.7,219.8 L 126.0,207.6 L 114.2,201.2 L 115.0,182.7 L 111.5,169.1 L 100.5,161.3 L 84.6,150.0 L 81.5,153.3 L 75.7,146.7 L 61.5,140.6 L 47.9,126.0 L 49.5,124.1 L 59.1,125.5 L 67.6,116.1 L 68.5,104.7 L 50.7,86.7 L 37.2,79.8 L 28.6,64.0 L 20.1,47.5 L 9.4,27.3 L 0.0,4.7 L 26.2,2.7 L 55.6,0.0 L 53.4,4.9 L 88.3,17.2 L 140.9,34.9 L 186.9,34.8 L 205.2,34.7 L 205.2,24.3 L 245.2,24.4 L 253.6,33.3 L 265.4,41.3 L 279.2,52.3 L 286.8,65.5 L 292.6,79.4 L 304.5,87.0 L 323.7,94.5 L 338.2,74.6 L 357.1,74.1 L 373.4,84.2 L 385.0,101.4 L 392.9,116.2 L 406.6,130.6 L 411.6,148.2 L 418.1,160.1 L 436.1,167.9 L 452.5,173.4 L 461.5,172.7 Z'
 
@@ -112,6 +114,78 @@ const ZOOM_TY = -16777.83
 // camera has already scaled everything up by ZOOM_SCALE — so their
 // declared font-size is the on-screen size divided by that scale.
 const LABEL_SIZE = 12 / ZOOM_SCALE
+// Same idea as LABEL_SIZE above, but for the WIDE (country) view instead
+// of the zoomed one — divides by WIDE_SCALE (~1.17) so these read as a
+// normal ~9px label on screen rather than scaling huge or tiny with it.
+// This is the tier-4 baseline; every other tier is a multiple of it, so
+// the whole set scales together if WIDE_SCALE ever changes.
+const GEO_LABEL_SIZE = 12 / WIDE_SCALE
+
+// Backdrop geography labels, visible only in the WIDE (pre-zoom) view —
+// gives the country outline some cartographic context instead of being a
+// bare shape. Positions are approximate, placed by eye (then checked with
+// a point-in-polygon test against COUNTRY_PATH so water labels land in
+// actual water and place labels land on actual land) relative to the
+// traced coastline above — this outline is Francisco's own hand-traced
+// shape, not a precise projection, so there's no lon/lat to compute from.
+//
+// Sized in tiers, matching the reference hierarchy Francisco pulled from
+// Google Maps: country names read clearly largest, the two oceans (Pacific
+// / Atlantic — bumped 10% above the other water labels per Francisco, since
+// they're the biggest bodies of water on the map) sit just under that,
+// gulfs/seas share one middle tier, and cities are smallest with a small
+// dot marking the actual point:
+//   1. Countries — United States, Mexico
+//   2. Oceans — Pacific Ocean, Atlantic Ocean (water tier x1.1)
+//   3. Water — Gulf of Mexico, Gulf of California, Caribbean Sea
+//   4. Cities — Monterrey, Guadalajara, Mexico City
+const GEO_TIER = { country: 2.6, ocean: 1.6 * 1.1, water: 1.6, city: 1.23 }
+
+// Positions below are GEOREFERENCED, not eyeballed — the previous two
+// rounds placed labels by matching relative compass directions against a
+// screenshot, which Francisco correctly flagged as still not accurate
+// enough (Guadalajara/Mexico City in particular were landing north of the
+// pin instead of south). This time every position is computed the same way
+// a real map projection would be: 5 points on COUNTRY_PATH whose real-world
+// longitude/latitude are known (the 2 US-border corners, the Baja tip at
+// Cabo, the southern Chiapas/Guatemala tip, and the Yucatán's Cancún-area
+// tip) were fed into a least-squares best-fit linear transform from
+// (lon, lat) to this file's own (x, y) units. That transform reproduces
+// all 5 reference points to within ~2 units, and — as a sanity check — maps
+// Punta Mita's real coordinates to within 6 units of PIN_X/PIN_Y, which
+// were placed independently in an earlier round. Every water/place/city
+// label below is that same transform applied to each location's real
+// longitude/latitude, so they're all consistent with each other and with
+// the pin, not just individually plausible.
+const GEO_WATER: { name: string; x: number; y: number; size: number; angle?: number }[] = [
+  { name: 'Pacific Ocean', x: 30, y: 260, size: GEO_LABEL_SIZE * GEO_TIER.ocean },
+  { name: 'Atlantic Ocean', x: 640, y: 70, size: GEO_LABEL_SIZE * GEO_TIER.ocean },
+  { name: 'Gulf of Mexico', x: 520, y: 205, size: GEO_LABEL_SIZE * GEO_TIER.water },
+  { name: 'Caribbean Sea', x: 715, y: 330, size: GEO_LABEL_SIZE * GEO_TIER.water },
+  // Georeferenced to a real open-water point in the gulf (27.5N 112.2W —
+  // picked for having the most clearance from both the Baja and mainland
+  // coastlines at this trace's scale) and rotated ~62° to run along the
+  // strait itself, matching Francisco's Google Maps reference where this
+  // label reads almost top-to-bottom instead of horizontally.
+  { name: 'Gulf of California', x: 111.6, y: 119.9, size: GEO_LABEL_SIZE * GEO_TIER.water, angle: 62 },
+]
+// Countries share the water labels' italic, marker-free style (a border
+// isn't a "point" any more than open water is) but read as their own,
+// more prominent tier.
+const GEO_COUNTRIES: { name: string; x: number; y: number; size: number }[] = [
+  { name: 'United States', x: 280, y: -50, size: GEO_LABEL_SIZE * GEO_TIER.country },
+  { name: 'Mexico', x: 300, y: 180, size: GEO_LABEL_SIZE * GEO_TIER.country },
+]
+// Cities get a small gold dot + label, since they ARE real point locations.
+// Georeferenced the same way as the water labels above (see that comment) —
+// matches the real relative geography instead of 3 independently-guessed
+// spots.
+const GEO_PLACES: { name: string; x: number; y: number; size: number }[] = [
+  { name: 'Monterrey', x: 387.8, y: 176.3, size: GEO_LABEL_SIZE * GEO_TIER.city },
+  { name: 'Guadalajara', x: 316.3, y: 304.5, size: GEO_LABEL_SIZE * GEO_TIER.city },
+  { name: 'Mexico City', x: 414.3, y: 335.2, size: GEO_LABEL_SIZE * GEO_TIER.city },
+]
+
 // Matches .dest-map-camera's transition in globals.css — connector lines
 // are only measured once this push-in has actually finished, otherwise
 // they'd be drawn to the shapes' pre-zoom positions and visibly snap once
@@ -415,10 +489,10 @@ export default function DestinationsRegionalMap({ destinations }: { destinations
   const zoomOut = () => { setZoomed(false); setActiveKey(null); setLines([]) }
 
   return (
-    <div className="dest-split" ref={wrapRef}>
+    <div className={`dest-split${zoomed ? ' is-zoomed' : ''}`} ref={wrapRef}>
       <div className="dest-split-list">
         {!zoomed ? (
-          <p className="dest-split-prompt">Click the pin to see all three destinations.</p>
+          <p className="dest-split-prompt">Click the pin to explore the region.</p>
         ) : (
           <div className="dest-split-cards">
             {destinations.map((d) => (
@@ -462,6 +536,31 @@ export default function DestinationsRegionalMap({ destinations }: { destinations
             style={{ transform: zoomed ? `translate(${ZOOM_TX}px, ${ZOOM_TY}px) scale(${ZOOM_SCALE})` : `translate(${WIDE_TX}px, ${WIDE_TY}px) scale(${WIDE_SCALE})` }}
           >
             <path d={COUNTRY_PATH} className="dest-map-country" style={{ opacity: zoomed ? 0 : 0.3 }} vectorEffect="non-scaling-stroke" />
+
+            {/* Backdrop geography — water + countries (italic, no marker,
+                sized by tier: oceans biggest, then countries, then seas/
+                gulfs) and a few named cities (small gold dot + label,
+                smallest tier) — only ever shown in the WIDE view, same
+                fade as the country outline itself. pointerEvents:'none' so
+                none of this ever intercepts the pin click. */}
+            <g style={{ opacity: zoomed ? 0 : 1, pointerEvents: 'none', transition: 'opacity .5s ease' }}>
+              {GEO_WATER.map((g) => (
+                <text
+                  key={g.name} x={g.x} y={g.y} textAnchor="middle" fontSize={g.size}
+                  className="dest-map-geo-water"
+                  transform={g.angle ? `rotate(${g.angle}, ${g.x}, ${g.y})` : undefined}
+                >{g.name}</text>
+              ))}
+              {GEO_COUNTRIES.map((g) => (
+                <text key={g.name} x={g.x} y={g.y} textAnchor="middle" fontSize={g.size} className="dest-map-geo-country">{g.name}</text>
+              ))}
+              {GEO_PLACES.map((g) => (
+                <g key={g.name}>
+                  <circle cx={g.x} cy={g.y} r={2 / WIDE_SCALE} className="dest-map-geo-dot" />
+                  <text x={g.x + 5 / WIDE_SCALE} y={g.y + g.size * 0.32} fontSize={g.size} className="dest-map-geo-place">{g.name}</text>
+                </g>
+              ))}
+            </g>
 
             <path d={BAHIA_REGION} className="dest-map-region" style={{ opacity: zoomed ? 1 : 0 }} vectorEffect="non-scaling-stroke" />
             <path d={PV_REGION} className="dest-map-region" style={{ opacity: zoomed ? 1 : 0 }} vectorEffect="non-scaling-stroke" />

@@ -29,7 +29,35 @@ export type CommunityPin = {
   pool: string
   bedrooms: string
   count: number
+  // What to call the properties in the "View N ___" link below — 'villa'
+  // /'condo'/'estate' when every property in this community is that same
+  // type, or the generic 'property' when the community mixes types (e.g.
+  // a community with both villas and condos). See aggregatePropertyType()
+  // in page.tsx, which computes this.
+  propertyTypeWord: 'villa' | 'condo' | 'estate' | 'property'
   photoUrl?: string
+  // Higher-resolution version of photoUrl, only used by the compare
+  // table's much larger thumbnail — see the comment where it's fetched
+  // in page.tsx for why it's a separate field instead of reusing photoUrl.
+  comparePhotoUrl?: string
+  // The 3 extra facts only the compare-communities table needs — kept
+  // off the map's own hover card and grid pills (which only show
+  // location/views/pool/bedrooms) so this doesn't get crowded.
+  beachAccess: string
+  sunOrientation: string
+  priceRange: string
+  beachClubDistance: string
+}
+
+// Shared by both this file's own hover card and CommunityExplorer.tsx's
+// grid cards, so "View N ___" always pluralizes the same way in both
+// places. 'properties' is irregular (not 'propertys'), everything else
+// is a plain +s.
+const PROPERTY_TYPE_PLURALS: Record<CommunityPin['propertyTypeWord'], string> = {
+  villa: 'villas', condo: 'condos', estate: 'estates', property: 'properties',
+}
+export function propertyTypeLabel(word: CommunityPin['propertyTypeWord'], count: number): string {
+  return count === 1 ? word : PROPERTY_TYPE_PLURALS[word]
 }
 
 const LEAFLET_CSS = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'
@@ -97,6 +125,17 @@ export default function CommunityMap({
         zoom: 14,
         scrollWheelZoom: false,
         attributionControl: false,
+        // Leaflet's default zoom/fade animations repaint the map onto its
+        // own GPU-accelerated layer during every pan/zoom. On some
+        // graphics hardware that animated layer wins the paint order
+        // against the hover card sitting on top of it even though the
+        // card's z-index is higher — the exact "hidden at rest, flashes
+        // into view mid-zoom" bug Francisco kept hitting. Turning these
+        // off makes zooming an instant swap instead of an animated one,
+        // which removes that layer entirely.
+        fadeAnimation: false,
+        zoomAnimation: false,
+        markerZoomAnimation: false,
       })
       L.tileLayer(TILE_URL, { maxZoom: 18 }).addTo(map)
       mapRef.current = map
@@ -225,28 +264,58 @@ export default function CommunityMap({
     <div className="community-map-wrap">
       <div ref={mapElRef} className="community-map" />
       {shown && (
-        <div className="community-map-card">
+        // The whole card is one link to that community's listing results —
+        // matching how the "Every Community" grid cards below and the
+        // sitewide PropertyCard both work (the whole card navigates, not
+        // just a line of text at the bottom). Since the outer element is
+        // now the link, the old inner "View N villas" Link became a plain
+        // span below — a real <a> can't nest inside another <a>.
+        <Link
+          href={`/villas?destination=${destinationSlug}&community=${shown.slug}`}
+          className="community-map-card"
+        >
           <div className="community-map-card-photo">
             {shown.photoUrl ? (
-              <Image src={shown.photoUrl} alt={shown.name} fill sizes="140px" className="community-map-card-img" />
+              <Image
+                src={shown.photoUrl}
+                alt={shown.name}
+                fill
+                sizes="(max-width: 600px) 92vw, 380px"
+                className="community-map-card-img"
+              />
             ) : (
               <span className="community-map-card-photo-label">Photo placeholder</span>
             )}
+            {/* Purely a visual "go look" cue, not a separate control — the
+                whole card is already the click target (see the outer
+                Link above), so this never needs its own click handler. */}
+            <span className="community-map-card-go" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></svg>
+            </span>
           </div>
           <div className="community-map-card-body">
-            <p className="community-map-card-name">{shown.name}</p>
+            {/* Back to a "View N condos" label next to the name, not a
+                pill in the tag row — Francisco found the count reading
+                as just another tag confusing there. */}
+            <div className="community-map-card-head">
+              <p className="community-map-card-name">{shown.name}</p>
+              <span className="community-map-card-link">
+                View {shown.count} {propertyTypeLabel(shown.propertyTypeWord, shown.count)}
+                <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></svg>
+              </span>
+            </div>
+            {/* Bedrooms dropped here per Francisco's direction (2026-08-09)
+                — still shown in the "Every Community" grid card below
+                (CommunityExplorer.tsx), just not in this compact map
+                preview. */}
             <div className="comm-tags">
-              {[shown.location, shown.views, shown.pool, shown.bedrooms].filter(Boolean).map((t) => (
+              {[shown.location, shown.views, shown.pool].filter(Boolean).map((t) => (
                 <span key={t} className="comm-tag">{t}</span>
               ))}
             </div>
             <p className="community-map-card-desc">{shown.description}</p>
-            <Link href={`/villas?destination=${destinationSlug}&community=${shown.slug}`} className="community-map-card-link">
-              View {shown.count} {shown.count === 1 ? 'villa' : 'villas'}
-              <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></svg>
-            </Link>
           </div>
-        </div>
+        </Link>
       )}
     </div>
   )

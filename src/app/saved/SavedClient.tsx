@@ -183,6 +183,24 @@ export default function SavedClient({ properties }: { properties: Property[] }) 
     setSelectedSeason(availableSeasons[0])
   }
 
+  // Mobile-only alternative to the tabs row above (CSS toggles which one
+  // shows — see .sv-season-tabs-row / .sv-season-dropdown-row). The tabs
+  // row lives inside the same horizontally-scrolling comparison table as
+  // the property columns, so on a narrow phone with 2+ properties saved,
+  // the later season pills scroll off past the edge with nothing hinting
+  // there's more to see (Francisco's report, 2026-08-09: he only ever saw
+  // part of one cut-off pill and didn't think to scroll for the rest).
+  const [seasonDropdownOpen, setSeasonDropdownOpen] = useState(false)
+  const seasonDropdownRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!seasonDropdownOpen) return
+    const handleClickOutside = (e: MouseEvent) => {
+      if (seasonDropdownRef.current && !seasonDropdownRef.current.contains(e.target as Node)) setSeasonDropdownOpen(false)
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [seasonDropdownOpen])
+
   // Same unsave mechanism PropertyCard's heart button uses (remove the
   // localStorage flag, fire the shared 'saved-changed' event) — the
   // recompute effect above already listens for this and fades the property
@@ -647,7 +665,13 @@ export default function SavedClient({ properties }: { properties: Property[] }) 
                       visible tabs directly above the row they control.
                       Every available season shows at once — 2 or 6, they
                       wrap instead of hiding options behind a click, and
-                      there's no ambiguity about whether this is interactive. */}
+                      there's no ambiguity about whether this is interactive.
+                      Desktop-only now (see .sv-season-tabs-row in
+                      globals.css) — on mobile this row lives inside the
+                      same horizontally-scrolling table as the property
+                      columns, so past 2-3 seasons the tabs scroll off with
+                      no hint there's more; the dropdown row right below
+                      this one replaces it below that width. */}
                   {availableSeasons.length > 1 && (
                     <tr className="sv-season-tabs-row">
                       <td></td>
@@ -663,6 +687,43 @@ export default function SavedClient({ properties }: { properties: Property[] }) 
                               {s}
                             </button>
                           ))}
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                  {/* Mobile-only dropdown (CSS-toggled, see comment above) —
+                      a single tap instead of scrolling the whole table
+                      sideways, with an explicit instruction line so it's
+                      never ambiguous that this opens something. */}
+                  {availableSeasons.length > 1 && (
+                    <tr className="sv-season-dropdown-row">
+                      <td></td>
+                      <td colSpan={orderedProps.length}>
+                        <p className="sv-season-dropdown-hint">Tap to see rates for other seasons</p>
+                        <div className="sv-season-dropdown" ref={seasonDropdownRef}>
+                          <button
+                            type="button"
+                            className="sv-season-dropdown-trigger"
+                            onClick={() => setSeasonDropdownOpen((o) => !o)}
+                            aria-expanded={seasonDropdownOpen}
+                          >
+                            {selectedSeason}
+                            <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9" /></svg>
+                          </button>
+                          {seasonDropdownOpen && (
+                            <div className="sv-season-dropdown-panel">
+                              {availableSeasons.map((s) => (
+                                <button
+                                  key={s}
+                                  type="button"
+                                  className={s === selectedSeason ? 'is-sel' : ''}
+                                  onClick={() => { setSelectedSeason(s); setSeasonDropdownOpen(false) }}
+                                >
+                                  {s}
+                                </button>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </td>
                     </tr>

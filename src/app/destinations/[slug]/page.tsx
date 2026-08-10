@@ -155,8 +155,8 @@ const DESTINATIONS: Record<string, Destination> = {
     heroSub: 'Villas, houses, estates, and condos across Punta Mita, Mexico, each booked direct with local experts for the best rate and true concierge service.',
     redesigned: true,
     whyStatement: {
-      headline: 'A 1,500-acre guard-gated peninsula — home to two Jack Nicklaus Signature golf courses, the Four Seasons, and the St. Regis.',
-      support: 'Every villa in this collection sits inside that private gate, with the security, service, and amenities that come with it. Guests choose Punta Mita for privacy as much as scenery — quiet, uncrowded beaches and a level of service that’s built into the villas themselves, not added on.',
+      headline: 'A 1,500-acre peninsula inside the gates — home to two Jack Nicklaus Signature golf courses, the Four Seasons, and the St. Regis.',
+      support: 'Every villa in this collection sits inside the gates — private, with the security, service, and amenities that come with it. Guests choose Punta Mita for privacy as much as scenery — quiet, uncrowded beaches and a level of service that’s built into the villas themselves, not added on.',
     },
     findVillaIntro: 'Every villa in this collection sits inside the gates — filtered here by what matters most when choosing where to stay.',
     communitiesHref: '/destinations/punta-mita/communities',
@@ -268,7 +268,7 @@ const DESTINATIONS: Record<string, Destination> = {
     redesigned: true,
     comingSoon: true,
     whyStatement: {
-      headline: 'A fishing-village-turned-surf-town at the tip of the peninsula — outside Punta Mita’s private gates, with four named breaks minutes from the sand.',
+      headline: 'A fishing-village-turned-surf-town at the tip of the peninsula — outside Punta Mita’s gates, with four named breaks minutes from the sand.',
       support: 'Properties here trade the golf-course quiet of Punta Mita for a livelier, walkable village: surf shops and seafood palapas along Avenida El Anclote, pangas leaving daily for the Marietas Islands, and a fishing-town pace that’s never needed a gate.',
     },
     insideSectionTitle: 'In the Village',

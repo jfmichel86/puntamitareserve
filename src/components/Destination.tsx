@@ -11,7 +11,7 @@ const DESTINATIONS = [
     href: '/destinations/punta-mita',
     name: 'Punta Mita',
     suffix: 'Inside the Gates',
-    hook: 'Where the Four Seasons, St. Regis, and two Jack Nicklaus courses share one private gate.',
+    hook: 'Where the Four Seasons, St. Regis, and two Jack Nicklaus courses share one private peninsula.',
     fallback: 'linear-gradient(160deg,#1A6A8A 0%,#0E4A65 55%,#071E2A 100%)',
   },
   {
@@ -63,7 +63,14 @@ export default async function Destination() {
                   {d.name}
                   {d.suffix && <span className="dest-card-name-suffix"> — {d.suffix}</span>}
                 </div>
-                <p className="dest-card-hook">{d.hook}</p>
+                {/* Punta Mita's hook is the longest of the 3 and already
+                    wraps to 2 lines at this card's full width. Punta de
+                    Mita Area's and Puerto Vallarta's are short enough to
+                    fit on 1 line at that same width — narrowing just
+                    those two (dest-card-hook--narrow) forces them back to
+                    2 lines, matching how they've always read everywhere
+                    else on the site. */}
+                <p className={`dest-card-hook${d.key !== 'puntaMita' ? ' dest-card-hook--narrow' : ''}`}>{d.hook}</p>
                 <span className="dest-card-link">
                   Explore
                   <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></svg>

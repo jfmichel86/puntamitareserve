@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Link from 'next/link'
 import { client, urlFor } from '@/lib/sanity'
 import { DESTINATION_SHOWCASE_QUERY } from '@/lib/queries'
 import { destinationPriceRange, formatPriceRange } from '@/lib/utils'
@@ -44,7 +45,7 @@ const DESTINATIONS = [
     suffix: 'Inside the Gates',
     // Short hook for the map's hover card — same line Destination.tsx uses
     // on the homepage, so the two stay consistent.
-    hook: 'Where the Four Seasons, St. Regis, and two Jack Nicklaus courses share one private gate.',
+    hook: 'Where the Four Seasons, St. Regis, and two Jack Nicklaus courses share one private peninsula.',
     // Private Beach Clubs and Dining are more distinctive/valuable to lead
     // with here than the generic Gated/Beachfront — per Francisco's call.
     tags: ['Golf', 'Private Beach Clubs', 'Dining'],
@@ -70,6 +71,17 @@ const DESTINATIONS = [
   },
 ]
 
+// Short two-word eyebrow for each destination's photo triptych card below
+// the map — deliberately separate from the map's `suffix` field (only
+// Punta Mita has one, "Inside the Gates", used to disambiguate its page
+// title) so all three triptych cards get an equally-weighted label instead
+// of two of them having none.
+const TRIPTYCH_EYEBROW: Record<RegionalMapDest['key'], string> = {
+  puntaMita: 'Inside the Gates',
+  puntaDeMita: 'Village & Surf',
+  puertoVallarta: 'City & Nightlife',
+}
+
 export default async function DestinationsIndexPage() {
   const photos = await client.fetch<ShowcaseResult>(DESTINATION_SHOWCASE_QUERY)
 
@@ -82,9 +94,9 @@ export default async function DestinationsIndexPage() {
     puertoVallarta: photos.puertoVallartaRates,
   }
 
-  // One real photo per destination (or its gradient fallback) — shown in
-  // the map's own destination-list panel now, so this is the only photo
-  // size this page needs.
+  // One real photo per destination (or its gradient fallback) — reused by
+  // both the map's destination-list panel AND the photo triptych below it,
+  // so this is the only photo size this page needs.
   const mapDests: RegionalMapDest[] = DESTINATIONS.map((d) => {
     const doc = photos[d.key]
     const bg = doc?.heroImage?.asset?._ref
@@ -93,6 +105,13 @@ export default async function DestinationsIndexPage() {
     const priceRange = formatPriceRange(destinationPriceRange(ratesByKey[d.key] || [])) ?? undefined
     return { key: d.key, href: d.href, name: d.name, suffix: d.suffix, hook: d.hook, tags: d.tags, bg, priceRange }
   })
+
+  // Real published-property count, not a placeholder — the same "...Rates"
+  // arrays the map's price ranges are built from already have exactly one
+  // entry per published property in that destination (see the query
+  // comment above), so summing their lengths is the true villa count
+  // rather than a number someone has to remember to update by hand.
+  const totalVillas = (photos.puntaMitaRates?.length || 0) + (photos.puntaDeMitaRates?.length || 0) + (photos.puertoVallartaRates?.length || 0)
 
   return (
     <>
@@ -106,6 +125,17 @@ export default async function DestinationsIndexPage() {
         <p className="pg-sub">Three destinations, one local team — every property is minutes from world-class beaches, golf, and dining. Click the map to explore.</p>
       </section>
 
+      {/* One-line trust strip — a second, quieter beat of authority between
+          the header and the map, using the real published-property count
+          computed above rather than a placeholder figure. */}
+      <div className="dest-stat-strip">
+        <div className="dest-stat-item"><b>3</b> Destinations</div>
+        <span className="dest-stat-dot" aria-hidden="true" />
+        <div className="dest-stat-item"><b>{totalVillas}+</b> Private Villas</div>
+        <span className="dest-stat-dot" aria-hidden="true" />
+        <div className="dest-stat-item">One Concierge Team, <b>24/7</b></div>
+      </div>
+
       {/* Map (right) + destination list (left) in one split, 16:9 frame.
           Clicking the pin reveals all three destinations at once, each
           connected to its shape on the map by a thin line — this replaces
@@ -114,6 +144,47 @@ export default async function DestinationsIndexPage() {
           carries a photo, hook, and tags for every destination. */}
       <div className="destinations-index">
         <DestinationsRegionalMap destinations={mapDests} />
+      </div>
+
+      {/* Photo triptych — reintroduces real destination photography below
+          the map (reusing the exact same bg/hook/tags data the map's list
+          panel already has, so there's no extra Sanity fetch), and doubles
+          as a second navigation path for visitors who'd rather scroll and
+          click a photo than click the map pin. */}
+      <div className="dest-triptych-wrap">
+        <div className="dest-triptych-head">
+          <p className="dest-triptych-eyebrow">Three Ways to Stay</p>
+          <h2 className="dest-triptych-title">Every destination, <em>at a glance</em></h2>
+        </div>
+        <div className="dest-triptych">
+          {mapDests.map((d) => (
+            <Link key={d.key} href={d.href} className="dest-trip-card" style={{ background: d.bg, backgroundSize: 'cover', backgroundPosition: 'center' }}>
+              <div className="dest-trip-content">
+                <p className="dest-trip-eyebrow">{TRIPTYCH_EYEBROW[d.key]}</p>
+                <p className="dest-trip-name">{d.name}</p>
+                {/* Punta Mita's hook is the one noticeably longer sentence
+                    of the three — at the same narrow width as the other
+                    two cards it wrapped to 3 lines instead of 2, throwing
+                    off the row's alignment. Widening it just for this card
+                    (dest-trip-hook--wide) gets it back to 2 lines without
+                    changing how Punta de Mita Area / Puerto Vallarta wrap —
+                    those two already read as 2 lines at the narrower width
+                    and stay that way. */}
+                <p className={`dest-trip-hook${d.key === 'puntaMita' ? ' dest-trip-hook--wide' : ''}`}>{d.hook}</p>
+                <span className="dest-trip-cta">Explore {d.name} →</span>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </div>
+
+      {/* Short narrative band — a beat of brand voice between the practical
+          (map, photos) and the transactional (Welcome Offer right below),
+          explaining briefly why Mexican Reserve operates across three
+          destinations instead of one. */}
+      <div className="dest-narrative">
+        <blockquote>&ldquo;One local team, three coastlines — so wherever you land, the villa, the welcome, and the standard of service are exactly the same.&rdquo;</blockquote>
+        <cite>The Mexican Reserve Promise</cite>
       </div>
     </>
   )

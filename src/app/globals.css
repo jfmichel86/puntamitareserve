@@ -272,12 +272,12 @@ body {
 .nav-search { position: relative; display: flex; align-items: center; align-self: stretch; flex-shrink: 0; }
 .nav-search-toggle {
   appearance: none; -webkit-appearance: none;
-  background: none; border: none; padding: 3px; margin: 0;
+  background: none; border: none; padding: 5px; margin: 0;
   display: inline-flex; align-items: center; justify-content: center;
   color: var(--text-on-dark); opacity: .7; cursor: pointer; transition: opacity .22s;
 }
 .nav-search-toggle:hover { opacity: 1; }
-.nav-search-toggle svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.6; }
+.nav-search-toggle svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.6; }
 .nav-search-form {
   display: flex; align-items: flex-end; gap: 12px;
   position: absolute; top: calc(100% + 16px); right: 0;
@@ -728,8 +728,28 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
 .cc-dots { position: absolute; top: 14px; right: 14px; z-index: 10; display: flex; gap: 5px; align-items: center; }
 .cc-dot { width: 5px; height: 5px; border-radius: 50%; background: rgba(255,255,255,.35); cursor: pointer; transition: background .22s, transform .22s; }
 .cc-dot.cc-dot-active { background: rgba(255,255,255,.92); transform: scale(1.35); }
-.cc-overlay { position: absolute; inset: 0; z-index: 2; background: linear-gradient(to top, rgba(0,0,0,.72) 0%, rgba(0,0,0,.12) 42%, rgba(0,0,0,0) 100%); pointer-events: none; }
-.cc-body { position: absolute; bottom: 0; left: 0; right: 0; padding: 22px 28px; z-index: 3; }
+/* Same bottom-third-darkening treatment as .dest-card-overlay / .dest-trip-
+   card::after elsewhere on the site — strongest right at the bottom edge
+   (where the tag/name/desc actually sit), holding dark through roughly the
+   bottom third, then fading out by a bit past halfway so the top of each
+   photo stays bright. Still read as too faint against brighter/greener
+   photos (Family Villas, Oceanfront) — pushed noticeably darker and held
+   solid longer (to 26%) before starting to fade. */
+.cc-overlay { position: absolute; inset: 0; z-index: 2; background: linear-gradient(to top, rgba(0,0,0,.92) 0%, rgba(0,0,0,.85) 26%, rgba(0,0,0,.4) 42%, rgba(0,0,0,0) 65%); pointer-events: none; }
+/* .cc-overlay's gradient is a percentage of the WHOLE card's height, but
+   the tag/name/desc text is a fixed pixel height — on a very tall card
+   (e.g. the single-column mobile layout, where each tile is much taller
+   relative to its width than the 3-across desktop grid) that fixed text
+   zone can land in a lighter part of the percentage-based fade, which is
+   exactly what still read as "barely visible." This local background is
+   sized to .cc-body's own content box instead (hugs the text, not the
+   card), so it darkens the right area regardless of the card's aspect
+   ratio — solid through the text itself, fading out only right at its own
+   top edge for a soft blend into .cc-overlay above it. */
+.cc-body {
+  position: absolute; bottom: 0; left: 0; right: 0; padding: 22px 28px; z-index: 3;
+  background: linear-gradient(to top, rgba(4,10,16,.88) 0%, rgba(4,10,16,.8) 65%, rgba(4,10,16,0) 100%);
+}
 .cc-tag { display: inline-block; font-family: var(--font-inter), sans-serif; font-size: 9px; font-weight: 400; letter-spacing: .22em; text-transform: uppercase; color: var(--gold); border: 1px solid rgba(200,148,58,.42); padding: 4px 10px; border-radius: 2px; margin-bottom: 8px; }
 .cc-name { font-family: var(--font-cormorant), serif; font-weight: 400; font-size: 28px; letter-spacing: .03em; color: var(--text-on-dark); line-height: 1.10; margin-bottom: 6px; }
 .cc-desc { font-family: var(--font-inter), sans-serif; font-weight: 300; font-size: 12px; color: rgba(239,246,251,.60); line-height: 1.65; }
@@ -787,14 +807,32 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
 .dest-card { position: relative; display: block; height: 100%; border-radius: 2px; overflow: hidden; text-decoration: none; }
 .dest-card-bg { position: absolute; inset: 0; transition: transform .8s cubic-bezier(.16,1,.3,1); }
 .dest-card:hover .dest-card-bg { transform: scale(1.06); }
+/* Same treatment as the /destinations triptych's .dest-trip-card::after —
+   strongest right at the bottom edge (where the name/hook/link actually
+   sit), holding dark through roughly the bottom third, then fading out by
+   a bit past halfway so the top of each photo stays bright. Same
+   rgba(4,10,16,...) base color this overlay already used, just redistributed
+   across more stops instead of one long, gradual fade. */
 .dest-card-overlay {
   position: absolute; inset: 0;
-  background: linear-gradient(to top, rgba(4,10,16,.86) 0%, rgba(4,10,16,.28) 48%, rgba(4,10,16,.04) 100%);
+  background: linear-gradient(to top, rgba(4,10,16,.94) 0%, rgba(4,10,16,.8) 20%, rgba(4,10,16,.42) 33%, rgba(4,10,16,0) 58%);
 }
 .dest-card-body { position: absolute; bottom: 0; left: 0; right: 0; padding: 26px 24px; }
 .dest-card-name { font-family: var(--font-cormorant), serif; font-weight: 400; font-size: 26px; color: var(--text-on-dark); line-height: 1.1; margin-bottom: 9px; }
 .dest-card-name-suffix { font-size: .5em; font-style: italic; color: rgba(239,246,251,.62); }
-.dest-card-hook { font-family: var(--font-inter), sans-serif; font-weight: 300; font-size: 12px; color: rgba(239,246,251,.62); line-height: 1.6; margin-bottom: 16px; }
+/* min-height reserves a full 2-line-tall box regardless of how many lines
+   a given hook actually wraps to (Punta Mita's is the longest of the 3 and
+   already wraps to 2 lines at this card's width, but this guarantees the
+   name/link above and below it stay aligned across all 3 cards even if
+   the copy changes later) — same reasoning as .dest-trip-hook on the
+   /destinations page. */
+.dest-card-hook { font-family: var(--font-inter), sans-serif; font-weight: 300; font-size: 12px; color: rgba(239,246,251,.62); line-height: 1.6; margin-bottom: 16px; min-height: calc(12px * 1.6 * 2); }
+/* Punta de Mita Area / Puerto Vallarta only (see the conditional class in
+   Destination.tsx) — their hooks are short enough to fit on 1 line at the
+   card's full width, so this narrows just those two back down to the 2
+   lines they've always read as elsewhere on the site. Same 240px used for
+   the same purpose on the /destinations page's .dest-trip-hook. */
+.dest-card-hook--narrow { max-width: 240px; }
 .dest-card-link { display: inline-flex; align-items: center; gap: 7px; font-family: var(--font-inter), sans-serif; font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: var(--gold); transition: gap .2s; }
 .dest-card:hover .dest-card-link { gap: 12px; }
 .dest-card-link svg { width: 11px; height: 11px; stroke: currentColor; fill: none; stroke-width: 2; }
@@ -841,8 +879,29 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
 .dest-split {
   position: relative; display: grid; grid-template-columns: 1fr 1fr; align-items: stretch;
   max-width: 1180px; margin: 0 auto; aspect-ratio: 16 / 9;
-  background: linear-gradient(160deg,#1A6A8A 0%,#0E4A65 55%,#071E2A 100%);
+  /* Two faint repeating-line layers on top of the original navy gradient —
+     reads as a cartographer's grid/graticule, not a texture. Kept very
+     low-opacity (.05) so it's a subtle "this is a map" cue, not a pattern
+     that competes with the actual country outline and destination shapes
+     drawn on top of it. Same rgba(184,200,216,...) family already used for
+     .dest-map-region, so it ties into the existing map palette. */
+  background:
+    repeating-linear-gradient(0deg, rgba(184,200,216,.05) 0px, transparent 1px, transparent 34px, rgba(184,200,216,.05) 35px),
+    repeating-linear-gradient(90deg, rgba(184,200,216,.05) 0px, transparent 1px, transparent 34px, rgba(184,200,216,.05) 35px),
+    linear-gradient(160deg,#1A6A8A 0%,#0E4A65 55%,#071E2A 100%);
   border-radius: 6px; overflow: hidden;
+}
+/* On the wide (pre-zoom) desktop view, give the map the lion's share of the
+   frame — 3/4 map, 1/4 for the short "Click the pin" prompt — since that
+   short line of text doesn't need the same room the 3-card list does once
+   zoomed. Scoped to .is-zoomed being ABSENT (the component adds that class
+   the instant a visitor clicks the pin) so the card list keeps its original,
+   already-approved even 50/50 split — cards with 250px photos need that
+   width and would break if squeezed into a 1/4 column. Also scoped to
+   min-width so it never fights the mobile single-column stack below, which
+   forces grid-template-columns back to 1fr regardless of zoom state. */
+@media (min-width: 721px) {
+  .dest-split:not(.is-zoomed) { grid-template-columns: 1fr 3fr; }
 }
 /* justify-content: center used to handle vertical centering here, but a
    pixel-measured screenshot proved it was consistently leaving ~45px more
@@ -855,11 +914,14 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
    there. justify-content is deliberately NOT centering anymore (flex
    default / stretch-start), since the two would fight each other. */
 .dest-split-list { position: relative; height: 100%; min-height: 0; padding: 4% 6%; display: flex; flex-direction: column; }
+/* Wraps the region label + prompt line together so the PAIR centers as one
+   block — margin: auto 0 only centers a single flex child, so once a label
+   sits above the prompt, the centering trick has to move up to whichever
+   element wraps both of them. */
 .dest-split-prompt {
-  /* margin: auto 0 (not justify-content on the parent, removed above) —
-     this is the one place on the page where centering a single flex item
-     by its own auto margins is fine, since there's no measured-bug
-     history here the way there is for the card stack. */
+  /* margin: auto 0 centers this single flex child within .dest-split-list —
+     safe here since there's only ever this one element in that state now
+     (the "Riviera Nayarit" label that used to sit above it was removed). */
   margin: auto 0; font-family: var(--font-cormorant), serif; font-style: italic; font-weight: 400;
   font-size: 24px; color: rgba(239,246,251,.55); line-height: 1.5; max-width: 320px;
 }
@@ -940,6 +1002,27 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
   fill: rgba(184,200,216,.05); stroke: rgba(184,200,216,.4); stroke-width: 1;
   transition: opacity .5s ease .35s;
 }
+/* Wide-view backdrop geography — water bodies read as quiet, italic labels
+   (no marker, since open water isn't a "point"); countries share that
+   italic treatment, one tier up in authority; named places get a small
+   gold dot to mark them as real locations, in the same gold family as the
+   pin and the destination shapes elsewhere on this map. Solid white, no
+   opacity, on every tier now — the size hierarchy (see GEO_TIER in the
+   component) is what tells them apart, not brightness, so nothing reads
+   as washed-out next to its neighbors. */
+.dest-map-geo-water {
+  font-family: var(--font-cormorant), serif; font-style: italic; font-weight: 400;
+  fill: #FFFFFF; letter-spacing: .02em;
+}
+.dest-map-geo-country {
+  font-family: var(--font-cormorant), serif; font-style: italic; font-weight: 500;
+  fill: #FFFFFF; letter-spacing: .015em;
+}
+.dest-map-geo-place {
+  font-family: var(--font-inter), sans-serif; font-weight: 400;
+  fill: #FFFFFF; letter-spacing: .04em;
+}
+.dest-map-geo-dot { fill: #C8943A; opacity: .9; }
 /* Each zone is 2 overlapping paths now (see the component for the full
    why): .dest-map-zone-hit is an invisible, NEVER-scaling copy that owns
    all pointer/hover detection — for a narrow shape, scaling the thing the
@@ -1010,6 +1093,105 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
   transition: opacity .3s ease .55s, transform .3s ease .55s;
 }
 .dest-map-back.is-visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
+
+/* ── Destinations index page: trust strip, photo triptych, narrative band ──
+   Three new sections added around the map (see DestinationsRegionalMap.tsx
+   above for the map itself): a one-line stat strip right under the page
+   header, a 3-photo triptych below the map reusing the exact same photo/
+   copy data the map's list panel already has, and a short pull-quote band
+   before the site's shared Welcome Offer / newsletter band. */
+.dest-stat-strip {
+  display: flex; justify-content: center; align-items: center; gap: 40px;
+  flex-wrap: wrap; padding: 26px 24px;
+  /* #0E2A38 is already used elsewhere on this map (.dest-map-back) as the
+     site's "one step darker than --deep-ocean" accent — reused here rather
+     than inventing a new navy, so this strip reads as part of the same
+     family as the header above and the map gradient below it. */
+  background: #0E2A38;
+}
+.dest-stat-item {
+  display: flex; align-items: baseline; gap: 7px; font-family: var(--font-inter), sans-serif;
+  font-weight: 300; font-size: 11px; letter-spacing: .14em; text-transform: uppercase;
+  color: rgba(239,246,251,.72);
+}
+.dest-stat-item b {
+  font-family: var(--font-cormorant), serif; font-weight: 600; font-style: italic;
+  font-size: 17px; color: var(--gold); letter-spacing: 0; text-transform: none;
+}
+.dest-stat-dot { width: 3px; height: 3px; border-radius: 50%; background: var(--gold); opacity: .6; }
+
+.dest-triptych-wrap { padding: 72px 64px; }
+.dest-triptych-head { text-align: center; margin-bottom: 36px; }
+.dest-triptych-eyebrow {
+  font-family: var(--font-inter), sans-serif; font-weight: 300; font-size: 9.5px;
+  letter-spacing: .32em; text-transform: uppercase; color: var(--gold); margin: 0 0 12px;
+}
+.dest-triptych-title {
+  font-family: var(--font-cormorant), serif; font-weight: 400; font-size: 34px;
+  color: var(--deep-ocean); margin: 0;
+}
+.dest-triptych-title em { font-style: italic; color: var(--charcoal-light); }
+.dest-triptych {
+  max-width: 1180px; margin: 0 auto; display: grid; grid-template-columns: repeat(3,1fr);
+  gap: 4px; border-radius: 6px; overflow: hidden;
+}
+/* Each card is its own link (not a card inside a link) — matches the
+   pattern .dest-split-card already uses: the whole tile is clickable, not
+   just the "Explore" line at the bottom. */
+.dest-trip-card {
+  position: relative; aspect-ratio: 3/4; display: flex; align-items: flex-end;
+  padding: 28px 24px; color: var(--text-on-dark); text-decoration: none;
+  transition: transform .4s cubic-bezier(.16,1,.3,1);
+}
+.dest-trip-card:hover { transform: scale(1.015); }
+.dest-trip-card::after {
+  content: ''; position: absolute; inset: 0;
+  /* Darkest right at the bottom edge, holding strong through roughly the
+     bottom third (where the eyebrow/name/hook text actually sits), then
+     fading out by the halfway mark so the top of each photo stays bright
+     and unobscured — was a flatter fade before that left the text zone
+     too washed-out against lighter photos. */
+  background: linear-gradient(0deg, rgba(7,20,28,.92) 0%, rgba(7,20,28,.78) 20%, rgba(7,20,28,.4) 33%, rgba(7,20,28,0) 58%);
+}
+.dest-trip-content { position: relative; z-index: 1; }
+.dest-trip-eyebrow {
+  font-family: var(--font-inter), sans-serif; font-weight: 300; font-size: 9px;
+  letter-spacing: .2em; text-transform: uppercase; color: var(--gold-light); margin: 0 0 6px;
+}
+.dest-trip-name { font-family: var(--font-cormorant), serif; font-style: italic; font-size: 26px; margin: 0 0 6px; }
+/* 240px is the width Punta de Mita Area's and Puerto Vallarta's hooks were
+   always designed around — both read as a clean 2 lines at this width, and
+   Francisco wants that kept exactly as it was. Punta Mita's hook is the one
+   noticeably longer sentence of the three and wraps to 3 lines at this same
+   width, which is what the --wide modifier below is for (applied only to
+   Punta Mita's card in page.tsx) — 310px is the width that gets it back
+   down to 2 lines instead.
+
+   min-height reserves a full 2-line-tall box regardless of which width
+   applies or how many lines a given hook actually wraps to, so the
+   eyebrow+name sitting above it — and this whole block being bottom-
+   anchored via .dest-trip-card's align-items:flex-end — always land at the
+   same height across all 3 cards even though the max-width now differs. */
+.dest-trip-hook {
+  font-family: var(--font-inter), sans-serif; font-weight: 300; font-size: 12px; line-height: 1.5;
+  color: rgba(239,246,251,.72); margin: 0 0 14px; max-width: 240px; min-height: calc(12px * 1.5 * 2);
+}
+.dest-trip-hook--wide { max-width: 310px; }
+.dest-trip-cta {
+  font-family: var(--font-inter), sans-serif; font-weight: 400; font-size: 10px;
+  letter-spacing: .16em; text-transform: uppercase; color: var(--gold-light);
+}
+
+.dest-narrative { padding: 84px 24px; text-align: center; }
+.dest-narrative blockquote {
+  font-family: var(--font-cormorant), serif; font-style: italic; font-weight: 400;
+  font-size: 27px; line-height: 1.55; color: var(--deep-ocean); max-width: 720px;
+  margin: 0 auto 20px;
+}
+.dest-narrative cite {
+  font-style: normal; font-family: var(--font-inter), sans-serif; font-weight: 300;
+  font-size: 10.5px; letter-spacing: .18em; text-transform: uppercase; color: var(--gold);
+}
 
 /* ── Experiences Catalog (/experiences) ───────────────────────
    Every published experience across every destination, filterable by
@@ -1256,6 +1438,16 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
 }
 .about-founder-quote { font-family: var(--font-cormorant), serif; font-style: italic; font-weight: 300; font-size: 26px; line-height: 1.5; color: var(--deep-ocean); margin: 0 0 20px; }
 .about-founder-name { font-family: var(--font-inter), sans-serif; font-size: 11px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--charcoal-light); margin: 0; }
+/* No-photo variant — used until a real photo of Francisco/the team is
+   ready. Collapses the two-column grid to a single centered column (a
+   plain gray placeholder box read as unfinished, not editorial) with a
+   slightly larger quote and the same small gold rule other centered
+   section headers on the site use (.s-div), so it still feels like a
+   deliberate moment, not a leftover empty slot. */
+.about-founder--no-photo { grid-template-columns: 1fr; max-width: 720px; }
+.about-founder--no-photo .about-founder-text { text-align: center; }
+.about-founder--no-photo .s-div { margin: 0 auto 28px; }
+.about-founder--no-photo .about-founder-quote { font-size: 28px; }
 
 /* ── Homepage responsive ──────────────────────────────────────
    Ported verbatim from index.html — none of this existed before,
@@ -1323,6 +1515,19 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
   .dest-split-card-photo { width: 92px; height: 62px; }
   .dest-split-card-name { font-size: 20px; }
   .dest-split-card-hook { max-width: none; }
+  /* Trust strip: the 3 items no longer fit one line at phone width, so let
+     them wrap (gap already handles the resulting 2-line spacing) and trim
+     the outer gap slightly. */
+  .dest-stat-strip { gap: 20px 28px; padding: 20px 24px; }
+  /* Triptych: 3 columns is unreadable at phone width — stack to 1, and
+     shorten each card since a phone doesn't need the tall 3:4 crop a
+     3-across desktop grid does. */
+  .dest-triptych-wrap { padding: 48px 24px; }
+  .dest-triptych-title { font-size: 26px; }
+  .dest-triptych { grid-template-columns: 1fr; gap: 3px; }
+  .dest-trip-card { aspect-ratio: 4/3; }
+  .dest-narrative { padding: 56px 24px; }
+  .dest-narrative blockquote { font-size: 21px; }
   /* ── Compact mobile search: hero shows a single pill instead of the full
      bar; tapping it opens the same fields as a full-screen sheet so nothing
      about the booking logic changes, just how much room it gets. ── */
@@ -2284,7 +2489,28 @@ body.on-saved-page .wa, body.on-saved-page .offer-badge { display: none; }
      breakpoint's own edge padding so it reads as a deliberate margin
      rather than a rounding error. */
   .nav-saved-link { display: none; margin-left: 24px; }
-  .nav-hamburger { display: flex; }
+  /* Search icon moves from beside the logo to beside the hamburger — the
+     two read as a grouped "search + menu" pair (a standard mobile
+     pattern) instead of crowding the logo. margin-left:auto now lives
+     on .nav-search itself (it was on .nav-hamburger) so search absorbs
+     the row's free space and pulls everything after it — saved-link,
+     when shown, and the hamburger — along with it toward the right
+     edge; the hamburger no longer needs its own auto margin. */
+  .nav-search { margin-left: auto; margin-right: 16px; position: static; }
+  .nav-hamburger { display: flex; margin-left: 0; }
+  /* The search panel used to anchor to the icon's own small box — fine
+     on desktop, where the icon sits near the nav's right edge already,
+     but once the icon moved to sit beside the hamburger here, that
+     anchor pushed most of the panel off the left edge of the screen
+     (Francisco's report: only "…tinations…" of the placeholder text was
+     visible). Anchoring to .nav itself instead — already position:fixed,
+     so it was always a valid containing block — and matching the nav's
+     own 24px edge padding keeps the panel fully on-screen at any width,
+     independent of exactly where the icon sits. The pointer triangle,
+     which pointed at the icon's exact position, is dropped here since
+     the panel no longer tracks the icon 1:1. */
+  .nav-search-form { right: 24px; }
+  .nav-search-form::before { display: none; }
   .pg-header { padding: 132px 24px 40px; }
   .pg-title { font-size: 36px; }
   /* The inherited design scrolled this row horizontally and clipped
@@ -3343,10 +3569,44 @@ textarea.ct-input { resize: vertical; min-height: 88px; line-height: 1.65; }
 }
 .sv-season-tab:hover { border-color: var(--ocean-mid); background: var(--mist-light); }
 .sv-season-tab.is-sel { background: var(--deep-ocean); border-color: var(--deep-ocean); color: var(--text-on-dark); }
+/* Mobile alternative to the tabs row — hidden above 768px, where the
+   tabs above (which need real width to lay out nicely) take over. See
+   the comment on .sv-season-tabs-row in SavedClient.tsx for why this
+   exists: the tabs row lives inside the same horizontally-scrolling
+   table as the property columns, so on a phone the later pills scroll
+   off with nothing hinting there's more to see. */
+.sv-season-dropdown-row { display: none; }
+.sv-season-dropdown-row td { padding: 14px 0 10px; border-top: 1px solid rgba(30,58,80,.07); }
+.sv-season-dropdown-hint {
+  font-family: var(--font-inter), sans-serif; font-style: italic; font-weight: 300;
+  font-size: 11.5px; color: var(--charcoal-light); margin: 0 0 8px;
+}
+.sv-season-dropdown { position: relative; display: inline-block; }
+.sv-season-dropdown-trigger {
+  display: flex; align-items: center; gap: 8px;
+  font-family: var(--font-inter), sans-serif; font-size: 11px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--deep-ocean); background: var(--white); border: 1px solid var(--sand); border-radius: 3px;
+  padding: 10px 14px; cursor: pointer; touch-action: manipulation;
+}
+.sv-season-dropdown-trigger svg { width: 11px; height: 11px; stroke: currentColor; fill: none; stroke-width: 2; flex-shrink: 0; }
+.sv-season-dropdown-panel {
+  position: absolute; top: calc(100% + 6px); left: 0; min-width: 180px;
+  background: var(--white); border: 1px solid var(--sand); border-radius: 4px;
+  box-shadow: 0 12px 40px rgba(30,58,80,.16); padding: 6px 0; z-index: 20; animation: fadeIn .18s ease both;
+}
+.sv-season-dropdown-panel button {
+  display: block; width: 100%; text-align: left;
+  font-family: var(--font-inter), sans-serif; font-size: 12px; font-weight: 400; color: var(--charcoal);
+  background: none; border: none; padding: 10px 16px; cursor: pointer;
+}
+.sv-season-dropdown-panel button:hover { background: var(--cream); }
+.sv-season-dropdown-panel button.is-sel { color: var(--deep-ocean); font-weight: 500; }
 @media (max-width: 768px) {
   #sv-compare { padding: 0 24px 60px; }
   .sv-cmp-lbl { width: 110px; min-width: 100px; }
   .sv-cmp-hd { width: 150px; }
+  .sv-season-tabs-row { display: none; }
+  .sv-season-dropdown-row { display: table-row; }
 }
 
 /* Toast */
@@ -3605,9 +3865,44 @@ textarea.ct-input { resize: vertical; min-height: 88px; line-height: 1.65; }
    plus a plain-text fallback grid underneath — the grid isn't decorative,
    it's what search engines and screen readers see, since neither can
    interact with a JS-driven map. */
-.community-map-wrap { display: flex; flex-direction: column; gap: 16px; }
+/* position: relative anchors the hover card below to this box (not the
+   whole page) — the card floats on top of the map itself now instead of
+   sitting in normal document flow underneath it, so it's still visible
+   while someone's eyes are on the map exploring pins, which is the whole
+   point of it existing.
+   Deliberately NOT display:flex here (it used to be, back when the card
+   sat in normal flow below the map). A flex column container's height
+   with a single aspect-ratio-sized child is resolved through a two-pass
+   flex sizing algorithm that isn't always reliable — in practice it was
+   giving .community-map-wrap a collapsed height far shorter than the
+   map's actual visual height, which meant the card's `bottom: 16px`
+   (see .community-map-card below) was measuring from that wrong,
+   collapsed edge — landing the card near the TOP of the map instead of
+   the bottom. Plain block layout doesn't have that ambiguity: a block
+   container with one child sizes to that child's real rendered height,
+   full stop, so `bottom: 16px` measures from the correct edge. Calibrate
+   mode's code panel is still a normal block sibling below the map; see
+   its margin-top below for the spacing the old `gap` used to provide. */
+/* isolation: isolate forces this box to start a brand-new stacking
+   context — a clean slate for "what's allowed to paint over what"
+   inside it — so nothing Leaflet does internally (it silently promotes
+   its own tile/pane layers onto the GPU for smooth pan/zoom, each with
+   its own z-index up to 700) can bleed out and interfere with how the
+   hover card below stacks against the map. */
+.community-map-wrap { position: relative; isolation: isolate; }
+/* min-height is the real fix for the floating card overlapping the
+   heading above the map: on a narrow phone screen, a pure 16:10 box can
+   come out shorter than the card's own content needs. Since the card is
+   bottom-anchored, "too short a map" doesn't shrink the card — it just
+   pushes the card's top edge up past the map's own top edge, overlapping
+   whatever sits above it on the page. Guaranteeing the map is always at
+   least this tall means the card's tallest realistic size always fits
+   inside it. Settled at 400px after the card was reorganized to be
+   shorter (16:9 photo instead of 3:2, name+count sharing one row, a
+   2-line description) — 500px was sized for the taller version of the
+   card and was leaving the map needlessly tall once the card shrank. */
 .community-map {
-  width: 100%; aspect-ratio: 16 / 10; border-radius: 3px; overflow: hidden;
+  width: 100%; aspect-ratio: 16 / 10; min-height: 400px; border-radius: 3px; overflow: hidden;
   background: var(--sand); border: 1px solid var(--sand);
 }
 /* Leaflet needs real pixel dimensions on its own tile panes — this keeps
@@ -3628,35 +3923,112 @@ textarea.ct-input { resize: vertical; min-height: 88px; line-height: 1.65; }
   box-shadow: 0 1px 4px rgba(10,24,32,.35);
 }
 .beach-club-tooltip { background: var(--deep-ocean); }
+/* Floats bottom-left, on top of the map's own bottom-left corner (clear
+   of Leaflet's zoom controls, which sit top-left), with a drop shadow so
+   it visibly separates from the map instead of looking pasted on.
+   Width is set directly with clamp() (a floor, a viewport-based
+   preferred size, a ceiling) rather than the old left+right "stretch to
+   fill" trick. That old approach needed the browser to measure
+   .community-map-wrap's own width to solve for the card's width, and in
+   practice that measurement was coming back wrong (a getBoundingClientRect
+   check showed the card rendering at 42px wide instead of ~340px) —
+   invisible-thin instead of missing, which is why it only ever flashed
+   into view for an instant during a zoom-triggered repaint. Sizing off
+   the viewport instead of the wrap sidesteps that measurement entirely. */
+/* Solid background, not a backdrop-filter blur — a frosted-glass effect
+   here on top of Leaflet's own tile/pane compositing layers risked the
+   same class of paint bug described below. A plain, fully opaque
+   background removes that risk entirely. */
+/* The real fix for "card is behind the map, flashes visible for a split
+   second when zooming" (confirmed fixed 2026-08-08): Leaflet's default
+   zoom/fade animations repaint the map onto its own GPU-accelerated
+   layer on every pan/zoom, and on Francisco's hardware that animated
+   layer was winning the paint order against this card even though the
+   card's z-index was higher — a compositor-level bug invisible to
+   DevTools (every computed-style reading looked correct: opacity,
+   visibility, z-index, all fine). Fixed at the source in
+   CommunityMap.tsx by turning those Leaflet animations off
+   (fadeAnimation/zoomAnimation/markerZoomAnimation: false). The
+   translateZ(0) GPU-layer promotion and max z-index here are cheap
+   belt-and-suspenders left in place alongside that real fix. */
+/* The whole card is one link (see CommunityMap.tsx) — same "whole card
+   navigates" pattern as the sitewide .prop-card, so :hover here lifts
+   the whole thing rather than just underlining a line of text. */
+/* No border — matches .prop-card's shadow-only language (a hairline
+   sand border plus a gold top edge was the one thing on this card that
+   didn't match how every other card on the site is finished). */
 .community-map-card {
-  display: flex; gap: 16px; align-items: flex-start; background: var(--white);
-  border: 1px solid var(--sand); border-top: 2px solid var(--gold); border-radius: 0 0 2px 2px;
-  padding: 18px 22px;
+  position: absolute; left: 16px; bottom: 16px; width: clamp(300px, 32vw, 380px); z-index: 2147483647;
+  display: block; text-decoration: none; color: inherit;
+  background: var(--white); overflow: hidden; border-radius: 4px;
+  box-shadow: 0 14px 36px rgba(10,24,32,.28);
+  transform: translateZ(0); -webkit-transform: translateZ(0); backface-visibility: hidden; will-change: transform;
+  transition: transform .25s ease, box-shadow .25s ease;
 }
+.community-map-card:hover { transform: translateZ(0) translateY(-3px); box-shadow: 0 20px 48px rgba(10,24,32,.34); }
+/* 16:9, not the sitewide 3:2 — shorter than a standard property photo
+   on purpose. This card floats over a map rather than sitting in a
+   grid, so it needs to stay compact; 16:9 keeps a real, full-width
+   photo without costing as much vertical space as 3:2 did. */
 .community-map-card-photo {
-  position: relative; flex: 0 0 140px; height: 96px; border-radius: 2px; overflow: hidden;
+  position: relative; width: 100%; aspect-ratio: 16 / 9; overflow: hidden;
   background: var(--sand); display: flex; align-items: center; justify-content: center; text-align: center;
 }
-.community-map-card-img { object-fit: cover; }
-.community-map-card-photo-label { font-family: var(--font-inter), sans-serif; font-size: 10.5px; color: var(--charcoal-light); padding: 0 10px; }
-.community-map-card-body { flex: 1; min-width: 0; }
-.community-map-card-name { font-family: var(--font-cormorant), serif; font-weight: 400; font-size: 18px; color: var(--deep-ocean); margin: 0 0 6px; }
-.community-map-card-desc { font-family: var(--font-inter), sans-serif; font-weight: 300; font-size: 12.5px; line-height: 1.7; color: var(--charcoal-light); margin: 0 0 10px; }
+.community-map-card-img { object-fit: cover; transition: transform .3s ease; }
+.community-map-card:hover .community-map-card-img { transform: scale(1.05); }
+/* Same bottom-edge darkening every other property photo on the site
+   gets (see .prop-photo-wrap::after) — without it a photo reads as a
+   flat crop rather than something actually photographed. */
+.community-map-card-photo::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,.18) 0%, transparent 45%);
+  pointer-events: none;
+}
+.community-map-card-photo-label { font-family: var(--font-inter), sans-serif; font-size: 11px; color: var(--charcoal-light); padding: 0 10px; }
+/* Solid gold, not a plain white circle — ties this "go look" cue back
+   to the gold used across the rest of the site's accents instead of
+   reading as a generic, unbranded UI control. Purely decorative
+   (aria-hidden in the markup): the whole card is already the link. */
+.community-map-card-go {
+  position: absolute; top: 10px; right: 10px; z-index: 2;
+  width: 30px; height: 30px; border-radius: 50%;
+  background: var(--gold); display: flex; align-items: center; justify-content: center;
+  transition: transform .2s;
+}
+.community-map-card:hover .community-map-card-go { transform: scale(1.08); }
+.community-map-card-go svg { width: 13px; height: 13px; stroke: var(--white); fill: none; stroke-width: 2; }
+.community-map-card-body { padding: 14px 16px 16px; }
+/* Name and "View N ___" share one row again, per Francisco's direction
+   (2026-08-09) — the count reading as just another pill in the tag row
+   was confusing; back to a distinct labeled link, same row as the name. */
+.community-map-card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin: 0 0 8px; }
+.community-map-card-name { font-family: var(--font-cormorant), serif; font-weight: 400; font-size: 17px; color: var(--deep-ocean); margin: 0; flex: 1; min-width: 0; }
+.community-map-card-link {
+  flex: none; display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-inter), sans-serif;
+  font-size: 10.5px; font-weight: 400; letter-spacing: .1em; text-transform: uppercase; color: var(--deep-ocean);
+  border-bottom: 1px solid var(--ocean); padding-bottom: 2px; white-space: nowrap; transition: color .18s, border-color .18s;
+}
+.community-map-card:hover .community-map-card-link { color: var(--gold); border-color: var(--gold); }
+.community-map-card-link svg { width: 10px; height: 10px; stroke: currentColor; fill: none; stroke-width: 2; }
+/* Clamped to 2 lines (was 3) — trimmed along with the rest of the card
+   so the whole thing sits noticeably shorter over the map. */
+.community-map-card-desc {
+  font-family: var(--font-inter), sans-serif; font-weight: 300; font-size: 12px; line-height: 1.6; color: var(--charcoal-light); margin: 0;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
 
 /* Feature pills — shared by the map's hover card and the "Every
-   Community" grid below it. */
+   Community" grid below it. The map card only ever passes
+   location/views/pool here (bedrooms deliberately left out, per
+   Francisco 2026-08-09) — the grid card still shows all four. */
 .comm-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 10px; }
 .comm-tag { font-family: var(--font-inter), sans-serif; font-size: 10.5px; color: var(--charcoal-light); background: var(--sand); padding: 4px 10px; border-radius: 20px; }
-.community-map-card-link {
-  display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-inter), sans-serif;
-  font-size: 11px; font-weight: 400; letter-spacing: .12em; text-transform: uppercase; color: var(--deep-ocean);
-  text-decoration: none; border-bottom: 1px solid var(--ocean); padding-bottom: 2px; transition: color .18s, border-color .18s;
-}
-.community-map-card-link:hover { color: var(--gold); border-color: var(--gold); }
-.community-map-card-link svg { width: 11px; height: 11px; stroke: currentColor; fill: none; stroke-width: 2; }
 @media (max-width: 600px) {
-  .community-map-card { flex-direction: column; }
-  .community-map-card-photo { width: 100%; flex-basis: auto; }
+  .community-map-card { left: 10px; bottom: 10px; width: clamp(260px, 92vw, 380px); }
+  .community-map-card-body { padding: 12px 14px 14px; }
+  .community-map-card-name { font-size: 15px; }
+  .community-map-card-link { font-size: 9.5px; }
+  .community-map-card-desc { font-size: 11px; -webkit-line-clamp: 2; }
 }
 
 /* Calibrate mode (?calibrate=1) — a setup tool, not a visitor-facing
@@ -3669,7 +4041,7 @@ textarea.ct-input { resize: vertical; min-height: 88px; line-height: 1.65; }
 }
 .community-pin-tooltip::before { display: none; }
 .community-map-calibrate {
-  background: var(--white); border: 1px dashed var(--charcoal-light); border-radius: 2px; padding: 16px 20px;
+  margin-top: 16px; background: var(--white); border: 1px dashed var(--charcoal-light); border-radius: 2px; padding: 16px 20px;
 }
 .community-map-calibrate-hint { font-family: var(--font-inter), sans-serif; font-size: 12.5px; color: var(--charcoal-light); margin: 0 0 10px; }
 .community-map-calibrate-code {
@@ -3688,23 +4060,106 @@ textarea.ct-input { resize: vertical; min-height: 88px; line-height: 1.65; }
    bottom edge across a row, regardless of how long that card's
    description happens to run. */
 .comm-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; align-items: stretch; }
-/* .comm-grid-card is a <button>, not a <div> — clicking anywhere on the
-   card opens it on the map above (see CommunityExplorer.tsx). The reset
-   rules undo the browser's default button chrome so it still reads as a
-   card, not a form control; the "View N villas" link inside stops its
-   own click from bubbling up so it navigates normally instead of
-   double-firing the card's click handler. */
+/* .comm-grid-card is a <Link> — the whole card navigates straight to that
+   community's listing results (see CommunityExplorer.tsx). The Compare
+   pill inside is the one exception: it stops its own click from bubbling
+   up so it can toggle selection instead of also navigating — it now
+   sits on the photo (like the sitewide save-heart button) rather than
+   floating over the name text. */
 .comm-grid-card {
   display: flex; flex-direction: column; width: 100%; height: 100%; text-align: left; font: inherit; cursor: pointer;
-  background: var(--white); border: 1px solid var(--sand); border-radius: 2px; padding: 20px 22px;
-  transition: border-color .18s, transform .18s;
+  background: var(--white); border: 1px solid var(--sand); border-radius: 2px; overflow: hidden;
+  transition: border-color .18s, transform .18s; text-decoration: none;
 }
 .comm-grid-card:hover { border-color: var(--gold); transform: translateY(-1px); }
+/* Same 3:2 full-width photo size/crop as the sitewide PropertyCard
+   (.prop-photo-wrap), so a community card and a villa card read as the
+   same family of card. */
+.comm-grid-card-photo { position: relative; width: 100%; aspect-ratio: 3 / 2; overflow: hidden; background: var(--sand); }
+.comm-grid-card-img { object-fit: cover; transition: transform .3s ease; }
+.comm-grid-card:hover .comm-grid-card-img { transform: scale(1.05); }
+.comm-grid-card-photo-placeholder { width: 100%; height: 100%; background: linear-gradient(160deg, var(--deep-ocean) 0%, var(--ocean-mid) 100%); }
+.comm-grid-card-photo::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,.18) 0%, transparent 45%);
+  pointer-events: none;
+}
+.comm-grid-card-body { display: flex; flex-direction: column; flex: 1; padding: 18px 22px 20px; }
 .comm-grid-card-name { font-family: var(--font-cormorant), serif; font-weight: 400; font-size: 17px; color: var(--deep-ocean); margin: 0 0 8px; }
 .comm-grid-card-desc { font-family: var(--font-inter), sans-serif; font-weight: 300; font-size: 12px; line-height: 1.65; color: var(--charcoal); margin: 0 0 12px; }
 /* Pins the CTA to the same bottom edge on every card in a row, no matter
    how many lines the tags or description above it take up. */
 .comm-grid-card .legal-cta { margin-top: auto; }
+
+/* ── Compare-communities toggle pill (each grid card) ── */
+.comm-compare-btn {
+  position: absolute; top: 10px; right: 10px; z-index: 2;
+  font-family: var(--font-inter), sans-serif; font-size: 9.5px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--charcoal-light); background: rgba(255,255,255,.92); border: 1px solid var(--sand); border-radius: 30px;
+  padding: 6px 12px; cursor: pointer; white-space: nowrap; transition: border-color .15s, background .15s, color .15s;
+}
+.comm-compare-btn:hover:not(:disabled) { border-color: var(--gold); color: var(--deep-ocean); background: var(--white); }
+.comm-compare-btn.is-active { background: var(--deep-ocean); border-color: var(--deep-ocean); color: var(--text-on-dark); }
+.comm-compare-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+/* ── Floating "Compare" button — same pill treatment as .fl-filters-btn
+   on the villas listing page, so it reads as a consistent site pattern. ── */
+.comm-compare-bar {
+  position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 9px;
+  padding: 13px 24px 13px 28px; border-radius: 40px;
+  background: var(--deep-ocean); color: var(--text-on-dark); text-decoration: none;
+  z-index: 199; font-family: var(--font-inter), sans-serif; font-size: 11px;
+  font-weight: 400; letter-spacing: .14em; text-transform: uppercase;
+  box-shadow: 0 8px 28px rgba(20,42,60,.36);
+  transition: background .22s, box-shadow .22s;
+  white-space: nowrap;
+}
+.comm-compare-bar:hover { background: var(--ocean-mid); box-shadow: 0 12px 36px rgba(20,42,60,.44); }
+.comm-compare-bar-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 17px; height: 17px; border-radius: 50%;
+  background: var(--gold); color: var(--deep-ocean);
+  font-size: 9px; font-weight: 600; letter-spacing: 0; text-transform: none;
+}
+
+/* ── Compare-communities table — same structural pattern as the wishlist
+   compare table (.sv-cmp-*), independent class names since the content
+   (community facts, not properties) and the trigger (a checkbox on a
+   card, not "everything you've saved") are different enough to keep
+   these decoupled from that page's future changes. ── */
+.comm-cmp-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.comm-cmp-table { width: 100%; border-collapse: collapse; table-layout: fixed; font-family: var(--font-inter), sans-serif; }
+.comm-cmp-table th, .comm-cmp-table td { vertical-align: middle; }
+.comm-cmp-lbl {
+  width: 160px; min-width: 140px; padding: 16px 20px 16px 0;
+  font-size: 10px; font-weight: 400; letter-spacing: .14em; text-transform: uppercase; color: var(--charcoal-light);
+  border-top: 1px solid rgba(30,58,80,.07); white-space: nowrap;
+}
+.comm-cmp-hd { width: 220px; padding: 0 12px 20px; text-align: center; }
+.comm-cmp-thumb-wrap { position: relative; width: 100%; }
+.comm-cmp-thumb { display: block; width: 100%; aspect-ratio: 3/2; border-radius: 3px; background-size: cover; background-position: center; }
+.comm-cmp-thumb-empty { background: linear-gradient(160deg, var(--deep-ocean) 0%, var(--ocean-mid) 100%); }
+.comm-cmp-remove-btn {
+  position: absolute; top: 8px; right: 8px; z-index: 10;
+  width: 26px; height: 26px; border-radius: 50%;
+  background: rgba(255,255,255,.85); border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .2s, transform .18s;
+}
+.comm-cmp-remove-btn:hover { background: var(--white); transform: scale(1.1); }
+.comm-cmp-remove-btn svg { width: 11px; height: 11px; stroke: var(--charcoal); fill: none; stroke-width: 2.2; }
+.comm-cmp-name {
+  font-family: var(--font-cormorant), serif; font-size: 16px; font-weight: 300; color: var(--deep-ocean);
+  margin: 10px 0 0; text-align: center; line-height: 1.25;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.comm-cmp-val { text-align: center; padding: 16px 12px; font-size: 13px; font-weight: 300; color: var(--charcoal); border-top: 1px solid rgba(30,58,80,.07); }
+@media (max-width: 768px) {
+  .comm-cmp-lbl { width: 110px; min-width: 100px; }
+  .comm-cmp-hd { width: 150px; }
+  .comm-compare-bar { padding: 12px 20px 12px 22px; font-size: 10px; }
+}
 
 .comm-filter-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 20px; }
 .comm-filter-chip {
