@@ -15,16 +15,23 @@ interface Props {
   // Family Villas, Exceptional Value) is active, so the badge reflects what
   // was actually searched for rather than an arbitrary tag on the property.
   activeCollection?: string
+  // The active filters on the /villas listing, as a raw query string (e.g.
+  // "destination=punta-mita&beds=3") — only ever set by VillasClient. Carried
+  // into the property page's URL as ?from=... so its "Results" breadcrumb
+  // link can send the visitor back to exactly the filtered list they came
+  // from, instead of a plain, filter-less /villas.
+  resultsQuery?: string
 }
 
 const BED_SVG   = <svg viewBox="0 0 24 24"><path d="M2 7v13M22 7v13M2 16h20M2 10h20M6 10V7.5a2 2 0 014 0V10M14 10V7.5a2 2 0 014 0V10"/></svg>
 const BATH_SVG  = <svg viewBox="0 0 24 24"><path d="M4 12h16v4a4 4 0 01-4 4H8a4 4 0 01-4-4v-4zM4 12V6a2 2 0 012-2h2a2 2 0 012 2v1"/></svg>
 const GUEST_SVG = <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0112 0v2"/></svg>
 
-export default function PropertyCard({ property: p, activeCollection }: Props) {
+export default function PropertyCard({ property: p, activeCollection, resultsQuery }: Props) {
   const rate   = startingRate(p)
   const guests = totalGuests(p)
   const slug   = p.slug
+  const detailHref = resultsQuery ? `/villas/${slug}?from=${encodeURIComponent(resultsQuery)}` : `/villas/${slug}`
   // This is now the ONE property card used everywhere on the site — homepage,
   // villas listing, and similar properties — showing both badges together.
   const badge = collectionBadge(p, activeCollection)
@@ -63,7 +70,7 @@ export default function PropertyCard({ property: p, activeCollection }: Props) {
   }
 
   return (
-    <Link href={`/villas/${slug}`} className="prop-card">
+    <Link href={detailHref} className="prop-card">
       <div className="prop-photo-wrap">
         <div className="prop-photos">
           {photos.length === 0 ? (

@@ -118,7 +118,39 @@ function filtersFromParams(searchParams: URLSearchParams): FilterState {
       children: Number(searchParams.get('children')) || 0,
       infants: Number(searchParams.get('infants')) || 0,
     },
+    type: searchParams.get('type') || '',
+    locationType: searchParams.get('locationType') || '',
+    sort: searchParams.get('sort') || 'popular',
   }
+}
+
+// The exact inverse of filtersFromParams — turns the live in-page filter
+// state back into a URL query string. This page never pushes filter clicks
+// into the browser's own address bar (see the searchKey/syncedKey dance
+// above — the URL here is only ever the *entry point*, not a live mirror of
+// `filters`), so this is the only place that knows what's currently active.
+// Used to stamp each property card's link with "?from=..." so the detail
+// page's "Results" breadcrumb can rebuild this exact filtered view.
+function filtersToQueryString(f: FilterState): string {
+  const p = new URLSearchParams()
+  if (f.destination) p.set('destination', f.destination)
+  if (f.community) p.set('community', f.community)
+  if (f.collection) p.set('collection', f.collection)
+  if (f.price) p.set('price', f.price)
+  if (f.beds) p.set('beds', String(f.beds))
+  if (f.bedsMax) p.set('bedsMax', String(f.bedsMax))
+  if (f.pool) p.set('pool', '1')
+  if (f.staff) p.set('staff', '1')
+  if (f.featured) p.set('featured', '1')
+  if (f.q) p.set('q', f.q)
+  f.views.forEach((v) => p.append('view', v))
+  if (f.guests.adults) p.set('adults', String(f.guests.adults))
+  if (f.guests.children) p.set('children', String(f.guests.children))
+  if (f.guests.infants) p.set('infants', String(f.guests.infants))
+  if (f.type) p.set('type', f.type)
+  if (f.locationType) p.set('locationType', f.locationType)
+  if (f.sort && f.sort !== 'popular') p.set('sort', f.sort)
+  return p.toString()
 }
 
 export default function VillasClient({ properties }: { properties: Property[] }) {
@@ -295,6 +327,11 @@ export default function VillasClient({ properties }: { properties: Property[] })
   }, [properties, filters, guestCapacityCount])
 
   const visible = filtered.slice(0, visibleCount)
+
+  // Recomputed on every render (cheap — a handful of string checks) rather
+  // than memoized, since it needs to reflect `filters` immediately with no
+  // risk of a stale dependency array falling out of sync.
+  const resultsQuery = filtersToQueryString(filters)
 
   // Communities grouped by destination, built from whatever properties actually exist
   const communitiesByDest = useMemo(() => {
@@ -795,7 +832,7 @@ export default function VillasClient({ properties }: { properties: Property[] })
         ) : (
           <>
             <div className="prop-grid">
-              {visible.map((p) => <PropertyCard key={p._id} property={p} activeCollection={filters.collection || undefined} />)}
+              {visible.map((p) => <PropertyCard key={p._id} property={p} activeCollection={filters.collection || undefined} resultsQuery={resultsQuery || undefined} />)}
             </div>
             {visibleCount < filtered.length && (
               <div className="load-more-wrap" style={{ display: 'block' }} ref={loadMoreSentinelRef}>

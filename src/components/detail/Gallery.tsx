@@ -141,7 +141,11 @@ export default function Gallery({ photos, mosaicPhotos, isExceptionalValue }: { 
                 fill
                 quality={92}
                 sizes="(max-width: 1100px) 100vw, 1100px"
-                style={{ objectFit: 'cover' }}
+                // contain (not cover) so a vertical/portrait photo is shown
+                // in full — it letterboxes with dark space on the sides
+                // instead of having its top and bottom cropped off to fill
+                // a landscape-shaped box.
+                style={{ objectFit: 'contain' }}
               />
             </div>
             <button className="lb-nav lb-next" type="button" onClick={() => move(1)} aria-label="Next photo">

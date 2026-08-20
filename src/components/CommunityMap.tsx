@@ -286,12 +286,6 @@ export default function CommunityMap({
             ) : (
               <span className="community-map-card-photo-label">Photo placeholder</span>
             )}
-            {/* Purely a visual "go look" cue, not a separate control — the
-                whole card is already the click target (see the outer
-                Link above), so this never needs its own click handler. */}
-            <span className="community-map-card-go" aria-hidden="true">
-              <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></svg>
-            </span>
           </div>
           <div className="community-map-card-body">
             {/* Back to a "View N condos" label next to the name, not a
@@ -313,7 +307,6 @@ export default function CommunityMap({
                 <span key={t} className="comm-tag">{t}</span>
               ))}
             </div>
-            <p className="community-map-card-desc">{shown.description}</p>
           </div>
         </Link>
       )}

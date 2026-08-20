@@ -2753,10 +2753,12 @@ body.an-visible { --sidebar-top: 140px; }
 .lb-close:hover { background: rgba(255,255,255,.2); }
 .lb-close svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; }
 .lb-frame { position: relative; width: 100%; max-width: 1100px; padding: 0 56px; display: flex; align-items: center; justify-content: center; }
-/* 3:2 matches the property photos' native upload ratio exactly (2400x1600,
-   2000x1333), so object-fit:cover never actually needs to crop anything —
-   the box shape and the photo shape are already the same. */
-.lb-img { position: relative; width: 100%; max-height: 70vh; aspect-ratio: 3/2; border-radius: 2px; overflow: hidden; }
+/* Fixed height (not aspect-ratio) so the box works for both landscape AND
+   vertical/portrait photos. Paired with object-fit:contain in Gallery.tsx
+   (not cover), so every photo is shown in full — a portrait photo letterboxes
+   with empty dark space on the sides instead of having its top/bottom cropped
+   off to force it into a landscape-shaped box. */
+.lb-img { position: relative; width: 100%; height: 70vh; border-radius: 2px; overflow: hidden; }
 /* backdrop-filter + a soft white ring keep this circle visible as a distinct
    "glass" disc regardless of what's directly behind it — plain rgba(255,255,
    255,.12) was fine over a mid-tone photo, but nearly disappeared over dark
@@ -2806,7 +2808,7 @@ body.an-visible { --sidebar-top: 140px; }
      a native photo viewer — with a darker circle so they stay legible over
      a bright photo instead of the subtle desktop tint. */
   .lb-frame { padding: 0 10px; }
-  .lb-img { max-height: 62vh; }
+  .lb-img { height: 62vh; }
   .lb-nav { width: 38px; height: 38px; background: rgba(7,20,28,.5); }
   .lb-nav:hover { background: rgba(7,20,28,.7); }
   .lb-prev { left: 18px; }
@@ -4065,7 +4067,12 @@ textarea.ct-input { resize: vertical; min-height: 88px; line-height: 1.65; }
    sand border plus a gold top edge was the one thing on this card that
    didn't match how every other card on the site is finished). */
 .community-map-card {
-  position: absolute; left: 16px; bottom: 16px; width: clamp(300px, 32vw, 380px); z-index: 2147483647;
+  /* 20% smaller than the previous 300/32vw/380 clamp (Francisco's call,
+     2026-08-10) — sized down further now that the description below is
+     gone too, so the card reads as a quick preview (photo, name, feature
+     pills, and the view-properties link) rather than a full write-up
+     floating over the map. */
+  position: absolute; left: 16px; bottom: 16px; width: clamp(240px, 25.6vw, 304px); z-index: 2147483647;
   display: block; text-decoration: none; color: inherit;
   background: var(--white); overflow: hidden; border-radius: 4px;
   box-shadow: 0 14px 36px rgba(10,24,32,.28);
@@ -4092,23 +4099,11 @@ textarea.ct-input { resize: vertical; min-height: 88px; line-height: 1.65; }
   pointer-events: none;
 }
 .community-map-card-photo-label { font-family: var(--font-inter), sans-serif; font-size: 11px; color: var(--charcoal-light); padding: 0 10px; }
-/* Solid gold, not a plain white circle — ties this "go look" cue back
-   to the gold used across the rest of the site's accents instead of
-   reading as a generic, unbranded UI control. Purely decorative
-   (aria-hidden in the markup): the whole card is already the link. */
-.community-map-card-go {
-  position: absolute; top: 10px; right: 10px; z-index: 2;
-  width: 30px; height: 30px; border-radius: 50%;
-  background: var(--gold); display: flex; align-items: center; justify-content: center;
-  transition: transform .2s;
-}
-.community-map-card:hover .community-map-card-go { transform: scale(1.08); }
-.community-map-card-go svg { width: 13px; height: 13px; stroke: var(--white); fill: none; stroke-width: 2; }
 .community-map-card-body { padding: 14px 16px 16px; }
 /* Name and "View N ___" share one row again, per Francisco's direction
    (2026-08-09) — the count reading as just another pill in the tag row
    was confusing; back to a distinct labeled link, same row as the name. */
-.community-map-card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin: 0 0 8px; }
+.community-map-card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin: 0 0 16px; }
 .community-map-card-name { font-family: var(--font-cormorant), serif; font-weight: 400; font-size: 17px; color: var(--deep-ocean); margin: 0; flex: 1; min-width: 0; }
 .community-map-card-link {
   flex: none; display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-inter), sans-serif;
@@ -4117,12 +4112,6 @@ textarea.ct-input { resize: vertical; min-height: 88px; line-height: 1.65; }
 }
 .community-map-card:hover .community-map-card-link { color: var(--gold); border-color: var(--gold); }
 .community-map-card-link svg { width: 10px; height: 10px; stroke: currentColor; fill: none; stroke-width: 2; }
-/* Clamped to 2 lines (was 3) — trimmed along with the rest of the card
-   so the whole thing sits noticeably shorter over the map. */
-.community-map-card-desc {
-  font-family: var(--font-inter), sans-serif; font-weight: 300; font-size: 12px; line-height: 1.6; color: var(--charcoal-light); margin: 0;
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
-}
 
 /* Feature pills — shared by the map's hover card and the "Every
    Community" grid below it. The map card only ever passes
@@ -4161,7 +4150,6 @@ textarea.ct-input { resize: vertical; min-height: 88px; line-height: 1.65; }
   .community-map-card-body { padding: 14px 16px 16px; }
   .community-map-card-name { font-size: 16px; }
   .community-map-card-link { font-size: 10px; }
-  .community-map-card-desc { font-size: 12px; -webkit-line-clamp: 3; }
 }
 
 /* Calibrate mode (?calibrate=1) — a setup tool, not a visitor-facing
