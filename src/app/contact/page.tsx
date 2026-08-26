@@ -36,7 +36,7 @@ export default function ContactPage() {
               <span className="ct-quick-text-val">Tap to compose</span>
             </div>
           </a>
-          <a className="ct-quick-link" href="https://wa.me/523313619889" target="_blank" rel="noopener">
+          <a className="ct-quick-link" href="https://wa.me/523224341968" target="_blank" rel="noopener">
             <div className="ct-quick-icon wa">
               <svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" /></svg>
             </div>

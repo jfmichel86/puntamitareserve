@@ -131,7 +131,7 @@ export default function About() {
           <p>Tell us your dates, your group, and what matters most — we&rsquo;ll take it from there.</p>
         </div>
         <div className="help-cta-btns">
-          <a className="help-btn help-btn-primary" href="https://wa.me/523313619889?text=Hi%2C%20I%27d%20like%20to%20start%20planning%20my%20stay" target="_blank" rel="noopener">WhatsApp us</a>
+          <a className="help-btn help-btn-primary" href="https://wa.me/523224341968?text=Hi%2C%20I%27d%20like%20to%20start%20planning%20my%20stay" target="_blank" rel="noopener">WhatsApp us</a>
           <a className="help-btn help-btn-secondary" href="mailto:rentals@mexicanreserve.com">Email us</a>
         </div>
       </section>

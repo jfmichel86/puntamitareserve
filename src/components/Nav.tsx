@@ -124,7 +124,10 @@ export default function Nav() {
 
   const closeMenu = () => { setMenuOpen(false); setMobileDestOpen(false); setMobilePropsOpen(false) }
   const isActive = (href: string) =>
-    href === '/villas' ? pathname.startsWith('/villas') : pathname === href
+    // /offers now lives inside the Collections menu (see PROPERTIES_MENU),
+    // so the Collections trigger should still light up as "active" when
+    // you're actually on the Exclusive Deals page.
+    href === '/villas' ? (pathname.startsWith('/villas') || pathname === '/offers') : pathname === href
   const isDestActive = pathname.startsWith('/destinations')
 
   const DESTINATIONS = [
@@ -138,6 +141,12 @@ export default function Nav() {
     { href: '/villas?collection=exceptional-value', label: 'Exceptional Value' },
     { href: '/villas?collection=family-villas', label: 'Family Villas' },
     { href: '/villas?collection=oceanfront', label: 'Oceanfront' },
+    // Not a /villas filter like the others above — this points at the
+    // standalone /offers page (limited-time rates, Pay 3 Stay 4, etc).
+    // Folded in here instead of keeping its own top-level nav slot: it
+    // still gets a real entry point in the Collections menu without
+    // adding a 5th item to an already-crowded header.
+    { href: '/offers', label: 'Exclusive Deals' },
   ]
 
   return (
@@ -210,7 +219,6 @@ export default function Nav() {
             ))}
           </div>
         </li>
-        <li><Link href="/offers" className={pathname === '/offers' ? 'active' : ''}>Exclusive Deals</Link></li>
         {/* Label reads "The Experience" (renamed from "About") — same /about
             page, which is actually concierge-service and local-expertise
             content, not a company bio, so the old label undersold it. */}
@@ -324,7 +332,6 @@ export default function Nav() {
             ))}
           </div>
         )}
-        <Link href="/offers" onClick={closeMenu}>Exclusive Deals</Link>
         <Link href="/about" onClick={closeMenu}>The Experience</Link>
         {savedCount > 0 && (
           <Link href="/saved" onClick={closeMenu}>Wishlist ({savedCount})</Link>

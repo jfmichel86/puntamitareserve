@@ -317,9 +317,10 @@ const DESTINATIONS: Record<string, Destination> = {
     slug: 'puerto-vallarta',
     eyebrow: 'Jalisco, Mexico',
     title: 'Puerto Vallarta',
+    heroTitlePrefix: 'Luxury Villa Rentals in',
+    metaTitle: 'Luxury Villa Rentals in Puerto Vallarta',
     heroSub: 'A historic beach city on Banderas Bay — a mile of oceanfront boardwalk, four distinct neighborhoods, and a livelier pace than the private peninsula.',
     redesigned: true,
-    comingSoon: true,
     whyStatement: {
       headline: 'A historic beach city on Banderas Bay — the widest dining, nightlife, and after-dark scene anywhere on the bay, all of it walkable.',
       support: 'Puerto Vallarta trades the private peninsula for a real city: rooftop bars and live music every night of the week, restaurants and galleries within walking distance, and a beach scene that’s never asked for a membership. If nightlife matters more than quiet, this is the destination that delivers it.',
@@ -332,7 +333,7 @@ const DESTINATIONS: Record<string, Destination> = {
         label: 'The Malecón',
         layout: 'cinematic',
         items: [
-          { title: 'The Malecón', text: 'A mile of oceanfront boardwalk linking the Zona Romántica to El Centro, dotted with 34 sculptures — including the bronze “Boy on the Seahorse,” Puerto Vallarta’s official symbol. Vendors and street performers by day; the bars and restaurants along it carry the energy into the night.' },
+          { title: 'The Malecón', text: 'A mile of oceanfront boardwalk linking the Zona Romántica to El Centro, dotted with 34 sculptures — including the bronze “Boy on the Seahorse,” Puerto Vallarta’s official symbol. Vendors and street performers by day; the bars and restaurants along it carry the energy into the night.', imageUrl: 'https://images.unsplash.com/photo-1641230155425-cc1b4404fe7e' },
         ],
       },
       {
@@ -346,10 +347,42 @@ const DESTINATIONS: Record<string, Destination> = {
         label: 'Neighborhoods',
         layout: 'showcase',
         items: [
-          { title: 'El Centro', vibe: 'Historic and walkable', tags: ['Cobblestone streets', 'Cathedral', 'Galleries'], text: 'Puerto Vallarta’s original downtown, anchored by the crown-topped Church of Our Lady of Guadalupe. Cobblestone streets climb from the bay past art galleries, cafés, and the city’s oldest architecture.' },
-          { title: 'Zona Romántica', vibe: 'The dining and nightlife core', tags: ['Rooftop bars', 'Live music & cabaret', 'South of the Cuale River'], text: 'Puerto Vallarta’s Old Town, just south of the Cuale River — rooftop bars, a nightly cabaret and live-music scene, and the widest concentration of restaurants and galleries in the city, all within walking distance of the beach.' },
-          { title: 'Los Muertos Beach', vibe: 'The city’s most popular beach', tags: ['Beach clubs & palapas', 'Water sports', '335-ft illuminated pier'], text: 'The heart of the Zona Romántica’s beachfront — beach clubs, palapa restaurants, and a 335-foot pier that lights up over the water at night. The busiest beach in Puerto Vallarta, and the most fun.' },
-          { title: 'Marina Vallarta', vibe: 'Quiet, and built around the harbor', tags: ['450-slip marina', 'Golf course', 'Near the airport'], text: 'A planned neighborhood around Puerto Vallarta’s yacht marina, with its own 18-hole golf course and a quieter, more residential pace than downtown — five minutes from the airport, farthest from the nightlife.' },
+          {
+            title: 'El Centro', vibe: 'Historic and walkable', tags: ['Cobblestone streets', 'Cathedral', 'Galleries'],
+            text: 'Puerto Vallarta’s original downtown, anchored by the crown-topped Church of Our Lady of Guadalupe. Cobblestone streets climb from the bay past art galleries, cafés, and the city’s oldest architecture.',
+            images: [
+              'https://images.unsplash.com/photo-1785765895556-21ec39e7fb2d',
+              'https://images.unsplash.com/photo-1747551056003-8a070da8165d',
+              'https://images.unsplash.com/photo-1747551055903-525f47b0e30b',
+            ],
+          },
+          {
+            title: 'Zona Romántica', vibe: 'The dining and nightlife core', tags: ['Rooftop bars', 'Live music & cabaret', 'South of the Cuale River'],
+            text: 'Puerto Vallarta’s Old Town, just south of the Cuale River — rooftop bars, a nightly cabaret and live-music scene, and the widest concentration of restaurants and galleries in the city, all within walking distance of the beach.',
+            images: [
+              'https://images.unsplash.com/photo-1772065255194-2f9d9da3e41a',
+              'https://images.unsplash.com/photo-1613109040835-56f3d1b7f021',
+              'https://images.unsplash.com/photo-1613109746855-81bdf19c0d86',
+            ],
+          },
+          {
+            title: 'Los Muertos Beach', vibe: 'The city’s most popular beach', tags: ['Beach clubs & palapas', 'Water sports', '335-ft illuminated pier'],
+            text: 'The heart of the Zona Romántica’s beachfront — beach clubs, palapa restaurants, and a 335-foot pier that lights up over the water at night. The busiest beach in Puerto Vallarta, and the most fun.',
+            images: [
+              'https://images.unsplash.com/photo-1741183706234-0b2cb0e22829',
+              'https://images.unsplash.com/photo-1644556441505-55fcbfc36352',
+              'https://images.unsplash.com/photo-1772065255320-bcd9adc63cc7',
+            ],
+          },
+          {
+            title: 'Marina Vallarta', vibe: 'Quiet, and built around the harbor', tags: ['450-slip marina', 'Golf course', 'Near the airport'],
+            text: 'A planned neighborhood around Puerto Vallarta’s yacht marina, with its own 18-hole golf course and a quieter, more residential pace than downtown — five minutes from the airport, farthest from the nightlife.',
+            images: [
+              'https://images.unsplash.com/photo-1741183575435-ddef33850f46',
+              'https://images.unsplash.com/photo-1731892165850-71481a86af31',
+              'https://images.unsplash.com/photo-1641578349391-bd6acc9d2fe3',
+            ],
+          },
         ],
       },
       {
@@ -363,6 +396,7 @@ const DESTINATIONS: Record<string, Destination> = {
     ],
     photoBreak: {
       caption: 'A city built to be walked — the Malecón at golden hour.',
+      imageUrl: 'https://images.unsplash.com/photo-1772064889848-030186c93a9b',
     },
     facts: [
       { label: 'Getting Here', value: '20 min', sub: 'Puerto Vallarta International Airport (PVR) is inside the city itself.' },

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { formatPrice } from '@/lib/utils'
 
-const WA_NUMBER = '523313619889'
+const WA_NUMBER = '523224341968'
 const CONTACT_EMAIL = 'rentals@mexicanreserve.com'
 
 type PanelOpen = 'dates' | 'guests' | null

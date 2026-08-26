@@ -4,6 +4,12 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: 'cdn.sanity.io' },
+      // Free-license stock photography (Unsplash License — free for
+      // commercial use, no attribution required) used to fill the Puerto
+      // Vallarta destination guide until real, brand-exclusive photography
+      // is available. See puerto-vallarta's insideGroups/photoBreak in
+      // destinations/[slug]/page.tsx.
+      { protocol: 'https', hostname: 'images.unsplash.com' },
     ],
     // Next.js only serves image quality values listed here — anything else
     // silently falls back to the closest allowed number (default is just

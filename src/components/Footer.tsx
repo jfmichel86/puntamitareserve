@@ -53,7 +53,7 @@ export default function Footer() {
           <div className="ft-col-title">Contact</div>
           <div className="ft-contact-item">
             <div className="ft-contact-lbl">WhatsApp</div>
-            <a href="https://wa.me/523313619889" className="ft-contact-val" target="_blank" rel="noopener">+52 33 1361 9889</a>
+            <a href="https://wa.me/523224341968" className="ft-contact-val" target="_blank" rel="noopener">+52 322 434 1968</a>
           </div>
           <div className="ft-contact-item">
             <div className="ft-contact-lbl">Email</div>
@@ -64,7 +64,7 @@ export default function Footer() {
             <span className="ft-contact-val">Punta de Mita, Nayarit, México</span>
           </div>
           <p className="ft-cta-txt">Not sure where to start? We&rsquo;re happy to help you find the right property.</p>
-          <a href="https://wa.me/523313619889" className="ft-btn" target="_blank" rel="noopener">WhatsApp us</a>
+          <a href="https://wa.me/523224341968" className="ft-btn" target="_blank" rel="noopener">WhatsApp us</a>
         </div>
       </div>
       <div className="footer-bottom">
