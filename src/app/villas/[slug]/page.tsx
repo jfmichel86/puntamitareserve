@@ -1,4 +1,3 @@
-import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
@@ -181,9 +180,7 @@ export default async function PropertyDetailPage({ params }: { params: Promise<P
       <div className="breadcrumb">
         <Link href="/">Home</Link>
         <span className="bc-sep">/</span>
-        <Suspense fallback={<Link href="/villas">Results</Link>}>
-          <ResultsLink />
-        </Suspense>
+        <ResultsLink />
         <span className="bc-sep">/</span>
         <span className="bc-current">{prop.title}</span>
       </div>

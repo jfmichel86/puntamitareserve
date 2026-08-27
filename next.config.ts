@@ -8,7 +8,7 @@ const nextConfig: NextConfig = {
       // commercial use, no attribution required) used to fill the Puerto
       // Vallarta destination guide until real, brand-exclusive photography
       // is available. See puerto-vallarta's insideGroups/photoBreak in
-      // destinations/[slug]/page.tsx.
+      // src/app/[slug]/page.tsx.
       { protocol: 'https', hostname: 'images.unsplash.com' },
     ],
     // Next.js only serves image quality values listed here — anything else
@@ -35,7 +35,15 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
-      { source: '/punta-mita', destination: '/destinations/punta-mita', permanent: true },
+      // Destination guide pages moved from /destinations/<slug> to short,
+      // root-level URLs (2026-08-27, Francisco's call). These 301s make sure
+      // anyone with the old address bookmarked, and any ranking Google built
+      // up on the old URLs, both carry over cleanly to the new ones instead
+      // of hitting a dead link.
+      { source: '/destinations/punta-mita', destination: '/punta-mita', permanent: true },
+      { source: '/destinations/punta-mita/communities', destination: '/punta-mita/communities', permanent: true },
+      { source: '/destinations/punta-de-mita', destination: '/punta-de-mita', permanent: true },
+      { source: '/destinations/puerto-vallarta', destination: '/puerto-vallarta', permanent: true },
     ]
   },
 }

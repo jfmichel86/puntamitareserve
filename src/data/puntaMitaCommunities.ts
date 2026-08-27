@@ -1,8 +1,8 @@
 // ─────────────────────────────────────────────────────────────
 // Punta Mita community map data
 // ─────────────────────────────────────────────────────────────
-// Powers the "Explore the Communities" page (/destinations/punta-mita/
-// communities) — one pin per gated community on the peninsula.
+// Powers the "Explore the Communities" page (/punta-mita/communities) —
+// one pin per gated community on the peninsula.
 //
 // Positions marked "verified" below came from Francisco dragging each pin
 // to its real spot in the drag-to-correct "calibrate" mode
@@ -21,7 +21,7 @@
 // published properties in Sanity (the `viewsAndPool` and `bedrooms`
 // fields), computed live in the page itself. See aggregateLocation /
 // aggregateViews / aggregatePool / aggregateBedrooms in
-// src/app/destinations/punta-mita/communities/page.tsx.
+// src/app/punta-mita/communities/page.tsx.
 //
 // This list is checked directly against Sanity's real community dropdown
 // (29 entries, confirmed by Francisco on 2026-08-06). Slugs must match

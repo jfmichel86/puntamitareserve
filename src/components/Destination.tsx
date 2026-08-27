@@ -8,7 +8,7 @@ type ShowcaseResult = { puntaMita: HeroOnly | null; puntaDeMita: HeroOnly | null
 const DESTINATIONS = [
   {
     key: 'puntaMita' as const,
-    href: '/destinations/punta-mita',
+    href: '/punta-mita',
     name: 'Punta Mita',
     suffix: 'Inside the Gates',
     hook: 'Where the Four Seasons, St. Regis, and two Jack Nicklaus courses share one private peninsula.',
@@ -16,7 +16,7 @@ const DESTINATIONS = [
   },
   {
     key: 'puntaDeMita' as const,
-    href: '/destinations/punta-de-mita',
+    href: '/punta-de-mita',
     name: 'Punta de Mita Area',
     suffix: undefined as string | undefined,
     hook: 'Village life and surf breaks, just outside the gates.',
@@ -24,7 +24,7 @@ const DESTINATIONS = [
   },
   {
     key: 'puertoVallarta' as const,
-    href: '/destinations/puerto-vallarta',
+    href: '/puerto-vallarta',
     name: 'Puerto Vallarta',
     suffix: undefined as string | undefined,
     hook: 'A historic beach city with a livelier pace, minutes south.',

@@ -176,11 +176,11 @@ export const DEST_LABELS: Record<string, string> = {
   'puerto-vallarta': 'Puerto Vallarta',
 }
 
-// URL slug (used by /destinations/[slug] and DEST_LABELS above) -> the raw
-// value Sanity actually stores on both the property schema's locationLabel
-// field and the activity schema's destinations field. Only "punta-de-mita"
-// differs from its own slug. Centralized here since both /destinations/[slug]
-// and /experiences need the same mapping.
+// URL slug (used by the root-level /[slug] destination pages and DEST_LABELS
+// above) -> the raw value Sanity actually stores on both the property
+// schema's locationLabel field and the activity schema's destinations field.
+// Only "punta-de-mita" differs from its own slug. Centralized here since
+// both the destination pages and /experiences need the same mapping.
 export const LOCATION_LABEL_BY_SLUG: Record<string, Property['locationLabel']> = {
   'punta-mita':      'punta-mita',
   'punta-de-mita':   'punta-de-mita-area',
@@ -232,6 +232,15 @@ export const LOC_TYPE_LABELS: Record<string, string> = {
   'golf-course': 'Golf Course',
   'hillside':    'Hillside',
 }
+
+// sessionStorage key PropertyCard writes to (and ResultsLink reads from) so
+// a property page's "Results" breadcrumb can return a visitor to exactly the
+// filtered /villas search they came from — WITHOUT stuffing that filter
+// state into the property page's own URL (Francisco's call, 2026-08-27: the
+// old ?from=... approach made shared/copied property links long and ugly,
+// e.g. ?from=collection%3Dexceptional-value). Shared by both files so the
+// key can't drift out of sync between the writer and the reader.
+export const LAST_SEARCH_STORAGE_KEY = 'mr-last-search'
 
 /** Community label for the card's eyebrow ("Kupuri", "Sayulita", etc.)
  *  Falls back to humanizing the raw slug (dashes → spaces, title case)

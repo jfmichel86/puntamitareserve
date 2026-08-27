@@ -7,6 +7,7 @@ import { urlFor } from '@/lib/sanity'
 import {
   Property, startingRate, totalGuests, formatPrice,
   communityLabel, collectionBadge, locationBadge, allPhotos, dealBadgeLabel,
+  LAST_SEARCH_STORAGE_KEY,
 } from '@/lib/utils'
 
 interface Props {
@@ -16,10 +17,11 @@ interface Props {
   // was actually searched for rather than an arbitrary tag on the property.
   activeCollection?: string
   // The active filters on the /villas listing, as a raw query string (e.g.
-  // "destination=punta-mita&beds=3") — only ever set by VillasClient. Carried
-  // into the property page's URL as ?from=... so its "Results" breadcrumb
-  // link can send the visitor back to exactly the filtered list they came
-  // from, instead of a plain, filter-less /villas.
+  // "destination=punta-mita&beds=3") — only ever set by VillasClient. Stashed
+  // in sessionStorage the moment this card is clicked (see handleCardClick
+  // below) rather than appended to the property page's own URL, so the
+  // property link itself stays short and clean — the property page's
+  // "Results" breadcrumb (ResultsLink.tsx) reads it back out from there.
   resultsQuery?: string
 }
 
@@ -31,7 +33,7 @@ export default function PropertyCard({ property: p, activeCollection, resultsQue
   const rate   = startingRate(p)
   const guests = totalGuests(p)
   const slug   = p.slug
-  const detailHref = resultsQuery ? `/villas/${slug}?from=${encodeURIComponent(resultsQuery)}` : `/villas/${slug}`
+  const detailHref = `/villas/${slug}`
   // This is now the ONE property card used everywhere on the site — homepage,
   // villas listing, and similar properties — showing both badges together.
   const badge = collectionBadge(p, activeCollection)
@@ -53,6 +55,23 @@ export default function PropertyCard({ property: p, activeCollection, resultsQue
     }
   }, [slug])
 
+  // Runs right as the card is clicked, not on every filter change — only
+  // ever needs to reflect whatever was active at the moment someone actually
+  // navigates into a property. Explicitly clears the key (not just skips
+  // writing) when there's no resultsQuery, so a stale filtered search from
+  // an earlier /villas visit can't leak into "Results" on a property reached
+  // some other way (Similar Properties, a destination page, etc).
+  const handleCardClick = () => {
+    try {
+      if (resultsQuery) sessionStorage.setItem(LAST_SEARCH_STORAGE_KEY, resultsQuery)
+      else sessionStorage.removeItem(LAST_SEARCH_STORAGE_KEY)
+    } catch {
+      // Private-browsing modes can throw on sessionStorage access — the
+      // "Results" breadcrumb just falls back to a plain /villas, same as if
+      // nothing had been saved.
+    }
+  }
+
   const movePhoto = (e: React.MouseEvent, dir: 1 | -1) => {
     e.preventDefault()
     e.stopPropagation()
@@ -70,7 +89,7 @@ export default function PropertyCard({ property: p, activeCollection, resultsQue
   }
 
   return (
-    <Link href={detailHref} className="prop-card">
+    <Link href={detailHref} className="prop-card" onClick={handleCardClick}>
       <div className="prop-photo-wrap">
         <div className="prop-photos">
           {photos.length === 0 ? (

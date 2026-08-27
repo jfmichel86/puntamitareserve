@@ -128,13 +128,19 @@ export default function Nav() {
     // so the Collections trigger should still light up as "active" when
     // you're actually on the Exclusive Deals page.
     href === '/villas' ? (pathname.startsWith('/villas') || pathname === '/offers') : pathname === href
-  const isDestActive = pathname.startsWith('/destinations')
-
   const DESTINATIONS = [
-    { href: '/destinations/punta-mita', name: 'Punta Mita', suffix: 'Inside the Gates' },
-    { href: '/destinations/punta-de-mita', name: 'Punta de Mita Area', suffix: undefined as string | undefined },
-    { href: '/destinations/puerto-vallarta', name: 'Puerto Vallarta', suffix: undefined as string | undefined },
+    { href: '/punta-mita', name: 'Punta Mita', suffix: 'Inside the Gates' },
+    { href: '/punta-de-mita', name: 'Punta de Mita Area', suffix: undefined as string | undefined },
+    { href: '/puerto-vallarta', name: 'Puerto Vallarta', suffix: undefined as string | undefined },
   ]
+  // Destination guide pages now live at short, root-level URLs (/punta-mita,
+  // not /destinations/punta-mita) rather than under one shared /destinations
+  // prefix, so this can no longer be a simple pathname.startsWith check —
+  // it has to test against each destination's own href (and the /destinations
+  // hub page itself, plus Punta Mita's nested /communities page) individually.
+  const isDestActive =
+    pathname === '/destinations' ||
+    DESTINATIONS.some((d) => pathname === d.href || pathname.startsWith(`${d.href}/`))
 
   const PROPERTIES_MENU = [
     { href: '/villas', label: 'All Properties' },
