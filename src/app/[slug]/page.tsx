@@ -333,14 +333,14 @@ const DESTINATIONS: Record<string, Destination> = {
         label: 'The Malecón',
         layout: 'cinematic',
         items: [
-          { title: 'The Malecón', text: 'A mile of oceanfront boardwalk linking the Zona Romántica to El Centro, dotted with 34 sculptures — including the bronze “Boy on the Seahorse,” Puerto Vallarta’s official symbol. Vendors and street performers by day; the bars and restaurants along it carry the energy into the night.', imageUrl: 'https://images.unsplash.com/photo-1641230155425-cc1b4404fe7e' },
+          { title: 'The Malecón', text: 'A mile of oceanfront boardwalk linking the Zona Romántica to El Centro, dotted with 34 sculptures — including the bronze “Boy on the Seahorse,” Puerto Vallarta’s official symbol. Vendors and street performers by day; the bars and restaurants along it carry the energy into the night.', imageUrl: '/images/destinations/puerto-vallarta/malecon-seahorse.jpg', imagePosition: 'center 40%' },
         ],
       },
       {
         label: 'Nightlife',
         layout: 'cinematic',
         items: [
-          { title: 'Puerto Vallarta After Dark', text: 'Rooftop bars watching the sun drop into the Pacific, a nightly cabaret and live-music scene through the Zona Romántica, and enough restaurants, bars, and clubs within a few blocks that you never need to call a cab. It’s the one advantage no other destination on the bay can match.' },
+          { title: 'Puerto Vallarta After Dark', text: 'Rooftop bars watching the sun drop into the Pacific, a nightly cabaret and live-music scene through the Zona Romántica, and enough restaurants, bars, and clubs within a few blocks that you never need to call a cab. It’s the one advantage no other destination on the bay can match.', imageUrl: '/images/destinations/puerto-vallarta/dockside-restaurant.jpg' },
         ],
       },
       {
@@ -352,8 +352,8 @@ const DESTINATIONS: Record<string, Destination> = {
             text: 'Puerto Vallarta’s original downtown, anchored by the crown-topped Church of Our Lady of Guadalupe. Cobblestone streets climb from the bay past art galleries, cafés, and the city’s oldest architecture.',
             images: [
               'https://images.unsplash.com/photo-1785765895556-21ec39e7fb2d',
-              'https://images.unsplash.com/photo-1747551056003-8a070da8165d',
-              'https://images.unsplash.com/photo-1747551055903-525f47b0e30b',
+              '/images/destinations/puerto-vallarta/voladores-malecon.jpg',
+              '/images/destinations/puerto-vallarta/huichol-artisan-market.jpg',
             ],
           },
           {
@@ -378,9 +378,9 @@ const DESTINATIONS: Record<string, Destination> = {
             title: 'Marina Vallarta', vibe: 'Quiet, and built around the harbor', tags: ['450-slip marina', 'Golf course', 'Near the airport'],
             text: 'A planned neighborhood around Puerto Vallarta’s yacht marina, with its own 18-hole golf course and a quieter, more residential pace than downtown — five minutes from the airport, farthest from the nightlife.',
             images: [
-              'https://images.unsplash.com/photo-1741183575435-ddef33850f46',
-              'https://images.unsplash.com/photo-1731892165850-71481a86af31',
-              'https://images.unsplash.com/photo-1641578349391-bd6acc9d2fe3',
+              '/images/destinations/puerto-vallarta/marina-vallarta-lighthouse.jpg',
+              '/images/destinations/puerto-vallarta/marina-vallarta-palms.jpg',
+              '/images/destinations/puerto-vallarta/marina-vallarta-panorama.jpg',
             ],
           },
         ],
@@ -395,8 +395,8 @@ const DESTINATIONS: Record<string, Destination> = {
       },
     ],
     photoBreak: {
-      caption: 'A city built to be walked — the Malecón at golden hour.',
-      imageUrl: 'https://images.unsplash.com/photo-1772064889848-030186c93a9b',
+      caption: 'Marina Vallarta’s channel at golden hour, the Sierra Madre behind it.',
+      imageUrl: '/images/destinations/puerto-vallarta/marina-channel-golden-hour.jpg',
     },
     facts: [
       { label: 'Getting Here', value: '20 min', sub: 'Puerto Vallarta International Airport (PVR) is inside the city itself.' },
@@ -658,8 +658,37 @@ export default async function DestinationPage({ params }: { params: Promise<Para
     </div>
   )
 
+  // Structured data — same reasoning as villas/[slug]/page.tsx: this had
+  // none before, on any of the 3 destination pages. TouristDestination is
+  // schema.org's purpose-built type for exactly this kind of page. Only
+  // added here (the fully-built page), not the "coming soon" branch above,
+  // since that page has almost no real content yet to describe.
+  const destUrl = `https://www.mexicanreserve.com/${slug}`
+  const REGION_BY_SLUG: Record<string, string> = {
+    'punta-mita': 'Nayarit', 'punta-de-mita': 'Nayarit', 'puerto-vallarta': 'Jalisco',
+  }
+  const destinationJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'TouristDestination',
+    name: dest.title,
+    description: dest.heroSub,
+    url: destUrl,
+    address: { '@type': 'PostalAddress', addressLocality: dest.title, addressRegion: REGION_BY_SLUG[slug] || 'Nayarit', addressCountry: 'MX' },
+  }
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://www.mexicanreserve.com/' },
+      { '@type': 'ListItem', position: 2, name: 'Destinations', item: 'https://www.mexicanreserve.com/destinations' },
+      { '@type': 'ListItem', position: 3, name: dest.title, item: destUrl },
+    ],
+  }
+
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(destinationJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
       <div id="dest-hero">
         <HeroBg photos={heroPhotosOrFallback} />
         <p className="pg-eyebrow">{dest.eyebrow}</p>

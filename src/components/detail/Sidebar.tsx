@@ -43,12 +43,16 @@ export default function Sidebar({
   minStayNights,
   showScarcity,
   priceOnRequest = false,
+  dealBadge,
+  dealValidity,
 }: {
   propertyTitle: string
   minRate: number | null
   minStayNights: number
   showScarcity: boolean
   priceOnRequest?: boolean
+  dealBadge?: string
+  dealValidity?: string
 }) {
   const [openPanel, setOpenPanel] = useState<PanelOpen>(null)
   const wrapRef = useRef<HTMLDivElement>(null)
@@ -252,6 +256,19 @@ export default function Sidebar({
   return (
     <div className="sidebar-sticky">
       <div className="iq-card">
+        {/* Previously a guest could see "Pay 3, Stay 4" on the property
+            card that led them to this page, but nothing here ever said
+            what it meant or when it applied — the only mention was buried
+            in small print further down under the rates table (Francisco's
+            report, 2026-09-15). This sits at the very top of the booking
+            widget instead, right where a guest is actually deciding
+            whether the deal applies to their dates. */}
+        {dealBadge && (
+          <div className="iq-deal">
+            <span className="iq-deal-badge">{dealBadge}</span>
+            {dealValidity && <span className="iq-deal-validity">{dealValidity}</span>}
+          </div>
+        )}
         <div className="iq-head">
           {priceOnRequest ? (
             <>

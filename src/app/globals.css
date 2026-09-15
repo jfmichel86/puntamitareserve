@@ -197,7 +197,7 @@ body {
 .nav-dropdown-trigger:hover::after, .nav-dropdown-trigger.active::after, .nav-dropdown.is-open .nav-dropdown-trigger::after { transform: scaleX(1); }
 .nav-dropdown.is-open .nav-dropdown-trigger svg { transform: rotate(180deg); }
 .nav-dropdown-panel {
-  display: none; position: absolute; top: 100%; left: 0;
+  display: none; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
   min-width: 200px;
   /* Solid, matching the nav bar's own dark color exactly — reads as a
      continuation of the nav rather than a separate floating box. Earlier
@@ -208,9 +208,16 @@ body {
      the panel meets the nav bar, undermining the "grows out of the same
      surface" effect the matching color is meant to create. */
   background: rgba(20,42,60,.99); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
-  border-radius: 0 0 4px 4px;
+  border-radius: 4px;
   box-shadow: 0 18px 30px -14px rgba(4,10,16,.28);
-  padding: 22px 44px 26px 12px; z-index: 500; animation: fadeIn .18s ease both;
+  /* Centered under the trigger (was left: 0, flush to the trigger's own left
+     edge) — since the panel is almost always wider than the word it hangs
+     off of, left-aligning made all that extra width spill out to the right
+     with nothing balancing it on the left, reading as "drifted off to the
+     side" rather than anchored to the word you're hovering. Padding is now
+     symmetric (was 44px right / 12px left, tuned for the old left-anchored
+     layout) to match. */
+  padding: 22px 32px 26px; z-index: 500; animation: fadeIn .18s ease both;
 }
 .nav-dropdown.is-open .nav-dropdown-panel { display: block; }
 .nav-dropdown-panel a {
@@ -232,6 +239,26 @@ body {
 .nav-dropdown-panel a:hover::after { transform: scaleX(1); }
 .nav-dropdown-panel a.is-sel { opacity: 1; color: var(--gold); }
 .nav-dropdown-panel a.is-sel::after { transform: scaleX(1); }
+/* Exclusive Deals — the one item in the Collections menu that isn't a
+   property collection (it's the standalone /offers page), so it gets its
+   own treatment instead of blending in as a 4th flavor of "browse villas":
+   a thin divider pulls it visually away from the collections above, and a
+   permanent gold color (not just on hover, like every other item here)
+   marks it as the one time-sensitive thing in the list. */
+.nav-dropdown-panel a.is-deal {
+  color: var(--gold); opacity: .85;
+  margin-top: 6px; padding-top: 18px;
+  border-top: 1px solid rgba(239,246,251,.14);
+}
+.nav-dropdown-panel a.is-deal:hover { opacity: 1; }
+/* Icon + two-line label for the deal item specifically — a bare gold label
+   read as "just a different color," so this gives it an actual preview of
+   value (a real, evergreen line, not a specific % that could go stale)
+   instead of relying on color alone to stand out. */
+.nav-deal-inner { display: flex; align-items: center; gap: 10px; }
+.nav-deal-icon { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+.nav-deal-text { display: flex; flex-direction: column; gap: 3px; }
+.nav-deal-sub { font-family: var(--font-inter), sans-serif; font-weight: 300; font-size: 8.5px; letter-spacing: .1em; text-transform: uppercase; color: rgba(239,246,251,.45); }
 .nav-dest-suffix { font-size: 9px; letter-spacing: .1em; opacity: .7; }
 
 .nav-cta {
@@ -383,6 +410,13 @@ body {
   text-decoration: none; opacity: .5; padding: 10px 0; border-bottom: none; transition: opacity .2s;
 }
 .mobile-dropdown-list a:hover { opacity: 1; }
+/* Matches .nav-dropdown-panel a.is-deal's desktop treatment — see comment
+   there for why Exclusive Deals gets a divider + permanent gold color. */
+.mobile-dropdown-list a.is-deal {
+  color: var(--gold); opacity: .85;
+  margin-top: 6px; padding-top: 16px;
+  border-top: 1px solid rgba(255,255,255,.1);
+}
 
 .mobile-drawer-cta {
   display: inline-block; font-family: var(--font-inter), sans-serif; font-weight: 400;
@@ -450,6 +484,17 @@ body {
   margin-top: 18px; font-family: var(--font-inter), sans-serif; font-size: 11px; font-weight: 300;
   letter-spacing: .14em; text-transform: uppercase; color: rgba(239,246,251,.42); text-align: center;
   animation: fadeUp .8s ease .80s both;
+  /* Purely decorative text sitting right below the search bar — it has no
+     links or buttons, so it never needs to receive clicks. Without this,
+     the open Guests dropdown panel (which is positioned absolutely and
+     overlaps this line) loses its "+" button on the very first row
+     (Adults) to this line underneath it: the panel's own z-index is high,
+     but .search-bar/.hero-content's stacking makes this static, in-flow
+     text paint on top right at that one spot, so only the Adults + button
+     (the row that happens to land over this text) was reported as "barely
+     clickable." Children/Infants sit further down, clear of this line, so
+     they were never affected — that mismatch was the giveaway. */
+  pointer-events: none;
 }
 .hero-scroll {
   position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); z-index: 10;
@@ -1165,9 +1210,14 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
   /* Darkest right at the bottom edge, holding strong through roughly the
      bottom third (where the eyebrow/name/hook text actually sits), then
      fading out by the halfway mark so the top of each photo stays bright
-     and unobscured — was a flatter fade before that left the text zone
-     too washed-out against lighter photos. */
-  background: linear-gradient(0deg, rgba(7,20,28,.92) 0%, rgba(7,20,28,.78) 20%, rgba(7,20,28,.4) 33%, rgba(7,20,28,0) 58%);
+     and unobscured. Deepened again 2026-08-31 (Francisco's eye, via the
+     About Us page's Punta Mita card): a bright, busy photo — red-tile roof,
+     green trees — still washed out the gold eyebrow at the old .78/.92
+     values even though a plain-sky photo read fine at the same numbers.
+     Legibility shouldn't depend on which specific photo a card happens to
+     get, so this holds essentially opaque through the whole text zone
+     instead of visibly fading within it. */
+  background: linear-gradient(0deg, rgba(4,10,16,.96) 0%, rgba(4,10,16,.90) 26%, rgba(4,10,16,.55) 40%, rgba(4,10,16,0) 62%);
 }
 .dest-trip-content { position: relative; z-index: 1; }
 .dest-trip-eyebrow {
@@ -1329,20 +1379,23 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
 .t-date { opacity: .7; }
 .t-platform { font-family: var(--font-inter), sans-serif; font-size: 10px; font-weight: 500; letter-spacing: .06em; color: var(--charcoal-light); opacity: .55; text-transform: uppercase; margin-top: 5px; }
 
-/* ── About / "The Experience" page ───────────────────────────
-   Redesigned from a flat, all-text bio page into a photo-led "guest
-   journey" narrative — see #about-hero below for the new photo header
-   (was the flat .pg-header), .journey-* for the 4-stage sequence,
-   .journey-proof-* for the stats (kept, but reframed as evidence rather
-   than the whole page), .about-founder-* for the new personal-note
-   section, and the page closes with the shared .help-cta band instead
-   of the old small .about-cta text link. */
-#about { background: var(--cream); }
+/* ── The Guest Journey (/guest-journey) & About Us (/about) ──────────
+   Originally one combined page at /about. Split in two (Francisco's call,
+   2026-08-31): /about should present the team and the company, not the
+   guest-journey story, so the guest-journey content — including this photo
+   hero — moved to its own /guest-journey page, and /about became a new,
+   separate "who we are" page (see .au-* below for its intro, and
+   AboutUs.tsx for how it reuses .journey-proof-lead, .dest-numbers, and
+   .about-founder). #gj-hero below is that same photo header
+   the old #about-hero was, just renamed to match its new page. .journey-*
+   is the 4-stage sequence, still on /guest-journey; the page closes with
+   the shared .help-cta band on both new pages, same as before. */
+#guest-journey-body, #about-us-body { background: var(--cream); }
 
 /* Photo hero — same recipe as #dest-hero/#pg-header (own scoped ID per
    this project's "shared classname, different pages" rule) so a future
    tweak to the destination hero can't accidentally change this one. */
-#about-hero {
+#gj-hero {
   position: relative;
   background: url('/images/about/hero.jpg') center/cover no-repeat;
   min-height: 62vh;
@@ -1350,15 +1403,15 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
   padding: 140px 64px 64px;
   overflow: hidden;
 }
-#about-hero::before {
+#gj-hero::before {
   content: ''; position: absolute; inset: 0; z-index: 0;
   background: linear-gradient(108deg, rgba(10,24,32,.90) 0%, rgba(10,24,32,.70) 32%, rgba(10,24,32,.42) 62%, rgba(10,24,32,.20) 100%);
   pointer-events: none;
 }
-#about-hero .pg-eyebrow { font-size: 10px; font-weight: 400; letter-spacing: .22em; margin: 0 0 16px; opacity: 1; animation: none; position: relative; z-index: 1; }
-#about-hero .pg-title { font-weight: 300; font-size: clamp(42px, 5.2vw, 68px); line-height: 1.08; letter-spacing: normal; color: var(--white); margin: 0 0 20px; animation: none; position: relative; z-index: 1; max-width: 780px; }
-#about-hero .pg-title em { font-style: italic; color: var(--mist); }
-#about-hero .pg-sub { font-size: 14px; color: rgba(255,255,255,.60); max-width: 480px; margin: 0; animation: none; position: relative; z-index: 1; }
+#gj-hero .pg-eyebrow { font-size: 10px; font-weight: 400; letter-spacing: .22em; margin: 0 0 16px; opacity: 1; animation: none; position: relative; z-index: 1; }
+#gj-hero .pg-title { font-weight: 300; font-size: clamp(42px, 5.2vw, 68px); line-height: 1.08; letter-spacing: normal; color: var(--white); margin: 0 0 20px; animation: none; position: relative; z-index: 1; max-width: 780px; }
+#gj-hero .pg-title em { font-style: italic; color: var(--mist); }
+#gj-hero .pg-sub { font-size: 14px; color: rgba(255,255,255,.60); max-width: 480px; margin: 0; animation: none; position: relative; z-index: 1; }
 /* Scroll cue — the hero is tall enough that it's worth a quiet nudge to
    keep scrolling, rather than assuming every visitor tries. */
 .hero-scroll-cue {
@@ -1367,6 +1420,87 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
   animation: heroScrollBounce 2.2s ease-in-out infinite;
 }
 .hero-scroll-cue svg { width: 22px; height: 22px; stroke: var(--white); fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+
+/* The Experience hub header — same recipe as #gj-hero (dark gradient over
+   a photo, content pinned to the bottom) but the photo itself rotates,
+   using the same .hero-photos/.hero-photo crossfade the homepage hero
+   uses (see HeroBg.tsx), instead of one static image — this page's job is
+   to represent the whole brand (like the homepage), not one destination or
+   story. Solid navy background is the fallback if zero curated photos
+   come back, same safety net #hero has. */
+#experience-hero {
+  position: relative;
+  min-height: 62vh;
+  display: flex; flex-direction: column; justify-content: flex-end;
+  padding: 140px 64px 64px;
+  overflow: hidden;
+  background: #091520;
+}
+#experience-hero::before {
+  content: ''; position: absolute; inset: 0; z-index: 1;
+  background: linear-gradient(108deg, rgba(10,24,32,.90) 0%, rgba(10,24,32,.70) 32%, rgba(10,24,32,.42) 62%, rgba(10,24,32,.20) 100%);
+  pointer-events: none;
+}
+#experience-hero .pg-eyebrow { font-size: 10px; font-weight: 400; letter-spacing: .22em; margin: 0 0 16px; opacity: 1; animation: none; position: relative; z-index: 2; }
+#experience-hero .pg-title { font-weight: 300; font-size: clamp(42px, 5.2vw, 68px); line-height: 1.08; letter-spacing: normal; color: var(--white); margin: 0 0 20px; animation: none; position: relative; z-index: 2; max-width: 780px; }
+#experience-hero .pg-title em { font-style: italic; color: var(--mist); }
+#experience-hero .pg-sub { font-size: 14px; color: rgba(255,255,255,.60); max-width: 480px; margin: 0; animation: none; position: relative; z-index: 2; }
+
+/* ── Journal masthead ─────────────────────────────────────────
+   Same dark-gradient-over-photo recipe as #gj-hero/#experience-hero, but
+   the photo is the latest published article's own cover image (see
+   JournalMasthead.tsx) rather than a curated set — every new article
+   automatically becomes this page's next hero photo. Named
+   "-masthead", not "-hero", because #journal-hero is already taken by the
+   individual article page's own cover-photo hero further down this file
+   (this project's "shared classname, different pages" rule — see
+   check-css-collisions.mjs). */
+#journal-masthead {
+  position: relative;
+  min-height: 64vh;
+  display: flex; flex-direction: column; justify-content: flex-end;
+  padding: 140px 64px 88px;
+  overflow: hidden;
+  background-size: cover; background-position: center;
+}
+.journal-masthead-scrim {
+  position: absolute; inset: 0; z-index: 0;
+  background: linear-gradient(108deg, rgba(10,24,32,.90) 0%, rgba(10,24,32,.68) 32%, rgba(10,24,32,.38) 62%, rgba(10,24,32,.18) 100%);
+  pointer-events: none;
+}
+.journal-masthead-head { position: relative; z-index: 1; max-width: 640px; }
+.journal-masthead-head .pg-eyebrow { font-size: 10px; font-weight: 400; letter-spacing: .22em; margin: 0 0 16px; opacity: 1; animation: none; }
+.journal-masthead-head .pg-title { font-weight: 300; font-size: clamp(42px, 5.2vw, 64px); line-height: 1.08; letter-spacing: normal; color: var(--white); margin: 0 0 20px; animation: none; }
+.journal-masthead-head .pg-title em { font-style: italic; color: var(--mist); }
+.journal-masthead-head .pg-sub { font-size: 13px; color: rgba(255,255,255,.55); max-width: 460px; margin: 0; animation: none; }
+/* The "Latest" call-out — the whole reason the hero photo is the newest
+   article's cover rather than a generic curated shot: it points somewhere
+   specific. Pinned bottom-right so it reads as a caption on the photo,
+   not competing with the page's own H1 on the left. */
+.journal-masthead-latest {
+  position: absolute; z-index: 1; right: 64px; bottom: 88px;
+  width: 320px; max-width: calc(100% - 128px);
+  background: rgba(9,21,32,.55); backdrop-filter: blur(6px);
+  border-left: 2px solid var(--gold);
+  padding: 18px 22px;
+  display: flex; flex-direction: column; gap: 6px;
+  text-decoration: none;
+  transition: background .25s ease;
+}
+.journal-masthead-latest:hover { background: rgba(9,21,32,.72); }
+.journal-masthead-latest-tag {
+  font-family: var(--font-inter), sans-serif; font-weight: 400;
+  font-size: 9.5px; letter-spacing: .22em; text-transform: uppercase;
+  color: var(--gold);
+}
+.journal-masthead-latest-title {
+  font-family: var(--font-cormorant), serif; font-weight: 500;
+  font-size: 19px; line-height: 1.25; color: var(--white);
+}
+.journal-masthead-latest-meta {
+  font-family: var(--font-inter), sans-serif; font-weight: 300;
+  font-size: 11px; letter-spacing: .03em; color: rgba(255,255,255,.50);
+}
 @keyframes heroScrollBounce {
   0%, 100% { transform: translateX(-50%) translateY(0); }
   50% { transform: translateX(-50%) translateY(8px); }
@@ -1420,17 +1554,12 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
    sections, so a full-bleed, very soft tinted band (rather than flat
    --cream) gives it a bit of its own visual weight instead of just
    blending into the page background. */
-.journey-proof {
-  background: linear-gradient(180deg, rgba(30,58,80,.09) 0%, rgba(30,58,80,.05) 45%, transparent 100%);
-  padding: 72px 0 100px;
-}
-.journey-proof-inner { max-width: 1360px; margin: 0 auto; padding: 0 64px; }
+/* .journey-proof/.journey-proof-inner/.about-stats-row/.about-stat/
+   .stat-icon/.stat-number/.stat-label (the old light stats-row treatment)
+   were removed 2026-08-31 — AboutUs.tsx now uses the dark .dest-numbers
+   band instead (see below). .journey-proof-lead survives, still used as
+   the lead line above that band. */
 .journey-proof-lead { text-align: center; font-family: var(--font-cormorant), serif; font-style: italic; font-size: 21px; color: var(--charcoal); margin: 0 0 32px; }
-.about-stats-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 1px; background: var(--sand); border-radius: 2px; overflow: hidden; }
-.about-stat { background: var(--cream); padding: 36px 32px; display: flex; flex-direction: column; gap: 10px; align-items: center; text-align: center; }
-.stat-icon { width: 22px; height: 22px; stroke: var(--gold); fill: none; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; opacity: .85; margin-bottom: 2px; }
-.stat-number { font-family: var(--font-cormorant), serif; font-weight: 300; font-size: 52px; line-height: 1; color: var(--gold); letter-spacing: -.01em; display: flex; align-items: center; gap: 6px; }
-.stat-label { font-family: var(--font-inter), sans-serif; font-weight: 300; font-size: 12px; line-height: 1.55; color: var(--charcoal-light); }
 
 /* Bridge — quiet link deeper into the site before the closing CTA */
 .journey-bridge {
@@ -1454,16 +1583,52 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
 }
 .about-founder-quote { font-family: var(--font-cormorant), serif; font-style: italic; font-weight: 300; font-size: 26px; line-height: 1.5; color: var(--deep-ocean); margin: 0 0 20px; }
 .about-founder-name { font-family: var(--font-inter), sans-serif; font-size: 11px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--charcoal-light); margin: 0; }
-/* No-photo variant — used until a real photo of Francisco/the team is
-   ready. Collapses the two-column grid to a single centered column (a
-   plain gray placeholder box read as unfinished, not editorial) with a
-   slightly larger quote and the same small gold rule other centered
-   section headers on the site use (.s-div), so it still feels like a
-   deliberate moment, not a leftover empty slot. */
-.about-founder--no-photo { grid-template-columns: 1fr; max-width: 720px; }
-.about-founder--no-photo .about-founder-text { text-align: center; }
-.about-founder--no-photo .s-div { margin: 0 auto 28px; }
-.about-founder--no-photo .about-founder-quote { font-size: 28px; }
+/* Statement variant — replaces the earlier centered "--no-photo" treatment
+   (Francisco's "still boring" feedback, 2026-08-31): every other section on
+   this page is already a centered, symmetric block (header, why-us
+   statement, triptych, stats band), so one more centered block here just
+   repeated the same rhythm. A giant faint quote mark stands in for the
+   photo we don't have yet (no real team photo exists), pulling the whole
+   block left instead of centering it — one deliberate asymmetric moment
+   on an otherwise very symmetric page. */
+.about-founder--statement { grid-template-columns: auto 1fr; column-gap: 28px; align-items: start; max-width: 760px; }
+.about-founder--statement .about-founder-text { text-align: left; }
+.about-founder--statement .s-div { margin: 0 0 28px; }
+.about-founder--statement .about-founder-quote { font-size: 28px; }
+.about-founder-mark-quote {
+  font-family: var(--font-cormorant), serif; font-style: italic;
+  font-size: 140px; line-height: .6; color: var(--gold); opacity: .28;
+  margin: 0; user-select: none;
+}
+
+/* About Us (/about) intro used to be a plain centered paragraph in its own
+   .au-intro/.au-intro-text classes — replaced 2026-08-31 (Francisco: "still
+   too generic") with the same .dest-why eyebrow/headline/rule/support
+   pattern the Destinations page uses for its "Why Punta Mita" statement, so
+   this page opens with a stated headline instead of a flat paragraph. No
+   .au-intro-specific CSS needed anymore.
+
+   .dest-triptych-wrap's default 72px top padding is tuned for following a
+   dense dark .dest-numbers band on /destinations — here it follows .dest-why
+   directly (48px bottom padding of its own), so the combined gap would run
+   heavier than the ~88px .dest-why→.dest-numbers gap already established on
+   /destinations itself. Scoped down to match that same total. */
+#about-us-body .dest-triptych-wrap { padding-top: 40px; }
+
+/* About Us (/about) — lead line above the dark .dest-numbers stats band
+   (reused verbatim from destination pages). Just spacing/centering; the
+   text styling itself comes from .journey-proof-lead, kept on the same
+   element so both pages' "lead line before a stats block" moment matches. */
+.au-proof-lead-wrap { max-width: 640px; margin: 0 auto; padding: 56px 24px 0; }
+
+/* /experience hub — plain wrapper around the reused .dest-find-grid/
+   .dest-find-card (see destination pages' "Villas to Match the Way You
+   Travel" tiles for their base styles); this page just needs a max-width
+   and some breathing room, not a new card design. */
+.experience-hub-wrap { max-width: 1000px; margin: 0 auto; padding: 56px 24px 96px; }
+@media (max-width: 720px) {
+  .experience-hub-wrap { padding: 40px 24px 64px; }
+}
 
 /* ── Homepage responsive ──────────────────────────────────────
    Ported verbatim from index.html — none of this existed before,
@@ -1487,14 +1652,21 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
   .cc:first-child { grid-row: auto; aspect-ratio: 16/8; }
   .cc { aspect-ratio: 16/7; }
   .properties-grid { grid-template-columns: 1fr; gap: 16px; }
-  .about-stats-row { grid-template-columns: 1fr; }
   /* The hero photo was composed for a wide landscape crop — plain wall on
      the left for the text, the group of people on the right. On a narrow,
      tall phone screen, background-size:cover's default center crop zooms
      in on the middle of that photo, which lands on empty wall and cuts the
      people out of frame. Shifting the focal point right keeps them
      visible instead. */
-  #about-hero { padding: 110px 24px 56px; min-height: 52vh; background-position: 80% center; }
+  #gj-hero { padding: 110px 24px 56px; min-height: 52vh; background-position: 80% center; }
+  #experience-hero { padding: 110px 24px 56px; min-height: 52vh; }
+  /* The "Latest" card is pinned absolute at desktop width, floating over
+     the photo's bottom-right corner — on a phone-width photo there isn't
+     enough room beside the H1 for that, so it drops into normal flow as
+     a full-width card sitting below the headline block instead. */
+  #journal-masthead { padding: 110px 24px 32px; min-height: auto; }
+  .journal-masthead-head { max-width: none; }
+  .journal-masthead-latest { position: static; width: 100%; max-width: none; margin-top: 32px; }
   .journey-wrap { padding: 64px 24px; }
   .journey-lead { margin-bottom: 48px; }
   .journey-stage { grid-template-columns: 1fr; gap: 24px; margin-bottom: 56px; }
@@ -1505,10 +1677,16 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
      tall block with lots of empty space above/below the people — revert
      to the same 4:3 shape as the other three here. */
   .journey-photo--tall { aspect-ratio: 4/3; }
-  .journey-proof { padding: 48px 0 64px; }
-  .journey-proof-inner { padding: 0 24px; }
+  .journey-proof-lead { margin-bottom: 24px; }
   .hero-scroll-cue { display: none; }
   .about-founder { grid-template-columns: 1fr; gap: 32px; padding: 0 24px 64px; }
+  /* The left/right asymmetric statement layout needs real width to read as
+     deliberate — collapsed to one narrow mobile column, it just reads as
+     a stray oversized quote mark sitting above the text. Center everything
+     instead, same as the old --no-photo treatment did at this width. */
+  .about-founder--statement .about-founder-text { text-align: center; }
+  .about-founder--statement .s-div { margin: 0 auto 28px; }
+  .about-founder-mark-quote { display: block; text-align: center; font-size: 84px; margin-bottom: -8px; }
   .t-grid { grid-template-columns: 1fr; }
   .wbd-grid { grid-template-columns: 1fr; gap: 32px; }
   .wbd-item { border-left: none; padding: 32px 0 0; border-top: 1px solid rgba(200,148,58,.22); }
@@ -1676,6 +1854,34 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
   font-size: 13px; letter-spacing: .04em;
   color: rgba(239,246,251,.50); margin-top: 14px;
   animation: fadeUp .7s ease .3s both;
+}
+
+/* About Us header — real photo instead of flat navy (Francisco's "still
+   boring" feedback, 2026-08-31, round 2): every sibling page under The
+   Experience dropdown now opens with a photo, so a solid color band here
+   was the one header on the site with no photograph in it. Reuses an
+   existing destination shot rather than a guest-facing one, desaturated
+   and color-shifted toward navy/gold via CSS filter (not a literal
+   duotone image) so it reads as a company mood-shot, not "book your
+   stay." The pyramid mark still sits over it as a crest, large and faint.
+   Layer order (back to front): photo → scrim → mark → text. */
+.au-header-photo {
+  position: absolute; inset: 0; z-index: 0;
+  background: url('/images/destinations/punta-mita/golf-sunset.jpg') 68% 58% / cover no-repeat;
+  filter: grayscale(.45) sepia(.3) hue-rotate(175deg) saturate(1.7) brightness(.5) contrast(1.08);
+}
+#au-header::before {
+  content: ''; position: absolute; inset: 0; z-index: 1;
+  background: linear-gradient(108deg, rgba(8,18,26,.92) 0%, rgba(8,18,26,.72) 34%, rgba(8,18,26,.46) 64%, rgba(8,18,26,.24) 100%);
+  pointer-events: none;
+}
+.au-header-mark {
+  position: absolute; z-index: 2; top: 50%; right: 64px;
+  transform: translateY(-50%);
+  opacity: .22; pointer-events: none;
+}
+#au-header .pg-eyebrow, #au-header .pg-title, #au-header .pg-sub {
+  position: relative; z-index: 3;
 }
 
 /* ── Filter Bar ───────────────────────────────────────────── */
@@ -1849,7 +2055,17 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
 /* ── Properties Grid ──────────────────────────────────────── */
 .properties-section { padding: 24px 64px 56px; }
 
-.deals-disclaimer { text-align: center; max-width: 640px; margin: 40px auto 0; padding-top: 24px; border-top: 1px solid var(--sand); font-family: var(--font-inter), sans-serif; font-size: 11px; font-weight: 300; color: var(--charcoal-light); line-height: 1.6; }
+/* Offers page (/offers) — each card's specific validity window, plus a
+   proper Terms block below the grid (Francisco's request, 2026-09-15:
+   the single peak-weeks line wasn't enough, and nothing said which
+   property's deal was valid when). .offer-card-wrap only exists on this
+   page — PropertyCard itself stays the one shared card used everywhere
+   else, unchanged. */
+.offer-card-wrap { display: flex; flex-direction: column; }
+.offer-card-validity { margin: 8px 2px 0; font-family: var(--font-inter), sans-serif; font-size: 11px; font-weight: 300; color: var(--charcoal-light); letter-spacing: .02em; }
+.offers-terms { max-width: 640px; margin: 40px auto 0; padding-top: 24px; border-top: 1px solid var(--sand); }
+.offers-terms .sec-label { text-align: center; }
+.offers-terms .rates-note { margin-top: 10px; }
 .prop-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
 
 /* ── Property Card ────────────────────────────────────────── */
@@ -2509,6 +2725,7 @@ body.on-saved-page .wa, body.on-saved-page .offer-badge { display: none; }
 @media (max-width: 960px) {
   .nav, .nav--scrolled { padding-left: 40px; padding-right: 40px; }
   .pg-header { padding: 132px 40px 40px; }
+  .au-header-mark { right: -40px; }
   .fb-inner { padding: 10px 40px; }
   .results-bar { padding: 16px 40px 0; }
   .properties-section { padding: 28px 40px 64px; }
@@ -2578,6 +2795,8 @@ body.on-saved-page .wa, body.on-saved-page .offer-badge { display: none; }
   .nav-search-form::before { display: none; }
   .pg-header { padding: 132px 24px 40px; }
   .pg-title { font-size: 36px; }
+  .au-header-mark svg { width: 260px; height: 260px; }
+  .au-header-mark { right: -60px; }
   /* The inherited design scrolled this row horizontally and clipped
      anything that opened below it — every dropdown (Destination, Guests,
      Bedrooms, Nightly Rate, Sort) was invisible the instant you tapped it on
@@ -2997,6 +3216,22 @@ body.an-visible { --sidebar-top: 140px; }
 /* No overflow:hidden here (removed) — the dates/guests dropdown panels
    below need to render outside the card's box. .iq-head gets its own
    top-corner radius instead, so it still matches the card's rounded shape. */
+/* Deal band — sits above .iq-head when this property has an active deal,
+   so the "Pay 3, Stay 4" a guest saw on the property card is explained
+   right where they're deciding whether it applies to their dates, instead
+   of only in small print further down the page (Francisco's report,
+   2026-09-15). Same gold tone as .prop-deal-badge on the card, at full
+   opacity here since it's not sitting over a photo. Stacked label/date
+   (not side-by-side) so a long "Available Dates" string never has to wrap
+   awkwardly in this narrow sidebar. */
+.iq-deal { background: linear-gradient(135deg, #C8943A 0%, #B37E28 100%); padding: 12px 26px; border-radius: 4px 4px 0 0; }
+.iq-deal-badge { display: block; font-family: var(--font-inter), sans-serif; font-size: 10px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; color: #fff; }
+.iq-deal-validity { display: block; font-family: var(--font-inter), sans-serif; font-size: 10.5px; font-weight: 300; color: rgba(255,255,255,.85); margin-top: 3px; }
+/* .iq-head normally rounds its own top corners to match the card (see note
+   below) — but when the gold deal band precedes it, .iq-head is no longer
+   the visual top of the card, so its own rounding would leave a small
+   white notch peeking through at the top corners. Square it off instead. */
+.iq-deal + .iq-head { border-radius: 0; }
 .iq-head { background: var(--deep-ocean); padding: 22px 26px; border-radius: 4px 4px 0 0; }
 .iq-from { font-family: var(--font-inter), sans-serif; font-size: 9px; font-weight: 300; letter-spacing: .18em; text-transform: uppercase; color: rgba(239,246,251,.40); margin-bottom: 4px; }
 .iq-price { display: flex; align-items: baseline; gap: 5px; }
@@ -4478,4 +4713,133 @@ textarea.ct-input { resize: vertical; min-height: 88px; line-height: 1.65; }
   opacity: 1; transition: opacity .3s ease;
 }
 .splash-screen--hide { opacity: 0; }
+
+/* ── The Journal ──────────────────────────────────────────────────────────
+   /journal (listing) and /journal/[slug] (article). Deliberately reuses as
+   much of the existing design system as possible rather than inventing a
+   new one: .exp-catalog/.exp-filters/.exp-chip-row/.exp-chip from the
+   Experiences catalog for the category filter, .breadcrumb/.legal-wrap/
+   .short-desc/.detail-section/.sec-label/.sec-title/.properties-grid from
+   the villa detail and legal pages for the article body and Related Villas
+   section. .journal-card below is modeled closely on .exp-card (same
+   photo+badge+title+text shape), and .journal-grid mirrors .exp-card-grid. */
+.journal-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; margin-top: 8px; }
+.journal-card {
+  display: block; background: var(--white); border-radius: 4px; overflow: hidden;
+  box-shadow: 0 2px 8px rgba(30,58,80,.07); text-decoration: none;
+  transition: transform .25s ease, box-shadow .25s ease;
+}
+.journal-card:hover { transform: translateY(-5px); box-shadow: 0 16px 48px rgba(30,58,80,.14); }
+.journal-card-photo { position: relative; aspect-ratio: 4/3; overflow: hidden; }
+.journal-card-bg { position: absolute; inset: 0; background-size: cover; background-position: center; }
+.journal-card-bg--placeholder {
+  display: flex; align-items: center; justify-content: center;
+  background: var(--sand); color: var(--charcoal-light);
+  font-family: var(--font-inter), sans-serif; font-size: 11px; letter-spacing: .08em; text-transform: uppercase;
+}
+.journal-card-badge {
+  position: absolute; top: 14px; left: 14px; z-index: 2;
+  font-family: var(--font-inter), sans-serif; font-size: 9px; font-weight: 400;
+  letter-spacing: .16em; text-transform: uppercase; color: var(--text-on-dark);
+  background: rgba(30,58,80,.72); padding: 6px 12px; border-radius: 2px;
+}
+.journal-card-body { padding: 18px 20px 20px; }
+.journal-card-title {
+  font-family: var(--font-cormorant), serif; font-weight: 400;
+  font-size: 21px; color: var(--deep-ocean); line-height: 1.25; margin: 0 0 10px;
+}
+.journal-card-excerpt {
+  font-family: var(--font-inter), sans-serif; font-size: 12.5px; font-weight: 300;
+  color: var(--charcoal); line-height: 1.7; margin: 0 0 16px;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+.journal-card-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.journal-card-date {
+  font-family: var(--font-inter), sans-serif; font-size: 10.5px; font-weight: 300;
+  font-style: italic; color: var(--charcoal-light);
+}
+.journal-card-more {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--font-inter), sans-serif; font-size: 10px; font-weight: 400;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--ocean);
+  transition: color .18s;
+}
+.journal-card-more svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.journal-card:hover .journal-card-more { color: var(--gold); }
+
+@media (max-width: 1024px) {
+  .journal-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 720px) {
+  .journal-grid { grid-template-columns: 1fr; gap: 20px; }
+}
+
+/* ── Article hero ── full-bleed cover photo, own scoped ID (own gradient
+   recipe tuned for a single static photo, not #dest-hero's rotating
+   crossfade) — same "photo hero with overlaid text" language as #dest-hero
+   and #pg-header elsewhere on the site. */
+#journal-hero {
+  position: relative; height: 62vh; min-height: 460px; max-height: 640px;
+  display: flex; align-items: flex-end; overflow: hidden;
+}
+.journal-hero-overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(0deg, rgba(19,38,54,.92) 0%, rgba(19,38,54,.55) 42%, rgba(19,38,54,.12) 72%, rgba(19,38,54,0) 100%);
+}
+.journal-hero-content { position: relative; z-index: 1; padding: 0 64px 48px; max-width: 900px; }
+.journal-hero-eyebrow {
+  font-family: var(--font-inter), sans-serif; font-weight: 300;
+  font-size: 9.5px; letter-spacing: .32em; text-transform: uppercase;
+  color: var(--gold); opacity: .9; margin: 0 0 16px;
+}
+.journal-hero-title {
+  font-family: var(--font-cormorant), serif; font-weight: 400;
+  font-size: clamp(34px, 4.6vw, 56px); line-height: 1.1;
+  letter-spacing: .01em; color: var(--text-on-dark); margin: 0 0 14px;
+}
+.journal-hero-meta {
+  font-family: var(--font-inter), sans-serif; font-size: 12px; font-weight: 300;
+  color: rgba(239,246,251,.65); margin: 0;
+}
+
+@media (max-width: 720px) {
+  #journal-hero { height: 52vh; min-height: 380px; }
+  .journal-hero-content { padding: 0 24px 36px; }
+}
+
+/* ── Article body ── .journal-article-wrap reuses .legal-wrap's 720px
+   reading column exactly; the lede reuses .short-desc as-is (already the
+   italic-serif, gold-left-border pull-quote treatment this design calls
+   for). .journal-body styles what renderPortableText() outputs — plain h2/
+   h3/p/blockquote/figure tags, same elements the CMS actually produces. */
+.journal-article-wrap { padding-top: 48px; }
+.journal-body {
+  font-family: var(--font-inter), sans-serif; font-size: 14.5px; font-weight: 300;
+  line-height: 1.9; color: var(--charcoal);
+}
+.journal-body p { margin: 0 0 22px; }
+.journal-body h2 {
+  font-family: var(--font-cormorant), serif; font-weight: 400; font-size: 26px;
+  color: var(--deep-ocean); line-height: 1.25; margin: 40px 0 18px;
+}
+.journal-body h3 {
+  font-family: var(--font-cormorant), serif; font-weight: 400; font-size: 20px;
+  color: var(--deep-ocean); line-height: 1.3; margin: 32px 0 14px;
+}
+.journal-body blockquote {
+  font-family: var(--font-cormorant), serif; font-style: italic; font-size: 18px;
+  color: var(--ocean-mid); line-height: 1.7; margin: 28px 0; padding: 4px 0 4px 22px;
+  border-left: 2px solid var(--gold);
+}
+.journal-body .pt-figure { margin: 32px 0; }
+.journal-body .pt-figure img { width: 100%; height: auto; border-radius: 3px; display: block; }
+
+.journal-related-wrap { padding-top: 8px; }
+.journal-back-wrap { padding-top: 8px; padding-bottom: 64px; }
+
+@media (max-width: 720px) {
+  .journal-article-wrap { padding-top: 32px; }
+  .journal-body h2 { font-size: 22px; margin-top: 32px; }
+  .journal-body h3 { font-size: 18px; }
+}
 

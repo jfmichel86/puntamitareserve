@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { client, urlFor } from '@/lib/sanity'
 import { PROPERTIES_QUERY } from '@/lib/queries'
-import { Property, hasAnyActiveDeal } from '@/lib/utils'
+import { Property, hasAnyActiveDeal, dealValidityText } from '@/lib/utils'
 import PropertyCard from '@/components/PropertyCard'
 
 export const revalidate = 60
@@ -53,9 +53,37 @@ export default async function OffersPage() {
       ) : (
         <div className="properties-section">
           <div className="prop-grid">
-            {properties.map((p) => <PropertyCard key={p._id} property={p} />)}
+            {/* Each card's own validity window sits right below it — the
+                Terms block further down covers the rules that apply to
+                every offer, but only this per-property line can say which
+                specific dates that property's own deal actually covers
+                (Francisco's request, 2026-09-15). Not part of PropertyCard
+                itself, which stays the one shared card used everywhere
+                else on the site — this caption is specific to this page. */}
+            {properties.map((p) => {
+              const validity = dealValidityText(p)
+              return (
+                <div key={p._id} className="offer-card-wrap">
+                  <PropertyCard property={p} />
+                  {validity && <p className="offer-card-validity">{validity}</p>}
+                </div>
+              )
+            })}
           </div>
-          <p className="deals-disclaimer">Offers exclude peak weeks, including major holidays (such as Christmas, New Year, and Easter / Semana Santa) and other high-demand periods as determined by us.</p>
+
+          {/* Previously just one disclaimer line about peak weeks — expanded
+              into a proper Terms block per Francisco's request, 2026-09-15.
+              Peak-weeks line kept verbatim as the first item. */}
+          <div className="offers-terms">
+            <span className="sec-label">Offer Terms</span>
+            <ul className="rates-note">
+              <li>Offers exclude peak weeks, including major holidays (such as Christmas, New Year, and Easter / Semana Santa) and other high-demand periods as determined by us.</li>
+              <li>Rates and availability are confirmed at the time of inquiry and subject to change without notice.</li>
+              <li>Each property&rsquo;s exact offer window is listed above; dates outside that window are not guaranteed at the promotional rate.</li>
+              <li>Offers cannot be combined with other promotions or discounts.</li>
+              <li>All stays remain subject to our standard booking terms, including applicable taxes and fees.</li>
+            </ul>
+          </div>
         </div>
       )}
     </>

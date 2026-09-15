@@ -27,6 +27,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title,
     description,
+    alternates: { canonical: 'https://www.mexicanreserve.com/destinations' },
     openGraph: { title, description, images: [ogImage] },
     twitter: { card: 'summary_large_image', title, description },
   }

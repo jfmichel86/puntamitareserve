@@ -226,6 +226,54 @@ export type Activity = {
   experiences: ExperienceItem[]
 }
 
+// Mirrors CATEGORY_LIST in sanity-studio/schemas/journalPost.js — the query
+// only returns the raw value, so this maps it back to a display label. Order
+// here is also the display order for the /journal category filter chips.
+export const JOURNAL_CATEGORIES: [string, string][] = [
+  ['destination-guides', 'Destination Guides'],
+  ['villas-living', 'Villas & Living'],
+  ['local-culture', 'Local Culture'],
+  ['planning-tips', 'Planning & Tips'],
+]
+export const JOURNAL_CATEGORY_LABEL: Record<string, string> = Object.fromEntries(JOURNAL_CATEGORIES)
+
+// A card-sized Journal post — every field the /journal listing page needs,
+// without the full body or resolved relatedProperties (see JOURNAL_POSTS_QUERY).
+export type JournalPostSummary = {
+  _id: string
+  title: string
+  slug: string
+  excerpt: string
+  coverImage?: PhotoRef
+  category: string
+  publishedDate: string
+}
+
+// A full article — everything JournalPostSummary has, plus the body and
+// resolved Related Villas (see JOURNAL_POST_BY_SLUG_QUERY).
+export type JournalPost = JournalPostSummary & {
+  body: unknown[]
+  seoTitle?: string
+  seoDescription?: string
+  relatedProperties?: Property[]
+}
+
+// Rough "X min read" estimate — 200 words/minute is the commonly cited
+// average adult silent-reading speed, floored at 1 minute so a very short
+// article never reads as "0 min read". Counts only actual text spans inside
+// portable text blocks (ignores images and empty blocks).
+export function readingTime(body: unknown[] | undefined): number {
+  if (!body?.length) return 1
+  const wordCount = (body as { _type: string; children?: { text?: string }[] }[])
+    .filter((b) => b._type === 'block')
+    .flatMap((b) => b.children || [])
+    .map((c) => c.text || '')
+    .join(' ')
+    .split(/\s+/)
+    .filter(Boolean).length
+  return Math.max(1, Math.round(wordCount / 200))
+}
+
 export const LOC_TYPE_LABELS: Record<string, string> = {
   'oceanfront':  'Oceanfront',
   'beachfront':  'Beachfront',
@@ -495,6 +543,39 @@ export function limitedTimePromotionLabel(p: Property): string {
 /** Display label for a last-minute deal, e.g. "15% Off" or "Pay 3, Stay 4". */
 export function lastMinuteDealLabel(p: Property): string {
   return offerLabel(p.promotions?.lastMinuteDeal, 'Last-Minute Deal')
+}
+
+/**
+ * Plain-language validity window for whichever deal is currently active on
+ * this property — e.g. "Valid Aug 1st to Oct 31st 2026" for a last-minute
+ * deal (Francisco's own free-text from the "Available Dates" field, shown
+ * as-is since it's often a loose range like "Dec 12–15 or Jan 3–7", not a
+ * single date), or "Valid through October 31, 2026" for a limited-time
+ * promotion (computed from its structured Expiry Date field). Previously
+ * this data existed in Sanity but was never shown anywhere on the live
+ * site — a guest saw "Pay 3, Stay 4" with no way to tell when it applied
+ * (Francisco's report, 2026-09-15). Property of the Month has no guest-
+ * facing validity window (it's an editorial distinction, not a rate with
+ * terms), so returns ''. Same priority order as dealBadgeLabel, so the
+ * date text shown always matches whichever badge is actually displayed.
+ */
+export function dealValidityText(p: Property): string {
+  if (isPropertyOfTheMonth(p)) return ''
+  if (hasActivePromotion(p)) {
+    const expiry = p.promotions?.limitedTimePromotion?.expiryDate
+    if (!expiry) return ''
+    // expiryDate is a date-only Sanity field ("YYYY-MM-DD"); appending a
+    // local midnight time avoids `new Date('2026-10-31')` being parsed as
+    // UTC midnight and displaying as the day before in timezones west of
+    // UTC (a real, easy-to-miss bug with date-only strings).
+    const formatted = new Date(`${expiry}T00:00:00`).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+    return `Valid through ${formatted}`
+  }
+  if (hasLastMinuteDeal(p)) {
+    const dates = p.promotions?.lastMinuteDeal?.availableDates
+    return dates ? `Valid ${dates}` : ''
+  }
+  return ''
 }
 
 /**

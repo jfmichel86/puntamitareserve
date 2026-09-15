@@ -3,7 +3,7 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import { client, urlFor } from '@/lib/sanity'
 import { PROPERTY_BY_SLUG_QUERY, PROPERTY_SLUGS_QUERY } from '@/lib/queries'
-import { Property, Season, startingRate, allSeasonRates, formatPrice, communityLabel, VIEW_LABELS, hasActivePromotion } from '@/lib/utils'
+import { Property, Season, startingRate, allSeasonRates, formatPrice, communityLabel, VIEW_LABELS, hasActivePromotion, hasLastMinuteDeal, dealBadgeLabel, dealValidityText } from '@/lib/utils'
 import {
   MEMBERSHIP_LABELS, BED_LABELS, LOC_LABEL, VIEW_H2_MAP,
   AMENITY_CATS, AMENITY_LABELS, pickAmenityHighlights, STAFF_NAMES, STAFF_SERVICE_LABELS,
@@ -40,7 +40,14 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
 
   const typeLabel = prop.propertyType === 'condo' ? 'Condo' : 'Villa'
   const locStr = LOC_LABEL[prop.locationLabel] || 'Punta Mita, Nayarit'
-  const title = `${prop.title} — ${prop.bedrooms} BR ${typeLabel} in Punta Mita | Mexican Reserve`
+  // No "| Mexican Reserve" suffix here — the root layout's title template
+  // (`'%s | Mexican Reserve'`) already appends that automatically to every
+  // page below it. Adding it here too was rendering as "...Punta Mita |
+  // Mexican Reserve | Mexican Reserve" on every single villa page (150+ of
+  // them) — a real, verified bug (checked against the live site, not just
+  // the code) that made every villa's search-result title look broken/
+  // duplicated, hurting both ranking and click-through.
+  const title = `${prop.title} — ${prop.bedrooms} BR ${typeLabel} in Punta Mita`
   const description = prop.shortDescription || `${prop.bedrooms}-bedroom luxury ${typeLabel.toLowerCase()} in ${locStr} with private staff and exclusive amenities.`
   // 1200x630 is the standard social-share card ratio (Facebook/WhatsApp/
   // Twitter); without an explicit height this was requesting the photo's
@@ -137,6 +144,16 @@ export default async function PropertyDetailPage({ params }: { params: Promise<P
   const rates = allSeasonRates(prop)
   const showScarcity = rates.length > 1 && Math.max(...rates) > Math.min(...rates) * 1.3
 
+  // Deal badge + validity window for the booking widget — previously a
+  // guest could see "Pay 3, Stay 4" on the property card that led them
+  // here, but nothing on this page ever said what it meant or when it
+  // applied (Francisco's report, 2026-09-15). '' from dealValidityText
+  // becomes undefined here since Sidebar treats an empty string the same
+  // as "don't show a validity line" either way, but undefined reads more
+  // honestly as "no prop passed" for an optional prop.
+  const dealBadge = dealBadgeLabel(prop) || undefined
+  const dealValidity = dealValidityText(prop) || undefined
+
   // Location pills
   const airportMin = prop.locationLabel === 'puerto-vallarta' ? '20 min' : '45 min'
   const locationPills: { text: string }[] = [{ text: `${airportMin} from PVR Airport` }]
@@ -165,6 +182,41 @@ export default async function PropertyDetailPage({ params }: { params: Promise<P
   const titleFirst = titleParts[0]
   const titleRest = titleParts.slice(1).join(' ')
 
+  // Structured data (JSON-LD) — tells Google exactly what this page is
+  // (a bookable property with a price) instead of leaving it to guess from
+  // plain text. This is what can make a price show up directly in the
+  // search result itself, which matters a lot for click-through when
+  // competing against OTA listings that already have this. Previously the
+  // homepage was the only page on the whole site with any structured data
+  // at all — every one of the 150+ individual villa pages had none.
+  const canonicalUrl = `https://www.mexicanreserve.com/villas/${slug}`
+  const productJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: prop.title,
+    description: prop.shortDescription || `${prop.bedrooms}-bedroom luxury ${typeLabel.toLowerCase()} in ${locStr}.`,
+    ...(prop.heroImage?.asset?._ref ? { image: [urlFor(prop.heroImage).width(1600).height(1067).quality(85).url()] } : {}),
+    brand: { '@type': 'Brand', name: 'Mexican Reserve' },
+    ...(minRate ? {
+      offers: {
+        '@type': 'Offer',
+        price: minRate,
+        priceCurrency: 'USD',
+        availability: 'https://schema.org/InStock',
+        url: canonicalUrl,
+      },
+    } : {}),
+  }
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://www.mexicanreserve.com/' },
+      { '@type': 'ListItem', position: 2, name: 'Properties', item: 'https://www.mexicanreserve.com/villas' },
+      { '@type': 'ListItem', position: 3, name: prop.title, item: canonicalUrl },
+    ],
+  }
+
   const houseRulesVis = prop.policies && (
     <div className="house-rules-vis">
       <HouseRule pets ban={prop.policies.noPets !== false} label={prop.policies.noPets !== false ? 'No pets allowed' : 'Pets welcome'} />
@@ -175,6 +227,8 @@ export default async function PropertyDetailPage({ params }: { params: Promise<P
 
   return (
     <div className="nav-always-dark-page">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
       <AnchorNav />
 
       <div className="breadcrumb">
@@ -418,6 +472,14 @@ export default async function PropertyDetailPage({ params }: { params: Promise<P
                 {hasActivePromotion(prop) && prop.promotions?.limitedTimePromotion?.note && (
                   <li>{prop.promotions.limitedTimePromotion.note}</li>
                 )}
+                {/* Same gap, same fix, for Last Minute Deal's own Note field
+                    — its dates/badge now show prominently in the booking
+                    widget above (see dealBadge/dealValidity), this is just
+                    the same kind of caveat text the promotion note carries
+                    (e.g. "Blackout dates apply"), 2026-09-15. */}
+                {hasLastMinuteDeal(prop) && prop.promotions?.lastMinuteDeal?.note && (
+                  <li>{prop.promotions.lastMinuteDeal.note}</li>
+                )}
               </ul>
             </div>
           ) : null}
@@ -454,7 +516,7 @@ export default async function PropertyDetailPage({ params }: { params: Promise<P
         </div>
 
         <div className="detail-right">
-          <Sidebar propertyTitle={prop.title} minRate={minRate} minStayNights={minStayNights} showScarcity={showScarcity} priceOnRequest={!!prop.priceOnRequest} />
+          <Sidebar propertyTitle={prop.title} minRate={minRate} minStayNights={minStayNights} showScarcity={showScarcity} priceOnRequest={!!prop.priceOnRequest} dealBadge={dealBadge} dealValidity={dealValidity} />
         </div>
       </div>
 

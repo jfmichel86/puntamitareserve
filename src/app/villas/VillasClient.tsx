@@ -24,11 +24,14 @@ interface FilterState {
   // 4+ staff roles (housekeeper, chef, butler, concierge, etc.) — mirrors
   // the "Fully Staffed" tile on the redesigned destination pages.
   staff: boolean
-  type: string
-  locationType: string
+  // type, locationType, and collection are multi-select (like views below) —
+  // an empty array means "any", picking one or more narrows to just those.
+  type: string[]
+  locationType: string[]
   views: string[]
-  collection: string
-  community: string
+  collection: string[]
+  // Multi-select, same as type/locationType/collection above.
+  community: string[]
   featured: boolean
   sort: string
   // Free-text search, set only via the nav bar's search field
@@ -46,11 +49,11 @@ const DEFAULT_FILTERS: FilterState = {
   price: '',
   pool: false,
   staff: false,
-  type: '',
-  locationType: '',
+  type: [],
+  locationType: [],
   views: [],
-  collection: '',
-  community: '',
+  collection: [],
+  community: [],
   featured: false,
   sort: 'popular',
   q: '',
@@ -82,15 +85,15 @@ const cnt = (n: number) => (n > 0 ? n : '')
 
 type CountOverrides = Partial<{
   destination: string
-  community: string
+  community: string[]
   beds: number
   bedsMax: number
   price: string
-  type: string
-  collection: string
+  type: string[]
+  collection: string[]
   pool: boolean
   staff: boolean
-  locationType: string
+  locationType: string[]
   views: string[]
   featured: boolean
   q: string
@@ -103,8 +106,8 @@ function filtersFromParams(searchParams: URLSearchParams): FilterState {
   return {
     ...DEFAULT_FILTERS,
     destination: searchParams.get('destination') || '',
-    community: searchParams.get('community') || '',
-    collection: searchParams.get('collection') || '',
+    community: searchParams.getAll('community'),
+    collection: searchParams.getAll('collection'),
     price: searchParams.get('price') || '',
     beds: Number(searchParams.get('beds')) || 0,
     bedsMax: Number(searchParams.get('bedsMax')) || 0,
@@ -118,8 +121,8 @@ function filtersFromParams(searchParams: URLSearchParams): FilterState {
       children: Number(searchParams.get('children')) || 0,
       infants: Number(searchParams.get('infants')) || 0,
     },
-    type: searchParams.get('type') || '',
-    locationType: searchParams.get('locationType') || '',
+    type: searchParams.getAll('type'),
+    locationType: searchParams.getAll('locationType'),
     sort: searchParams.get('sort') || 'popular',
   }
 }
@@ -134,8 +137,8 @@ function filtersFromParams(searchParams: URLSearchParams): FilterState {
 function filtersToQueryString(f: FilterState): string {
   const p = new URLSearchParams()
   if (f.destination) p.set('destination', f.destination)
-  if (f.community) p.set('community', f.community)
-  if (f.collection) p.set('collection', f.collection)
+  f.community.forEach((c) => p.append('community', c))
+  f.collection.forEach((c) => p.append('collection', c))
   if (f.price) p.set('price', f.price)
   if (f.beds) p.set('beds', String(f.beds))
   if (f.bedsMax) p.set('bedsMax', String(f.bedsMax))
@@ -147,8 +150,8 @@ function filtersToQueryString(f: FilterState): string {
   if (f.guests.adults) p.set('adults', String(f.guests.adults))
   if (f.guests.children) p.set('children', String(f.guests.children))
   if (f.guests.infants) p.set('infants', String(f.guests.infants))
-  if (f.type) p.set('type', f.type)
-  if (f.locationType) p.set('locationType', f.locationType)
+  f.type.forEach((t) => p.append('type', t))
+  f.locationType.forEach((l) => p.append('locationType', l))
   if (f.sort && f.sort !== 'popular') p.set('sort', f.sort)
   return p.toString()
 }
@@ -282,7 +285,7 @@ export default function VillasClient({ properties }: { properties: Property[] })
     const effViews    = overrides.views         !== undefined ? overrides.views         : filters.views
     const featuredVal = overrides.featured      !== undefined ? overrides.featured      : filters.featured
     const qVal        = overrides.q             !== undefined ? overrides.q             : filters.q
-    const ltEffective = locTypeVal ? LOC_TYPE_VIEW_MAP[locTypeVal] : ''
+    const ltEffective = locTypeVal.map((lt) => LOC_TYPE_VIEW_MAP[lt])
     const range = priceVal ? PRICE_RANGES[priceVal] : null
     const qNorm = qVal.trim().toLowerCase()
 
@@ -296,18 +299,18 @@ export default function VillasClient({ properties }: { properties: Property[] })
       const haystack = `${p.title} ${communityLabel(p)} ${dest ? DEST_LABELS[dest] : ''}`.toLowerCase()
       return (
         (!destVal || destinationOf(p) === destVal) &&
-        (!commVal || p.communityPuntaMita === commVal || p.communityPuntaDeMita === commVal) &&
+        (commVal.length === 0 || commVal.includes(p.communityPuntaMita || '') || commVal.includes(p.communityPuntaDeMita || '')) &&
         (guestCapacityCount === 0 || g >= guestCapacityCount) &&
         (bedsVal === 0 || p.bedrooms >= bedsVal) &&
         (bedsMaxVal === 0 || p.bedrooms <= bedsMaxVal) &&
         (!range || (r >= range[0] && r <= range[1])) &&
-        (!typeVal || p.propertyType === typeVal) &&
+        (typeVal.length === 0 || typeVal.includes(p.propertyType)) &&
         (effViews.length === 0 || effViews.some((v) => (p.viewsAndPool || []).includes(v))) &&
-        (!collVal || (p.collection || []).includes(collVal)) &&
+        (collVal.length === 0 || collVal.some((c) => (p.collection || []).includes(c))) &&
         (!poolVal || hasPool(p)) &&
         (!staffVal || (p.staffServices?.length || 0) >= FULLY_STAFFED_MIN) &&
         (!featuredVal || !!p.featured) &&
-        (!ltEffective || (p.viewsAndPool || []).includes(ltEffective)) &&
+        (ltEffective.length === 0 || ltEffective.some((lt) => (p.viewsAndPool || []).includes(lt))) &&
         (!qNorm || haystack.includes(qNorm))
       )
     })
@@ -380,8 +383,8 @@ export default function VillasClient({ properties }: { properties: Property[] })
 
   const hasActiveFilters =
     filters.destination || totalGuestCount > 0 || filters.beds || filters.price || filters.pool || filters.staff ||
-    filters.type || filters.locationType || filters.views.length > 0 || filters.collection || filters.community ||
-    filters.featured || filters.q
+    filters.type.length > 0 || filters.locationType.length > 0 || filters.views.length > 0 ||
+    filters.collection.length > 0 || filters.community.length > 0 || filters.featured || filters.q
 
   const activeChips: { label: string; clear: () => void }[] = []
   if (filters.q) activeChips.push({ label: `"${filters.q}"`, clear: () => setFilters((f) => ({ ...f, q: '' })) })
@@ -395,12 +398,24 @@ export default function VillasClient({ properties }: { properties: Property[] })
   if (filters.pool) activeChips.push({ label: 'Private pool', clear: () => setFilters((f) => ({ ...f, pool: false })) })
   if (filters.staff) activeChips.push({ label: 'Fully staffed', clear: () => setFilters((f) => ({ ...f, staff: false })) })
   if (filters.featured) activeChips.push({ label: 'Favorites', clear: () => setFilters((f) => ({ ...f, featured: false })) })
-  const typeLabel = filters.type === 'villa' ? 'Villa' : filters.type === 'condo' ? 'Condo' : 'Estate'
-  if (filters.type) activeChips.push({ label: typeLabel, clear: () => setFilters((f) => ({ ...f, type: '' })) })
-  if (filters.locationType) activeChips.push({ label: LOC_TYPE_LABELS[filters.locationType], clear: () => setFilters((f) => ({ ...f, locationType: '' })) })
+  const typeLabels: Record<string, string> = { villa: 'Villa', condo: 'Condo', estate: 'Estate' }
+  filters.type.forEach((t) => activeChips.push({
+    label: typeLabels[t] || t,
+    clear: () => setFilters((f) => ({ ...f, type: f.type.filter((x) => x !== t) })),
+  }))
+  filters.locationType.forEach((lt) => activeChips.push({
+    label: LOC_TYPE_LABELS[lt] || lt,
+    clear: () => setFilters((f) => ({ ...f, locationType: f.locationType.filter((x) => x !== lt) })),
+  }))
   filters.views.forEach((v) => activeChips.push({ label: VIEW_LABELS[v] || v, clear: () => toggleView(v) }))
-  if (filters.collection) activeChips.push({ label: COLL_NAMES[filters.collection], clear: () => setFilters((f) => ({ ...f, collection: '' })) })
-  if (filters.community) activeChips.push({ label: communityLabelFromSlug(filters.community), clear: () => setFilters((f) => ({ ...f, community: '' })) })
+  filters.collection.forEach((c) => activeChips.push({
+    label: COLL_NAMES[c] || c,
+    clear: () => setFilters((f) => ({ ...f, collection: f.collection.filter((x) => x !== c) })),
+  }))
+  filters.community.forEach((c) => activeChips.push({
+    label: communityLabelFromSlug(c),
+    clear: () => setFilters((f) => ({ ...f, community: f.community.filter((x) => x !== c) })),
+  }))
 
   // Count of active filters that live only in the "More Filters" drawer
   // (mirrors the original site's mf-badge / fl-badge count formula).
@@ -409,8 +424,8 @@ export default function VillasClient({ properties }: { properties: Property[] })
   // now that they only live inside this drawer, the "All Filters" badge is
   // the only place a person would see that one of them is switched on.
   const drawerFilterCount =
-    (filters.community ? 1 : 0) + (filters.type ? 1 : 0) + filters.views.length +
-    (filters.collection ? 1 : 0) + (filters.locationType ? 1 : 0) +
+    filters.community.length + filters.type.length + filters.views.length +
+    filters.collection.length + filters.locationType.length +
     (filters.pool ? 1 : 0) + (filters.staff ? 1 : 0)
 
   function communityLabelFromSlug(slug: string) {
@@ -450,16 +465,16 @@ export default function VillasClient({ properties }: { properties: Property[] })
                   a community picked under one destination is meaningless (and
                   would silently zero out the results) once a different
                   destination is active. */}
-              <div className={`ff-opt${!filters.destination ? ' is-sel' : ''}`} onClick={() => { setFilters((f) => ({ ...f, destination: '', community: '' })); closeAll() }}>
+              <div className={`ff-opt${!filters.destination ? ' is-sel' : ''}`} onClick={() => { setFilters((f) => ({ ...f, destination: '', community: [] })); closeAll() }}>
                 All destinations <span className="opt-count">{cnt(countFor({ destination: '' }))}</span>
               </div>
-              <div className={`ff-opt${filters.destination === 'punta-mita' ? ' is-sel' : ''}`} onClick={() => { setFilters((f) => ({ ...f, destination: 'punta-mita', community: '' })); closeAll() }}>
+              <div className={`ff-opt${filters.destination === 'punta-mita' ? ' is-sel' : ''}`} onClick={() => { setFilters((f) => ({ ...f, destination: 'punta-mita', community: [] })); closeAll() }}>
                 Punta Mita <span className="opt-count">{cnt(countFor({ destination: 'punta-mita' }))}</span>
               </div>
-              <div className={`ff-opt${filters.destination === 'punta-de-mita' ? ' is-sel' : ''}`} onClick={() => { setFilters((f) => ({ ...f, destination: 'punta-de-mita', community: '' })); closeAll() }}>
+              <div className={`ff-opt${filters.destination === 'punta-de-mita' ? ' is-sel' : ''}`} onClick={() => { setFilters((f) => ({ ...f, destination: 'punta-de-mita', community: [] })); closeAll() }}>
                 Punta de Mita <span className="opt-count">{cnt(countFor({ destination: 'punta-de-mita' }))}</span>
               </div>
-              <div className={`ff-opt${filters.destination === 'puerto-vallarta' ? ' is-sel' : ''}`} onClick={() => { setFilters((f) => ({ ...f, destination: 'puerto-vallarta', community: '' })); closeAll() }}>
+              <div className={`ff-opt${filters.destination === 'puerto-vallarta' ? ' is-sel' : ''}`} onClick={() => { setFilters((f) => ({ ...f, destination: 'puerto-vallarta', community: [] })); closeAll() }}>
                 Puerto Vallarta <span className="opt-count">{cnt(countFor({ destination: 'puerto-vallarta' }))}</span>
               </div>
             </div>
@@ -680,8 +695,18 @@ export default function VillasClient({ properties }: { properties: Property[] })
           <div className="mf-section">
             <div className="mf-section-title">Property Type</div>
             <div className="mf-type-chips">
-              {[['', 'All'], ['villa', 'Villa'], ['condo', 'Condo'], ['estate', 'Estate']].map(([v, l]) => (
-                <button key={v} className={`mf-type-chip${filters.type === v ? ' is-sel' : ''}`} onClick={() => setFilters((f) => ({ ...f, type: v }))}>
+              {/* "All" clears the whole group back to "any type" — every
+                  other pill toggles independently, so more than one can be
+                  active at once (e.g. Villa + Estate, but not Condo). */}
+              <button className={`mf-type-chip${filters.type.length === 0 ? ' is-sel' : ''}`} onClick={() => setFilters((f) => ({ ...f, type: [] }))}>
+                All
+              </button>
+              {[['villa', 'Villa'], ['condo', 'Condo'], ['estate', 'Estate']].map(([v, l]) => (
+                <button
+                  key={v}
+                  className={`mf-type-chip${filters.type.includes(v) ? ' is-sel' : ''}`}
+                  onClick={() => setFilters((f) => ({ ...f, type: f.type.includes(v) ? f.type.filter((x) => x !== v) : [...f.type, v] }))}
+                >
                   {l}
                 </button>
               ))}
@@ -691,8 +716,15 @@ export default function VillasClient({ properties }: { properties: Property[] })
           <div className="mf-section">
             <div className="mf-section-title">Location</div>
             <div className="mf-coll-chips">
-              {[['', 'All'], ['oceanfront', 'Oceanfront'], ['beachfront', 'Beachfront'], ['golf-course', 'Golf Course'], ['hillside', 'Hillside']].map(([v, l]) => (
-                <button key={v} className={`mf-coll-chip${filters.locationType === v ? ' is-sel' : ''}`} onClick={() => setFilters((f) => ({ ...f, locationType: v }))}>
+              <button className={`mf-coll-chip${filters.locationType.length === 0 ? ' is-sel' : ''}`} onClick={() => setFilters((f) => ({ ...f, locationType: [] }))}>
+                All
+              </button>
+              {[['oceanfront', 'Oceanfront'], ['beachfront', 'Beachfront'], ['golf-course', 'Golf Course'], ['hillside', 'Hillside']].map(([v, l]) => (
+                <button
+                  key={v}
+                  className={`mf-coll-chip${filters.locationType.includes(v) ? ' is-sel' : ''}`}
+                  onClick={() => setFilters((f) => ({ ...f, locationType: f.locationType.includes(v) ? f.locationType.filter((x) => x !== v) : [...f.locationType, v] }))}
+                >
                   {l}
                 </button>
               ))}
@@ -712,8 +744,15 @@ export default function VillasClient({ properties }: { properties: Property[] })
           <div className="mf-section">
             <div className="mf-section-title">Collections</div>
             <div className="mf-coll-chips">
-              {[['', 'All'], ...Object.entries(COLL_NAMES)].map(([v, l]) => (
-                <button key={v} className={`mf-coll-chip${filters.collection === v ? ' is-sel' : ''}`} onClick={() => setFilters((f) => ({ ...f, collection: v }))}>
+              <button className={`mf-coll-chip${filters.collection.length === 0 ? ' is-sel' : ''}`} onClick={() => setFilters((f) => ({ ...f, collection: [] }))}>
+                All
+              </button>
+              {Object.entries(COLL_NAMES).map(([v, l]) => (
+                <button
+                  key={v}
+                  className={`mf-coll-chip${filters.collection.includes(v) ? ' is-sel' : ''}`}
+                  onClick={() => setFilters((f) => ({ ...f, collection: f.collection.includes(v) ? f.collection.filter((x) => x !== v) : [...f.collection, v] }))}
+                >
                   {l}
                 </button>
               ))}
@@ -753,8 +792,8 @@ export default function VillasClient({ properties }: { properties: Property[] })
                         {comms.map((c) => (
                           <div
                             key={c}
-                            className={`mf-comm-opt${filters.community === c ? ' is-sel' : ''}`}
-                            onClick={() => setFilters((f) => ({ ...f, community: f.community === c ? '' : c }))}
+                            className={`mf-comm-opt${filters.community.includes(c) ? ' is-sel' : ''}`}
+                            onClick={() => setFilters((f) => ({ ...f, community: f.community.includes(c) ? f.community.filter((x) => x !== c) : [...f.community, c] }))}
                           >
                             {communityLabelFromSlug(c)}
                           </div>
@@ -768,7 +807,7 @@ export default function VillasClient({ properties }: { properties: Property[] })
           </div>
         </div>
         <div className="mf-footer">
-          <button className="mf-clear-btn" onClick={() => setFilters((f) => ({ ...f, type: '', locationType: '', views: [], collection: '', community: '' }))}>Clear</button>
+          <button className="mf-clear-btn" onClick={() => setFilters((f) => ({ ...f, type: [], locationType: [], views: [], collection: [], community: [] }))}>Clear</button>
           <button className="mf-apply-btn" onClick={() => setDrawerOpen(false)}>Show results</button>
         </div>
       </div>
@@ -832,7 +871,7 @@ export default function VillasClient({ properties }: { properties: Property[] })
         ) : (
           <>
             <div className="prop-grid">
-              {visible.map((p) => <PropertyCard key={p._id} property={p} activeCollection={filters.collection || undefined} resultsQuery={resultsQuery || undefined} />)}
+              {visible.map((p) => <PropertyCard key={p._id} property={p} activeCollection={filters.collection[0] || undefined} resultsQuery={resultsQuery || undefined} />)}
             </div>
             {visibleCount < filtered.length && (
               <div className="load-more-wrap" style={{ display: 'block' }} ref={loadMoreSentinelRef}>

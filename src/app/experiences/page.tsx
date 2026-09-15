@@ -10,6 +10,7 @@ export const revalidate = 60
 export const metadata: Metadata = {
   title: 'Concierge & Experiences',
   description: 'A curated menu of what our concierge team can arrange for your stay — golf, beach clubs, private chefs, yacht charters, and more — across every Mexican Reserve destination.',
+  alternates: { canonical: 'https://www.mexicanreserve.com/experiences' },
 }
 
 export default async function ExperiencesPage() {

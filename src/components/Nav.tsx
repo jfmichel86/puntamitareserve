@@ -89,6 +89,7 @@ export default function Nav() {
 
   const [mobileDestOpen, setMobileDestOpen] = useState(false)
   const [mobilePropsOpen, setMobilePropsOpen] = useState(false)
+  const [mobileExpOpen, setMobileExpOpen] = useState(false)
 
   // Desktop Properties + Destinations dropdowns — both open on hover (mouse
   // enter/leave on the whole <li>); click is kept too, as a fallback for
@@ -97,16 +98,23 @@ export default function Nav() {
   const destRef = useRef<HTMLLIElement>(null)
   const [propsOpen, setPropsOpen] = useState(false)
   const propsRef = useRef<HTMLLIElement>(null)
+  // "The Experience" — same hover-dropdown pattern as Destinations/
+  // Collections, added when The Journal needed a real nav entry point
+  // alongside Concierge & Experiences, rather than adding a 4th top-level
+  // link and crowding the header further.
+  const [expOpen, setExpOpen] = useState(false)
+  const expRef = useRef<HTMLLIElement>(null)
 
   useEffect(() => {
-    if (!destOpen && !propsOpen) return
+    if (!destOpen && !propsOpen && !expOpen) return
     const handleClickOutside = (e: MouseEvent) => {
       if (destOpen && destRef.current && !destRef.current.contains(e.target as Node)) setDestOpen(false)
       if (propsOpen && propsRef.current && !propsRef.current.contains(e.target as Node)) setPropsOpen(false)
+      if (expOpen && expRef.current && !expRef.current.contains(e.target as Node)) setExpOpen(false)
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [destOpen, propsOpen])
+  }, [destOpen, propsOpen, expOpen])
 
   // Close both dropdowns on any navigation (Nav persists across route
   // changes in the App Router, so it won't unmount and reset on its own).
@@ -118,11 +126,12 @@ export default function Nav() {
     setDestOpenForPath(pathname)
     setDestOpen(false)
     setPropsOpen(false)
+    setExpOpen(false)
     setSearchOpen(false)
     setSearchTerm('')
   }
 
-  const closeMenu = () => { setMenuOpen(false); setMobileDestOpen(false); setMobilePropsOpen(false) }
+  const closeMenu = () => { setMenuOpen(false); setMobileDestOpen(false); setMobilePropsOpen(false); setMobileExpOpen(false) }
   const isActive = (href: string) =>
     // /offers now lives inside the Collections menu (see PROPERTIES_MENU),
     // so the Collections trigger should still light up as "active" when
@@ -143,7 +152,9 @@ export default function Nav() {
     DESTINATIONS.some((d) => pathname === d.href || pathname.startsWith(`${d.href}/`))
 
   const PROPERTIES_MENU = [
-    { href: '/villas', label: 'All Properties' },
+    // "All Properties" used to lead here too — removed as a dead duplicate:
+    // the "Collections" trigger label itself already links to /villas, so
+    // clicking the word above this list does exactly what that item did.
     { href: '/villas?collection=exceptional-value', label: 'Exceptional Value' },
     { href: '/villas?collection=family-villas', label: 'Family Villas' },
     { href: '/villas?collection=oceanfront', label: 'Oceanfront' },
@@ -151,9 +162,32 @@ export default function Nav() {
     // standalone /offers page (limited-time rates, Pay 3 Stay 4, etc).
     // Folded in here instead of keeping its own top-level nav slot: it
     // still gets a real entry point in the Collections menu without
-    // adding a 5th item to an already-crowded header.
-    { href: '/offers', label: 'Exclusive Deals' },
+    // adding a 5th item to an already-crowded header. `deal: true` gives
+    // it its own visual treatment (see .nav-dropdown-panel a.is-deal in
+    // globals.css) since it's a different kind of thing from the property
+    // collections above it, not just another one of them.
+    { href: '/offers', label: 'Exclusive Deals', deal: true },
   ]
+
+  // "The Experience" dropdown — trigger now links to /experience, a short
+  // hub page listing all four items below, instead of jumping straight to
+  // one of them (Francisco's call, 2026-08-31: the old direct link to
+  // /about broke the pattern every other dropdown follows — Destinations'
+  // trigger goes to the /destinations hub, Collections' to /villas — so
+  // clicking the word itself should land somewhere that contains the whole
+  // menu, not skip straight to one item). /about used to BE the guest-
+  // journey content directly; that content now lives at /guest-journey,
+  // and /about became a real, separate About Us page — so both need their
+  // own entry here now.
+  const EXPERIENCE_MENU = [
+    { href: '/guest-journey', label: 'The Guest Journey' },
+    { href: '/experiences', label: 'Concierge & Experiences' },
+    { href: '/journal', label: 'The Journal' },
+    { href: '/about', label: 'About Us' },
+  ]
+  const isExpActive =
+    pathname === '/experience' || pathname === '/guest-journey' ||
+    pathname === '/experiences' || pathname.startsWith('/journal') || pathname === '/about'
 
   return (
     <nav className={`nav${isDark ? ' nav--dark' : ''}${scrolled ? ' nav--scrolled' : ''}`}>
@@ -219,16 +253,57 @@ export default function Nav() {
           </div>
           <div className="nav-dropdown-panel">
             {PROPERTIES_MENU.map((p) => (
-              <Link key={p.href} href={p.href} onClick={() => setPropsOpen(false)}>
-                {p.label}
+              <Link key={p.href} href={p.href} className={p.deal ? 'is-deal' : ''} onClick={() => setPropsOpen(false)}>
+                {p.deal ? (
+                  <span className="nav-deal-inner">
+                    <svg className="nav-deal-icon" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M20.59 13.41 13.42 20.58a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82Z" />
+                      <line x1="7" y1="7" x2="7.01" y2="7" />
+                    </svg>
+                    <span className="nav-deal-text">
+                      <span className="nav-deal-label">{p.label}</span>
+                      {/* Deliberately generic, not a specific %/date — the
+                          actual offers on /offers change over time, and a
+                          hardcoded number here would go stale. */}
+                      <span className="nav-deal-sub">Limited-time rates</span>
+                    </span>
+                  </span>
+                ) : p.label}
               </Link>
             ))}
           </div>
         </li>
         {/* Label reads "The Experience" (renamed from "About") — same /about
             page, which is actually concierge-service and local-expertise
-            content, not a company bio, so the old label undersold it. */}
-        <li><Link href="/about" className={pathname === '/about' ? 'active' : ''}>The Experience</Link></li>
+            content, not a company bio, so the old label undersold it. Now a
+            dropdown (same pattern as Destinations/Collections) so Concierge
+            & Experiences and The Journal both get a real nav entry point. */}
+        <li
+          className={`nav-dropdown${expOpen ? ' is-open' : ''}`}
+          ref={expRef}
+          onMouseEnter={() => setExpOpen(true)}
+          onMouseLeave={() => setExpOpen(false)}
+        >
+          <div className={`nav-dropdown-trigger${isExpActive ? ' active' : ''}`}>
+            <Link href="/experience" className="nav-dropdown-trigger-label">The Experience</Link>
+            <button
+              type="button"
+              className="nav-dropdown-trigger-caret"
+              onClick={() => setExpOpen((o) => !o)}
+              aria-expanded={expOpen}
+              aria-label="Toggle experience menu"
+            >
+              <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+          </div>
+          <div className="nav-dropdown-panel">
+            {EXPERIENCE_MENU.map((e) => (
+              <Link key={e.href} href={e.href} className={pathname === e.href ? 'is-sel' : ''} onClick={() => setExpOpen(false)}>
+                {e.label}
+              </Link>
+            ))}
+          </div>
+        </li>
       </ul>
 
       {/* Global search — collapsed to an icon by default. Expanding it opens
@@ -334,11 +409,44 @@ export default function Nav() {
         {mobilePropsOpen && (
           <div className="mobile-dropdown-list">
             {PROPERTIES_MENU.map((p) => (
-              <Link key={p.href} href={p.href} onClick={closeMenu}>{p.label}</Link>
+              <Link key={p.href} href={p.href} className={p.deal ? 'is-deal' : ''} onClick={closeMenu}>
+                {p.deal ? (
+                  <span className="nav-deal-inner">
+                    <svg className="nav-deal-icon" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M20.59 13.41 13.42 20.58a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82Z" />
+                      <line x1="7" y1="7" x2="7.01" y2="7" />
+                    </svg>
+                    <span className="nav-deal-text">
+                      <span className="nav-deal-label">{p.label}</span>
+                      <span className="nav-deal-sub">Limited-time rates</span>
+                    </span>
+                  </span>
+                ) : p.label}
+              </Link>
             ))}
           </div>
         )}
-        <Link href="/about" onClick={closeMenu}>The Experience</Link>
+        <div className={`mobile-dropdown-trigger${isExpActive ? ' active' : ''}`}>
+          <Link href="/experience" className="mobile-dropdown-trigger-label" onClick={closeMenu}>
+            The Experience
+          </Link>
+          <button
+            type="button"
+            className="mobile-dropdown-trigger-caret"
+            onClick={() => setMobileExpOpen((o) => !o)}
+            aria-expanded={mobileExpOpen}
+            aria-label="Toggle experience list"
+          >
+            <svg className={mobileExpOpen ? 'open' : ''} viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+        </div>
+        {mobileExpOpen && (
+          <div className="mobile-dropdown-list">
+            {EXPERIENCE_MENU.map((e) => (
+              <Link key={e.href} href={e.href} onClick={closeMenu}>{e.label}</Link>
+            ))}
+          </div>
+        )}
         {savedCount > 0 && (
           <Link href="/saved" onClick={closeMenu}>Wishlist ({savedCount})</Link>
         )}

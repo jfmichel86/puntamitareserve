@@ -1,6 +1,6 @@
 import type { MetadataRoute } from 'next'
 import { client } from '@/lib/sanity'
-import { PROPERTY_SLUGS_QUERY } from '@/lib/queries'
+import { PROPERTY_SLUGS_QUERY, JOURNAL_SLUGS_QUERY } from '@/lib/queries'
 
 const BASE_URL = 'https://www.mexicanreserve.com'
 
@@ -16,9 +16,15 @@ const STATIC_ROUTES: { path: string; priority: number; changeFrequency: Metadata
   { path: '/punta-mita/communities',   priority: 0.6, changeFrequency: 'weekly' },
   { path: '/punta-de-mita',            priority: 0.8, changeFrequency: 'weekly' },
   { path: '/puerto-vallarta',          priority: 0.7, changeFrequency: 'weekly' },
+  { path: '/experience',               priority: 0.5, changeFrequency: 'monthly' },
+  { path: '/guest-journey',            priority: 0.6, changeFrequency: 'monthly' },
   { path: '/about',                    priority: 0.6, changeFrequency: 'monthly' },
   { path: '/contact',                  priority: 0.6, changeFrequency: 'monthly' },
   { path: '/faq',                      priority: 0.5, changeFrequency: 'monthly' },
+  { path: '/offers',                   priority: 0.7, changeFrequency: 'weekly'  },
+  { path: '/experiences',              priority: 0.5, changeFrequency: 'monthly' },
+  { path: '/journal',                  priority: 0.6, changeFrequency: 'weekly'  },
+  { path: '/list-your-property',       priority: 0.4, changeFrequency: 'monthly' },
   { path: '/cancellation-policy',      priority: 0.3, changeFrequency: 'yearly'  },
   { path: '/privacy-policy',           priority: 0.3, changeFrequency: 'yearly'  },
   { path: '/terms-and-conditions',     priority: 0.3, changeFrequency: 'yearly'  },
@@ -34,12 +40,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }))
 
   let slugs: string[] = []
+  let journalSlugs: string[] = []
   try {
-    slugs = await client.fetch(PROPERTY_SLUGS_QUERY)
+    ;[slugs, journalSlugs] = await Promise.all([
+      client.fetch(PROPERTY_SLUGS_QUERY),
+      client.fetch(JOURNAL_SLUGS_QUERY),
+    ])
   } catch {
     // If Sanity is unreachable at build time, ship the sitemap with just the
     // static routes rather than failing the whole build.
     slugs = []
+    journalSlugs = []
   }
 
   const villaEntries: MetadataRoute.Sitemap = slugs.map((slug) => ({
@@ -49,5 +60,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }))
 
-  return [...staticEntries, ...villaEntries]
+  const journalEntries: MetadataRoute.Sitemap = journalSlugs.map((slug) => ({
+    url: `${BASE_URL}/journal/${slug}`,
+    lastModified: new Date(),
+    changeFrequency: 'monthly',
+    priority: 0.5,
+  }))
+
+  return [...staticEntries, ...villaEntries, ...journalEntries]
 }

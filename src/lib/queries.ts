@@ -263,3 +263,72 @@ export const ALL_EXPERIENCES_QUERY = `
     "experiences": experiences[]{ text, destinationOverride }
   }
 `
+
+// ── The Journal ─────────────────────────────────────────────────────────
+
+// Listing page (/journal): every published article, newest first. Excludes
+// `body` and `relatedProperties` — the listing only ever shows a card's
+// worth of each post, so there's no reason to fetch the full article text
+// or resolve property references for every post just to render a grid.
+export const JOURNAL_POSTS_QUERY = `
+  *[_type == "journalPost" && status == "published"] | order(publishedDate desc) {
+    _id,
+    title,
+    "slug": slug.current,
+    excerpt,
+    coverImage,
+    category,
+    publishedDate
+  }
+`
+
+// All slugs (for static generation of /journal/[slug])
+export const JOURNAL_SLUGS_QUERY = `
+  *[_type == "journalPost" && status == "published" && defined(slug.current)].slug.current
+`
+
+// Single article by slug. relatedProperties resolves each reference into
+// the same card-relevant field set PROPERTIES_QUERY uses, so PropertyCard
+// can render the "Related Villas" section directly — a raw reference (just
+// an _id) wouldn't give the card enough to work with. Only published
+// related properties come through, in case a linked villa is later
+// unpublished or deleted without anyone updating the article.
+export const JOURNAL_POST_BY_SLUG_QUERY = `
+  *[_type == "journalPost" && slug.current == $slug && status == "published"][0] {
+    _id,
+    title,
+    "slug": slug.current,
+    excerpt,
+    coverImage,
+    category,
+    body,
+    publishedDate,
+    seoTitle,
+    seoDescription,
+    "relatedProperties": relatedProperties[]->{
+      _id,
+      title,
+      "slug": slug.current,
+      tagline,
+      propertyType,
+      featured,
+      collection,
+      locationLabel,
+      communityPuntaMita,
+      communityPuntaDeMita,
+      bedrooms,
+      bathrooms,
+      maxAdults,
+      childOnlyBeds,
+      viewsAndPool,
+      "seasons": seasons[]{ nightlyRate, "bedroomRates": bedroomRates[]{ bedrooms, nightlyRate } },
+      heroImage,
+      "mosaicPhotos": mosaicPhotos[]{ asset, hotspot },
+      amenities,
+      "promotions": promotions {
+        limitedTimePromotion { active, offerType, percentageOff, payNights, stayNights, expiryDate, note },
+        lastMinuteDeal        { active, availableDates, offerType, percentageOff, payNights, stayNights, note }
+      }
+    }[status == "published"]
+  }
+`

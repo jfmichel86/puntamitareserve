@@ -30,7 +30,13 @@ export default function Footer() {
         <div>
           <div className="ft-col-title">Company</div>
           <ul className="ft-links">
-            <li><Link href="/about">The Experience</Link></li>
+            {/* Points at the /experience hub (all four sub-pages), not
+                directly at any one of them — same reasoning as the header's
+                own "The Experience" dropdown trigger. About Us is its own
+                line below since /about is now a real, separate page rather
+                than what "The Experience" itself used to mean. */}
+            <li><Link href="/experience">The Experience</Link></li>
+            <li><Link href="/about">About Us</Link></li>
             <li><Link href="/faq">FAQ</Link></li>
             {/* Deliberately plain text, same weight as the other Company
                 links — not a button — so it doesn't compete with the

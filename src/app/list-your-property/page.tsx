@@ -4,6 +4,7 @@ import OwnerForm from '@/components/OwnerForm'
 export const metadata: Metadata = {
   title: 'List Your Property',
   description: 'Partner with Mexican Reserve — full property management in Punta Mita, or a marketing and booking partnership in every other destination we serve.',
+  alternates: { canonical: 'https://www.mexicanreserve.com/list-your-property' },
 }
 
 export default function ListYourPropertyPage() {
