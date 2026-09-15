@@ -483,8 +483,22 @@ export function locationDisplay(p: Property): string {
   return map[p.locationLabel] || p.locationLabel
 }
 
+// TEMPORARY KILL SWITCH (2026-09-15) — Francisco's explicit instruction:
+// "Remove all promotions on the website until this is fixed." A bug in the
+// Sanity Promotions Manager tool (now fixed, see BulkPromotionsTool.jsx)
+// left stale "active" promotions on the published copies of Villa Amore
+// and Villa Brezza even after Francisco removed them — guests were seeing
+// deals that no longer existed. Setting this to true forces every deal
+// check below to report "no active deal" sitewide (badges, the /offers
+// page, the detail-page callout, everything), regardless of what's
+// actually saved in Sanity, until the underlying data is confirmed clean
+// and this is verified fixed. Flip back to false once confirmed — nothing
+// else needs to change, every deal function below reads this one flag.
+const DEALS_DISABLED = true
+
 /** Check if a limited time promotion is still active */
 export function hasActivePromotion(p: Property): boolean {
+  if (DEALS_DISABLED) return false
   const promo = p.promotions?.limitedTimePromotion
   if (!promo?.active) return false
   if (!promo.expiryDate) return true
@@ -493,11 +507,13 @@ export function hasActivePromotion(p: Property): boolean {
 
 /** Check if property has an active last minute deal */
 export function hasLastMinuteDeal(p: Property): boolean {
+  if (DEALS_DISABLED) return false
   return p.promotions?.lastMinuteDeal?.active ?? false
 }
 
 /** Check if property is the current property of the month */
 export function isPropertyOfTheMonth(p: Property): boolean {
+  if (DEALS_DISABLED) return false
   const potm = p.promotions?.propertyOfTheMonth
   if (!potm?.active) return false
   if (potm.month == null || potm.year == null) return true
