@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 
 function AccordionItem({
   id, name, content, open, onToggle,
@@ -53,11 +54,15 @@ export default function PolicyAccordion({
         open={open === 'pi2'}
         onToggle={() => toggle('pi2')}
         content={
+          // Mirrors the full Cancellation Policy page (/cancellation-policy) —
+          // keep both in sync, on Mexican Reserve AND Beyond Traveling.
           <ul>
-            <li>Full refund if cancelled 90+ days before arrival</li>
-            <li>50% refund if cancelled 61–89 days before arrival</li>
-            <li>No refund within 60 days of arrival</li>
-            <li>Peak weeks are non-refundable</li>
+            <li>90+ days before arrival: 100% refund, less a 5% processing fee</li>
+            <li>60–89 days before arrival: 50% refund, less a 5% processing fee</li>
+            <li>Within 60 days of arrival: no refund</li>
+            <li>One date change allowed at no fee if requested 90+ days before arrival</li>
+            <li>No refund for no-shows or early departures</li>
+            <li><Link href="/cancellation-policy" style={{ textDecoration: 'underline' }}>Read the full cancellation policy</Link></li>
           </ul>
         }
       />

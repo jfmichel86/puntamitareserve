@@ -190,7 +190,7 @@ export default function Nav() {
     pathname === '/experiences' || pathname.startsWith('/journal') || pathname === '/about'
 
   return (
-    <nav className={`nav${isDark ? ' nav--dark' : ''}${scrolled ? ' nav--scrolled' : ''}`}>
+    <nav className={`nav${isDark ? ' nav--dark' : ''}${scrolled ? ' nav--scrolled' : ''}${searchOpen ? ' nav--search-open' : ''}`}>
       <Link href="/" className="nav-logo" onClick={closeMenu}>
         <Logo />
       </Link>
@@ -306,23 +306,25 @@ export default function Nav() {
         </li>
       </ul>
 
-      {/* Global search — collapsed to an icon by default. Expanding it opens
-          a small dropdown panel below the icon (same visual language as the
-          Destinations/Collections panels above), so the rest of the nav —
-          links, wishlist, Inquire — stays exactly as it is; nothing shifts
-          or hides to make room. A small pointer/caret (::before on
-          .nav-search-form) visually connects the panel back to the icon it
-          came from, and there's just the one close (X) action — pressing
-          Enter in the single text field submits the form on its own, no
-          separate magnifying-glass button needed. */}
+      {/* Global search — collapsed to an icon by default. On desktop,
+          opening it keeps everything on the SAME line as the rest of the
+          nav: the icon opens into a compact field right where it sits, and
+          the other items just slide over a little to make room. Nothing is
+          hidden — every menu link, the wishlist and Inquire stay usable
+          while searching (Francisco, 2026-10-14). Closing (X, Esc, or a
+          click anywhere else) brings the links back. On phones there's no
+          room in the bar, so it still opens as a small panel below
+          (see the max-width:720px block in globals.css). Pressing Enter
+          submits — no separate search button needed. */}
       <div className="nav-search" ref={searchRef}>
         {searchOpen ? (
           <form className="nav-search-form" onSubmit={submitSearch}>
+            <svg className="nav-search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
             <input
               ref={searchInputRef}
               type="text"
               className="nav-search-input"
-              placeholder="Search villas, communities, destinations…"
+              placeholder="Search villas or destinations…"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Escape') setSearchOpen(false) }}
@@ -345,7 +347,7 @@ export default function Nav() {
       {savedCount > 0 && (
         <Link href="/saved" className="nav-saved-link" style={{ display: 'flex' }} aria-label="Wishlist">
           <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-          <span className="nav-saved-count">{savedCount} in wishlist</span>
+          <span className="nav-saved-count">{savedCount}<span className="nav-saved-word"> in wishlist</span></span>
         </Link>
       )}
 
