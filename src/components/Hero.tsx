@@ -14,7 +14,15 @@ export default async function Hero() {
   const sourceDocs = docs.length > 0 ? docs : await client.fetch<HeroPhotoDoc[]>(HERO_PHOTOS_FALLBACK_QUERY)
   const photos = sourceDocs
     .filter((d) => d.heroImage?.asset?._ref)
-    .map((d) => urlFor(d.heroImage!).width(2400).height(1500).quality(92).url())
+    .map((d) => ({
+      // auto('format') lets Sanity send modern WebP/AVIF files to browsers
+      // that support them (nearly all) — same picture, much smaller file.
+      // Wide screens keep the full 2400px landscape crop; phones get a
+      // portrait crop sized for their screen (both respect the photo's
+      // focal point set in Sanity).
+      desktop: urlFor(d.heroImage!).width(2400).height(1500).quality(85).auto('format').url(),
+      mobile: urlFor(d.heroImage!).width(1000).height(1600).quality(80).auto('format').url(),
+    }))
 
   return (
     <section id="hero">
