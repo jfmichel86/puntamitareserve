@@ -166,11 +166,19 @@ body {
 /* Label carries its own opacity now (matching plain nav links at .7)
    instead of the whole trigger — see the svg rule below for why they can't
    share one opacity value anymore. */
-.nav-dropdown-trigger-label { color: inherit; text-decoration: none; opacity: .7; transition: opacity .22s; }
+.nav-dropdown-trigger-label { color: inherit; text-decoration: none; opacity: .7; transition: opacity .22s;
+  /* Invisible extra tap area (padding offset by negative margin) so the
+     link is at least 24px tall for touch/accessibility — no visual change. */
+  display: inline-block; padding: 6px 0; margin: -6px 0; }
 .nav-dropdown-trigger-caret {
   appearance: none; -webkit-appearance: none;
-  background: none; border: none; margin: 0; padding: 2px;
+  background: none; border: none; padding: 2px;
   display: inline-flex; align-items: center; color: inherit; cursor: pointer;
+  /* 24×24 minimum tap target for accessibility. The extra area extends
+     invisibly to the right (into the gap before the next menu item) and
+     the negative margins cancel it out, so the arrow doesn't move. */
+  min-width: 24px; min-height: 24px; justify-content: flex-start;
+  margin: -5.5px -11px -5.5px 0;
 }
 .nav-dropdown-trigger::after {
   content: ''; position: absolute; bottom: -4px; left: 0; right: 0;
@@ -262,7 +270,7 @@ body {
 .nav-cta {
   font-family: var(--font-inter), sans-serif; font-weight: 500;
   font-size: 11.5px; letter-spacing: .14em; text-transform: uppercase;
-  color: var(--deep-ocean) !important; background: var(--gold);
+  color: #142a3c !important; background: var(--gold); /* darker navy: deep-ocean on gold fell just short of 4.5:1 readability */
   padding: 10px 22px; border-radius: 2px; text-decoration: none;
   opacity: 1 !important; transition: background .22s, transform .18s;
 }
@@ -616,7 +624,9 @@ body {
 .sf:last-of-type .sf-trigger { border-right: none; }
 .guests-panel { padding: 0; }
 .search-btn {
-  flex-shrink: 0; background: var(--gold); color: var(--white); border: none; padding: 0 48px;
+  /* Navy text, not white: white on gold was hard to read (2.7:1). Matches the
+     site's other gold buttons (Inquire, Claim Offer, WhatsApp Us). */
+  flex-shrink: 0; background: var(--gold); color: #142a3c; border: none; padding: 0 48px;
   border-radius: 0 4px 4px 0; font-family: var(--font-inter), sans-serif; font-weight: 500; font-size: 11.5px;
   letter-spacing: .16em; text-transform: uppercase; cursor: pointer; display: flex; align-items: center; gap: 12px;
   transition: background .22s; white-space: nowrap; text-decoration: none;
@@ -2729,7 +2739,7 @@ footer { background: var(--deep-ocean); padding: 56px 64px 56px; }
 .offer-badge {
   position: fixed; bottom: 28px; left: 28px; z-index: 500;
   display: flex; align-items: center; gap: 8px;
-  background: var(--gold); color: var(--deep-ocean);
+  background: var(--gold); color: #142a3c; /* darker navy for readable contrast, same as the other gold buttons */
   padding: 14px 22px; border-radius: 30px;
   font-family: var(--font-inter), sans-serif; font-size: 14px; font-weight: 600;
   letter-spacing: .02em; text-decoration: none; white-space: nowrap;
@@ -2742,7 +2752,7 @@ footer { background: var(--deep-ocean); padding: 56px 64px 56px; }
   background: var(--gold-light);
   box-shadow: 0 8px 28px rgba(30,58,80,.36);
 }
-.offer-badge svg { width: 18px; height: 18px; stroke: var(--deep-ocean); fill: none; stroke-width: 1.6; flex-shrink: 0; }
+.offer-badge svg { width: 18px; height: 18px; stroke: #142a3c; fill: none; stroke-width: 1.6; flex-shrink: 0; }
 
 /* Both floats sit outside the nav in the DOM at a higher effective z-index
    than anything inside its dropdown — without this they'd render on top of
