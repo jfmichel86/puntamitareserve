@@ -2589,7 +2589,10 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
 .newsletter-band { background: var(--sand); border-top: 1px solid var(--sand-dark); padding: 72px 64px; text-align: center; }
 .newsletter-eyebrow {
   font-family: var(--font-inter), sans-serif; font-size: 12px;
-  letter-spacing: .2em; text-transform: uppercase; color: var(--gold);
+  /* Deeper bronze rather than --gold: plain gold on the sand band was too
+     faint to read (2.2:1 contrast); this keeps the gold family while
+     meeting the 4.5:1 readability standard. */
+  letter-spacing: .2em; text-transform: uppercase; color: #7e5a1c;
   margin-bottom: 16px;
 }
 .newsletter-headline {
@@ -2614,7 +2617,9 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
 .newsletter-input::placeholder { color: rgba(77,77,79,.75); }
 .newsletter-input:focus { outline: none; border-color: var(--gold); }
 .newsletter-btn {
-  background: var(--gold); color: var(--deep-ocean); border: none; border-radius: 3px;
+  /* #142a3c (the nav's darker navy) instead of --deep-ocean — deep-ocean on
+     gold fell just short of the 4.5:1 readability standard (4.4:1). */
+  background: var(--gold); color: #142a3c; border: none; border-radius: 3px;
   padding: 0 30px; font-family: var(--font-inter), sans-serif; font-size: 12px;
   font-weight: 600; letter-spacing: .08em; text-transform: uppercase; cursor: pointer;
   white-space: nowrap; transition: background .2s;
@@ -2673,7 +2678,7 @@ footer { background: var(--deep-ocean); padding: 56px 64px 56px; }
    tracked like the nav dropdown), so the nav's wide letter-spacing would
    look inconsistent here and push the line to wrap. Tighter tracking + a
    hair smaller keeps "Punta Mita — Inside the Gates" on one line. */
-.ft-links .nav-dest-suffix { font-size: 12.5px; letter-spacing: normal; }
+.ft-links .nav-dest-suffix { font-size: 12.5px; letter-spacing: normal; opacity: .85; } /* .85, not the nav's .7 — on top of the footer's already-dimmed link color, .7 made it too faint to read */
 .ft-links a.ft-nowrap { white-space: nowrap; }
 .ft-contact-item { margin-bottom: 16px; }
 .ft-contact-lbl {
@@ -2693,7 +2698,7 @@ footer { background: var(--deep-ocean); padding: 56px 64px 56px; }
 .ft-btn {
   display: inline-block; font-family: var(--font-inter), sans-serif; font-weight: 500;
   font-size: 11px; letter-spacing: .14em; text-transform: uppercase;
-  color: var(--deep-ocean); background: var(--gold);
+  color: #142a3c; background: var(--gold); /* darker navy for readable contrast, same as .newsletter-btn */
   padding: 12px 24px; border-radius: 2px; text-decoration: none; transition: background .2s;
 }
 .ft-btn:hover { background: var(--gold-light); }
