@@ -11,7 +11,9 @@ type CollectionPhotosResult = { exceptionalValue: HeroOnly[]; familyVillas: Hero
 function urlForItem(p: HeroOnly, width: number, height: number): string {
   // Explicit quality — every other photo on the site requests 85-92%; this
   // was the one spot still relying on Sanity's unspecified default.
-  return urlFor(p.heroImage!).width(width).height(height).quality(88).url()
+  // auto('format') = same picture and quality, sent as a modern, much
+  // smaller WebP/AVIF file to browsers that support them.
+  return urlFor(p.heroImage!).width(width).height(height).quality(88).auto('format').url()
 }
 
 /**

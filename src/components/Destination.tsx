@@ -52,7 +52,7 @@ export default async function Destination() {
           // on retina/high-DPI screens — plus an explicit quality, matching the
           // 85-92 standard used for photos elsewhere on the site (this had none).
           const bg = doc?.heroImage?.asset?._ref
-            ? `url('${urlFor(doc.heroImage!).width(1200).height(1600).quality(88).url()}')`
+            ? `url('${urlFor(doc.heroImage!).width(1200).height(1600).quality(88).auto('format').url()}')`
             : d.fallback
           return (
             <Link key={d.key} href={d.href} className="dest-card">
