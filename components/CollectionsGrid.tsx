@@ -53,6 +53,15 @@ type Collection = typeof COLLECTIONS[number]
 
 function CollectionCard({ c, photos }: { c: Collection; photos: string[] }) {
   const [idx, setIdx] = useState(0)
+  // Speed: each tile has up to 6 photos, but a visitor only ever sees the
+  // current one. Load the current photo plus the next one (so the arrow
+  // feels instant), and fetch the rest only as the visitor clicks through,
+  // instead of downloading all ~18 collection photos on page load.
+  const [loadedUpTo, setLoadedUpTo] = useState(1)
+  const goTo = (n: number) => {
+    setIdx(n)
+    setLoadedUpTo((m) => Math.max(m, n + 1))
+  }
   const router = useRouter()
 
   // Real property photos replace the gradient placeholders entirely once
@@ -63,7 +72,7 @@ function CollectionCard({ c, photos }: { c: Collection; photos: string[] }) {
 
   const move = (e: React.MouseEvent, dir: 1 | -1) => {
     e.preventDefault(); e.stopPropagation()
-    setIdx((i) => (i + dir + slides.length) % slides.length)
+    goTo((idx + dir + slides.length) % slides.length)
   }
 
   return (
@@ -74,7 +83,7 @@ function CollectionCard({ c, photos }: { c: Collection; photos: string[] }) {
             <div
               key={i}
               className="cc-slide"
-              style={usingPhotos ? { backgroundImage: `url('${s}')` } : { background: s }}
+              style={usingPhotos ? (i <= loadedUpTo ? { backgroundImage: `url('${s}')` } : undefined) : { background: s }}
               {...(usingPhotos ? { role: 'img', 'aria-label': `${c.name} — photo ${i + 1}` } : { 'aria-hidden': true })}
             />
           ))}
@@ -88,7 +97,7 @@ function CollectionCard({ c, photos }: { c: Collection; photos: string[] }) {
                 <span
                   key={i}
                   className={`cc-dot${i === idx ? ' cc-dot-active' : ''}`}
-                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIdx(i) }}
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); goTo(i) }}
                 />
               ))}
             </div>

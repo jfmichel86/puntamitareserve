@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { preconnect } from 'react-dom'
 import { Cormorant_Garamond, Inter } from 'next/font/google'
 import './globals.css'
 import Nav from '@/components/Nav'
@@ -64,6 +65,12 @@ export const metadata: Metadata = {
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  // Speed: nearly every photo on the site comes from Sanity's image server.
+  // This tells the browser to open that connection right away, while it's
+  // still reading the page, instead of waiting until it finds the first
+  // photo — saves roughly half a second on slow mobile connections.
+  preconnect('https://cdn.sanity.io')
+
   return (
     <html lang="en" className={`${cormorant.variable} ${inter.variable}`}>
       <body>
