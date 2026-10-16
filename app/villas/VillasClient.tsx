@@ -1,0 +1,907 @@
+'use client'
+
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react'
+import { useSearchParams } from 'next/navigation'
+import PropertyCard from '@/components/PropertyCard'
+import {
+  Property, startingRate, totalGuests, hasPool,
+  destinationOf, communityLabel, DEST_LABELS, COLL_NAMES, LOC_TYPE_LABELS, VIEW_LABELS,
+} from '@/lib/utils'
+
+const PAGE_SIZE = 9
+
+interface FilterState {
+  destination: string
+  guests: { adults: number; children: number; infants: number }
+  beds: number
+  // Optional upper bound paired with `beds` — 0 means no cap. Only ever set
+  // via URL (the "Intimate Properties" destination-page tile links with
+  // both beds=2&bedsMax=4); picking a Bedrooms option manually always
+  // clears it, since the dropdown itself has no UI for entering a max.
+  bedsMax: number
+  price: string
+  pool: boolean
+  // 4+ staff roles (housekeeper, chef, butler, concierge, etc.) — mirrors
+  // the "Fully Staffed" tile on the redesigned destination pages.
+  staff: boolean
+  // type, locationType, and collection are multi-select (like views below) —
+  // an empty array means "any", picking one or more narrows to just those.
+  type: string[]
+  locationType: string[]
+  views: string[]
+  collection: string[]
+  // Multi-select, same as type/locationType/collection above.
+  community: string[]
+  featured: boolean
+  sort: string
+  // Free-text search, set only via the nav bar's search field
+  // (/villas?q=...) — matched against villa name, community, and
+  // destination. Never has its own UI control on this page, only the
+  // "Clear" on its active-chip and the sitewide "Clear" button.
+  q: string
+}
+
+const DEFAULT_FILTERS: FilterState = {
+  destination: '',
+  guests: { adults: 0, children: 0, infants: 0 },
+  beds: 0,
+  bedsMax: 0,
+  price: '',
+  pool: false,
+  staff: false,
+  type: [],
+  locationType: [],
+  views: [],
+  collection: [],
+  community: [],
+  featured: false,
+  sort: 'popular',
+  q: '',
+}
+
+// Matches the threshold used by the destination page's "Fully Staffed" tile.
+const FULLY_STAFFED_MIN = 4
+
+const PRICE_RANGES: Record<string, [number, number]> = {
+  '0-1000':    [0, 1000],
+  '1001-2500': [1001, 2500],
+  '2501-5000': [2501, 5000],
+  '5001-8000': [5001, 8000],
+  '8001+':     [8001, Infinity],
+}
+
+// Location-type drawer chip slug -> the actual viewsAndPool value it checks for.
+// Only "golf-course" differs from its own slug (stored as "golf-course-view").
+const LOC_TYPE_VIEW_MAP: Record<string, string> = {
+  oceanfront: 'oceanfront',
+  beachfront: 'beachfront',
+  'golf-course': 'golf-course-view',
+  hillside: 'hillside',
+}
+
+// A "hide when zero" formatter — the original site leaves the count badge
+// blank rather than showing "0" next to a filter option.
+const cnt = (n: number) => (n > 0 ? n : '')
+
+type CountOverrides = Partial<{
+  destination: string
+  community: string[]
+  beds: number
+  bedsMax: number
+  price: string
+  type: string[]
+  collection: string[]
+  pool: boolean
+  staff: boolean
+  locationType: string[]
+  views: string[]
+  featured: boolean
+  q: string
+}>
+
+// Reads the filter-relevant fields straight off a URLSearchParams object —
+// shared by the initial mount AND by the resync-on-navigation logic below,
+// so both stay in lockstep with whatever the URL actually says.
+function filtersFromParams(searchParams: URLSearchParams): FilterState {
+  return {
+    ...DEFAULT_FILTERS,
+    destination: searchParams.get('destination') || '',
+    community: searchParams.getAll('community'),
+    collection: searchParams.getAll('collection'),
+    price: searchParams.get('price') || '',
+    beds: Number(searchParams.get('beds')) || 0,
+    bedsMax: Number(searchParams.get('bedsMax')) || 0,
+    pool: searchParams.get('pool') === '1',
+    staff: searchParams.get('staff') === '1',
+    featured: searchParams.get('featured') === '1',
+    q: searchParams.get('q') || '',
+    views: searchParams.getAll('view'),
+    guests: {
+      adults: Number(searchParams.get('adults')) || 0,
+      children: Number(searchParams.get('children')) || 0,
+      infants: Number(searchParams.get('infants')) || 0,
+    },
+    type: searchParams.getAll('type'),
+    locationType: searchParams.getAll('locationType'),
+    sort: searchParams.get('sort') || 'popular',
+  }
+}
+
+// The exact inverse of filtersFromParams — turns the live in-page filter
+// state back into a URL query string. This page never pushes filter clicks
+// into the browser's own address bar (see the searchKey/syncedKey dance
+// above — the URL here is only ever the *entry point*, not a live mirror of
+// `filters`), so this is the only place that knows what's currently active.
+// Used to stamp each property card's link with "?from=..." so the detail
+// page's "Results" breadcrumb can rebuild this exact filtered view.
+function filtersToQueryString(f: FilterState): string {
+  const p = new URLSearchParams()
+  if (f.destination) p.set('destination', f.destination)
+  f.community.forEach((c) => p.append('community', c))
+  f.collection.forEach((c) => p.append('collection', c))
+  if (f.price) p.set('price', f.price)
+  if (f.beds) p.set('beds', String(f.beds))
+  if (f.bedsMax) p.set('bedsMax', String(f.bedsMax))
+  if (f.pool) p.set('pool', '1')
+  if (f.staff) p.set('staff', '1')
+  if (f.featured) p.set('featured', '1')
+  if (f.q) p.set('q', f.q)
+  f.views.forEach((v) => p.append('view', v))
+  if (f.guests.adults) p.set('adults', String(f.guests.adults))
+  if (f.guests.children) p.set('children', String(f.guests.children))
+  if (f.guests.infants) p.set('infants', String(f.guests.infants))
+  f.type.forEach((t) => p.append('type', t))
+  f.locationType.forEach((l) => p.append('locationType', l))
+  if (f.sort && f.sort !== 'popular') p.set('sort', f.sort)
+  return p.toString()
+}
+
+export default function VillasClient({ properties }: { properties: Property[] }) {
+  const searchParams = useSearchParams()
+
+  // Pick up filters passed via URL (from homepage collection cards / search bar
+  // / header Properties dropdown), computed once up front — the URL is known
+  // at render time, so no effect needed for the initial mount.
+  const [filters, setFilters] = useState<FilterState>(() => filtersFromParams(searchParams))
+
+  // This page doesn't unmount when you click another Properties link while
+  // already on /villas — it's the same route, just a new query string — so
+  // without this, the useState initializer above only ever ran once and the
+  // filters would silently keep showing whatever was selected first. Adjusting
+  // state during render (React's recommended pattern for "sync state to a
+  // changed prop") re-reads the filters every time the URL search params
+  // actually change, without disturbing in-page filter clicks, which never
+  // touch the URL at all.
+  const searchKey = searchParams.toString()
+  const [syncedKey, setSyncedKey] = useState(searchKey)
+  if (searchKey !== syncedKey) {
+    setSyncedKey(searchKey)
+    setFilters(filtersFromParams(searchParams))
+  }
+
+  const [openPanel, setOpenPanel] = useState<string | null>(null)
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
+  const [flVisible, setFlVisible] = useState(false)
+  // Which destination's community accordion is expanded (null = none open).
+  // Replaces a single always-visible "Any community" dropdown — each
+  // destination gets its own small, self-contained list instead of one
+  // combined list mixing every destination's communities together.
+  const [openCommGroup, setOpenCommGroup] = useState<string | null>(null)
+  // Nightly Rate inside the drawer — its own open state, separate from the
+  // bar's openPanel, since this dropdown lives in a completely different
+  // part of the page (the drawer) with no shared positioning/outside-click
+  // logic to piggyback on.
+  const [mfPriceOpen, setMfPriceOpen] = useState(false)
+  // Sort control on the results row (see .results-bar in the JSX below,
+  // now its home at every width) — its own open state and outside-click
+  // handling, same reasoning as mfPriceOpen just above: it lives in a
+  // different part of the page than the filter bar's openPanel/closeAll,
+  // with no shared positioning logic to piggyback on.
+  const [sortMenuOpen, setSortMenuOpen] = useState(false)
+  const sortMenuRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!sortMenuOpen) return
+    const handleClickOutside = (e: MouseEvent) => {
+      if (sortMenuRef.current && !sortMenuRef.current.contains(e.target as Node)) setSortMenuOpen(false)
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [sortMenuOpen])
+  const filterBarRef = useRef<HTMLDivElement>(null)
+
+  // Auto-loads the next batch as the "Show more properties" wrap scrolls
+  // near the bottom of the viewport, so browsing a large portfolio doesn't
+  // mean repeatedly clicking the same button — the button itself stays as
+  // a visible fallback (keyboard/screen-reader users, or anyone who'd
+  // rather click). A callback ref (not a plain useRef) is required here:
+  // this wrap unmounts once every property is loaded, and React only calls
+  // a callback ref again — with the fresh node, or null on unmount — it
+  // won't re-fire a plain ref for us to notice the swap.
+  const loadMoreObserverRef = useRef<IntersectionObserver | null>(null)
+  const loadMoreSentinelRef = useCallback((node: HTMLDivElement | null) => {
+    loadMoreObserverRef.current?.disconnect()
+    loadMoreObserverRef.current = null
+    if (!node) return
+    loadMoreObserverRef.current = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) setVisibleCount((c) => c + PAGE_SIZE) },
+      { rootMargin: '0px 0px 600px 0px' } // starts loading ~600px before it'd actually be reached
+    )
+    loadMoreObserverRef.current.observe(node)
+  }, [])
+
+  // Floating "All Filters" button: shown once the filter bar scrolls out of view.
+  useEffect(() => {
+    const el = filterBarRef.current
+    if (!el) return
+    const obs = new IntersectionObserver(([entry]) => setFlVisible(!entry.isIntersecting), {
+      threshold: 0, rootMargin: '0px 0px 0px 0px',
+    })
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [])
+
+  // .filter-bar's sticky top was a hardcoded 92px in CSS, matching the main
+  // nav's usual height — but that height isn't actually constant (it grows
+  // when the wishlist count is showing, wraps on some widths), so on any
+  // screen where the real nav differed from 92px, this bar stuck either too
+  // low (a gap of page content showing above it, under the nav) or partly
+  // hidden under the nav. Same fix as AnchorNav.tsx: measure the real nav
+  // height and keep this bar pinned to it exactly, on every screen.
+  useEffect(() => {
+    const navEl = document.querySelector('.nav') as HTMLElement | null
+    const barEl = filterBarRef.current
+    if (!navEl || !barEl) return
+    const sync = () => { barEl.style.top = `${navEl.getBoundingClientRect().height}px` }
+    sync()
+    const ro = new ResizeObserver(sync)
+    ro.observe(navEl)
+    return () => ro.disconnect()
+  }, [])
+
+  const toggle = (key: string) => setOpenPanel((p) => (p === key ? null : key))
+  const closeAll = () => setOpenPanel(null)
+
+  // Displayed/active-state guest count includes infants; the actual capacity
+  // match does not, since infants don't count toward a property's guest capacity.
+  const totalGuestCount = filters.guests.adults + filters.guests.children + filters.guests.infants
+  const guestCapacityCount = filters.guests.adults + filters.guests.children
+
+  // Core match test — takes the live filters, with optional per-category overrides.
+  // Reused both for the actual result list and for the "faceted" counts shown next
+  // to each filter option (how many properties WOULD match if that option were picked,
+  // holding every other active filter constant) — mirrors the original site's countFor().
+  const matchList = (overrides: CountOverrides) => {
+    const destVal     = overrides.destination   !== undefined ? overrides.destination   : filters.destination
+    const commVal     = overrides.community     !== undefined ? overrides.community     : filters.community
+    const bedsVal     = overrides.beds          !== undefined ? overrides.beds          : filters.beds
+    const bedsMaxVal  = overrides.bedsMax       !== undefined ? overrides.bedsMax       : filters.bedsMax
+    const priceVal    = overrides.price         !== undefined ? overrides.price         : filters.price
+    const typeVal     = overrides.type          !== undefined ? overrides.type          : filters.type
+    const collVal     = overrides.collection    !== undefined ? overrides.collection    : filters.collection
+    const poolVal     = overrides.pool          !== undefined ? overrides.pool          : filters.pool
+    const staffVal    = overrides.staff         !== undefined ? overrides.staff         : filters.staff
+    const locTypeVal  = overrides.locationType  !== undefined ? overrides.locationType  : filters.locationType
+    const effViews    = overrides.views         !== undefined ? overrides.views         : filters.views
+    const featuredVal = overrides.featured      !== undefined ? overrides.featured      : filters.featured
+    const qVal        = overrides.q             !== undefined ? overrides.q             : filters.q
+    const ltEffective = locTypeVal.map((lt) => LOC_TYPE_VIEW_MAP[lt])
+    const range = priceVal ? PRICE_RANGES[priceVal] : null
+    const qNorm = qVal.trim().toLowerCase()
+
+    return properties.filter((p) => {
+      const g = totalGuests(p)
+      const r = startingRate(p) ?? 0
+      // Search matches villa name, community, and destination — a simple
+      // substring test (no fuzzy matching/typo tolerance yet) against
+      // whatever came in on ?q= from the nav bar's search field.
+      const dest = destinationOf(p)
+      const haystack = `${p.title} ${communityLabel(p)} ${dest ? DEST_LABELS[dest] : ''}`.toLowerCase()
+      return (
+        (!destVal || destinationOf(p) === destVal) &&
+        (commVal.length === 0 || commVal.includes(p.communityPuntaMita || '') || commVal.includes(p.communityPuntaDeMita || '')) &&
+        (guestCapacityCount === 0 || g >= guestCapacityCount) &&
+        (bedsVal === 0 || p.bedrooms >= bedsVal) &&
+        (bedsMaxVal === 0 || p.bedrooms <= bedsMaxVal) &&
+        (!range || (r >= range[0] && r <= range[1])) &&
+        (typeVal.length === 0 || typeVal.includes(p.propertyType)) &&
+        (effViews.length === 0 || effViews.some((v) => (p.viewsAndPool || []).includes(v))) &&
+        (collVal.length === 0 || collVal.some((c) => (p.collection || []).includes(c))) &&
+        (!poolVal || hasPool(p)) &&
+        (!staffVal || (p.staffServices?.length || 0) >= FULLY_STAFFED_MIN) &&
+        (!featuredVal || !!p.featured) &&
+        (ltEffective.length === 0 || ltEffective.some((lt) => (p.viewsAndPool || []).includes(lt))) &&
+        (!qNorm || haystack.includes(qNorm))
+      )
+    })
+  }
+
+  const countFor = (overrides: CountOverrides) => matchList(overrides).length
+
+  const filtered = useMemo(() => {
+    const list = matchList({})
+    return list.sort((a, b) => {
+      if (filters.sort === 'price-asc')  return (startingRate(a) ?? 0) - (startingRate(b) ?? 0)
+      if (filters.sort === 'price-desc') return (startingRate(b) ?? 0) - (startingRate(a) ?? 0)
+      if (filters.sort === 'beds-desc')  return b.bedrooms - a.bedrooms
+      return 0
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [properties, filters, guestCapacityCount])
+
+  const visible = filtered.slice(0, visibleCount)
+
+  // Recomputed on every render (cheap — a handful of string checks) rather
+  // than memoized, since it needs to reflect `filters` immediately with no
+  // risk of a stale dependency array falling out of sync.
+  const resultsQuery = filtersToQueryString(filters)
+
+  // Communities grouped by destination, built from whatever properties actually exist
+  const communitiesByDest = useMemo(() => {
+    const map: Record<string, Set<string>> = { 'punta-mita': new Set(), 'punta-de-mita': new Set() }
+    properties.forEach((p) => {
+      if (p.communityPuntaMita) map['punta-mita'].add(p.communityPuntaMita)
+      if (p.communityPuntaDeMita) map['punta-de-mita'].add(p.communityPuntaDeMita)
+    })
+    return map
+  }, [properties])
+
+  const guestStep = (type: 'adults' | 'children' | 'infants', dir: 1 | -1) => {
+    setFilters((f) => ({
+      ...f,
+      guests: { ...f.guests, [type]: Math.max(0, f.guests[type] + dir) },
+    }))
+  }
+
+  // Was hardcoded to 8 — that silently capped the filter below whatever the
+  // biggest actual property has (12 bedrooms today), so someone looking for
+  // a 9-12 bedroom estate could never select high enough. Now it reads the
+  // real ceiling straight from the data, so it's correct even as new,
+  // bigger (or smaller-maxed) properties get added later.
+  const maxBedrooms = useMemo(
+    () => properties.reduce((max, p) => Math.max(max, p.bedrooms || 0), 0),
+    [properties]
+  )
+
+  // Same stepper pattern as guests — 0 reads as "Any", maxBedrooms is the
+  // top of the range. Clears bedsMax on every step since that field is a
+  // deep-link-only range (?beds=2&bedsMax=4) with no UI control of its own;
+  // touching the stepper always means the person wants a plain "N+
+  // bedrooms" filter again.
+  const bedsStep = (dir: 1 | -1) => {
+    setFilters((f) => ({ ...f, beds: Math.max(0, Math.min(maxBedrooms, f.beds + dir)), bedsMax: 0 }))
+  }
+
+  const toggleView = (v: string) => {
+    setFilters((f) => ({
+      ...f,
+      views: f.views.includes(v) ? f.views.filter((x) => x !== v) : [...f.views, v],
+    }))
+  }
+
+  const clearAll = () => { setFilters(DEFAULT_FILTERS); closeAll(); setVisibleCount(PAGE_SIZE) }
+
+  const hasActiveFilters =
+    filters.destination || totalGuestCount > 0 || filters.beds || filters.price || filters.pool || filters.staff ||
+    filters.type.length > 0 || filters.locationType.length > 0 || filters.views.length > 0 ||
+    filters.collection.length > 0 || filters.community.length > 0 || filters.featured || filters.q
+
+  const activeChips: { label: string; clear: () => void }[] = []
+  if (filters.q) activeChips.push({ label: `"${filters.q}"`, clear: () => setFilters((f) => ({ ...f, q: '' })) })
+  if (filters.destination) activeChips.push({ label: DEST_LABELS[filters.destination], clear: () => setFilters((f) => ({ ...f, destination: '' })) })
+  if (totalGuestCount > 0) activeChips.push({ label: `${totalGuestCount} guests`, clear: () => setFilters((f) => ({ ...f, guests: DEFAULT_FILTERS.guests })) })
+  if (filters.beds) activeChips.push({
+    label: filters.bedsMax ? `${filters.beds}-${filters.bedsMax} bedrooms` : `${filters.beds}+ bedrooms`,
+    clear: () => setFilters((f) => ({ ...f, beds: 0, bedsMax: 0 })),
+  })
+  if (filters.price) activeChips.push({ label: 'Price range', clear: () => setFilters((f) => ({ ...f, price: '' })) })
+  if (filters.pool) activeChips.push({ label: 'Private pool', clear: () => setFilters((f) => ({ ...f, pool: false })) })
+  if (filters.staff) activeChips.push({ label: 'Fully staffed', clear: () => setFilters((f) => ({ ...f, staff: false })) })
+  if (filters.featured) activeChips.push({ label: 'Favorites', clear: () => setFilters((f) => ({ ...f, featured: false })) })
+  const typeLabels: Record<string, string> = { villa: 'Villa', condo: 'Condo', estate: 'Estate' }
+  filters.type.forEach((t) => activeChips.push({
+    label: typeLabels[t] || t,
+    clear: () => setFilters((f) => ({ ...f, type: f.type.filter((x) => x !== t) })),
+  }))
+  filters.locationType.forEach((lt) => activeChips.push({
+    label: LOC_TYPE_LABELS[lt] || lt,
+    clear: () => setFilters((f) => ({ ...f, locationType: f.locationType.filter((x) => x !== lt) })),
+  }))
+  filters.views.forEach((v) => activeChips.push({ label: VIEW_LABELS[v] || v, clear: () => toggleView(v) }))
+  filters.collection.forEach((c) => activeChips.push({
+    label: COLL_NAMES[c] || c,
+    clear: () => setFilters((f) => ({ ...f, collection: f.collection.filter((x) => x !== c) })),
+  }))
+  filters.community.forEach((c) => activeChips.push({
+    label: communityLabelFromSlug(c),
+    clear: () => setFilters((f) => ({ ...f, community: f.community.filter((x) => x !== c) })),
+  }))
+
+  // Count of active filters that live only in the "More Filters" drawer
+  // (mirrors the original site's mf-badge / fl-badge count formula).
+  // Pool + Staffed now count toward the badge too — they used to have their
+  // own visible chips in the bar (an active chip was its own indicator), but
+  // now that they only live inside this drawer, the "All Filters" badge is
+  // the only place a person would see that one of them is switched on.
+  const drawerFilterCount =
+    filters.community.length + filters.type.length + filters.views.length +
+    filters.collection.length + filters.locationType.length +
+    (filters.pool ? 1 : 0) + (filters.staff ? 1 : 0)
+
+  function communityLabelFromSlug(slug: string) {
+    const found = properties.find((p) => p.communityPuntaMita === slug || p.communityPuntaDeMita === slug)
+    return found ? communityLabel(found) : slug
+  }
+
+  // Drives the page header below — reads the same filters.destination state
+  // the filter bar itself uses, so the headline stays truthful whether the
+  // destination came in on the URL (a shared link) or was picked from the
+  // dropdown a moment ago. Previously this text was hardcoded to "Punta
+  // Mita" in page.tsx no matter what was actually selected.
+  const heroDestLabel = filters.destination ? DEST_LABELS[filters.destination] : null
+
+  return (
+    <>
+      {/* Page header */}
+      <section className="pg-header">
+        <p className="pg-eyebrow">{heroDestLabel ?? 'All Destinations'} · México</p>
+        <h1 className="pg-title">All Properties in <em>{heroDestLabel ?? 'México'}</em></h1>
+        <p className="pg-sub">Every home we represent, personally curated — reach out and we&rsquo;ll handle the rest.</p>
+      </section>
+
+      {/* FILTER BAR */}
+      <div className="filter-bar" ref={filterBarRef} onClick={(e) => { if (e.target === e.currentTarget) closeAll() }}>
+        <div className="fb-inner">
+
+          {/* Destination */}
+          <div className={`ff ff-destination${filters.destination ? ' is-active' : ''}${openPanel === 'destination' ? ' is-open' : ''}`}>
+            <button className="ff-trigger" onClick={() => toggle('destination')}>
+              <span className="ff-val">{filters.destination ? DEST_LABELS[filters.destination] : 'Destination'}</span>
+              <span className="ff-dot" />
+              <svg className="ff-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div className="ff-panel">
+              {/* Switching destinations always clears any selected Community too —
+                  a community picked under one destination is meaningless (and
+                  would silently zero out the results) once a different
+                  destination is active. */}
+              <div className={`ff-opt${!filters.destination ? ' is-sel' : ''}`} onClick={() => { setFilters((f) => ({ ...f, destination: '', community: [] })); closeAll() }}>
+                All destinations <span className="opt-count">{cnt(countFor({ destination: '' }))}</span>
+              </div>
+              <div className={`ff-opt${filters.destination === 'punta-mita' ? ' is-sel' : ''}`} onClick={() => { setFilters((f) => ({ ...f, destination: 'punta-mita', community: [] })); closeAll() }}>
+                Punta Mita <span className="opt-count">{cnt(countFor({ destination: 'punta-mita' }))}</span>
+              </div>
+              <div className={`ff-opt${filters.destination === 'punta-de-mita' ? ' is-sel' : ''}`} onClick={() => { setFilters((f) => ({ ...f, destination: 'punta-de-mita', community: [] })); closeAll() }}>
+                Punta de Mita <span className="opt-count">{cnt(countFor({ destination: 'punta-de-mita' }))}</span>
+              </div>
+              <div className={`ff-opt${filters.destination === 'puerto-vallarta' ? ' is-sel' : ''}`} onClick={() => { setFilters((f) => ({ ...f, destination: 'puerto-vallarta', community: [] })); closeAll() }}>
+                Puerto Vallarta <span className="opt-count">{cnt(countFor({ destination: 'puerto-vallarta' }))}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="fb-sep" />
+
+          {/* Guests stepper */}
+          <div className={`ff ff-guests${totalGuestCount ? ' is-active' : ''}${openPanel === 'guests' ? ' is-open' : ''}`}>
+            <button className="ff-trigger" onClick={() => toggle('guests')}>
+              <span className="ff-val">{totalGuestCount ? `${totalGuestCount} guests` : 'Guests'}</span>
+              <span className="ff-dot" />
+              <svg className="ff-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div className="ff-panel">
+              {([['adults', 'Adults', 'Ages 13+'], ['children', 'Children', 'Ages 2–13'], ['infants', 'Infants', 'Ages 0–1']] as const).map(([key, label, age]) => (
+                <div className="g-row" key={key}>
+                  <div className="g-info">
+                    <div className="g-type">{label}</div>
+                    <div className="g-age">{age}</div>
+                  </div>
+                  <div className="g-counter">
+                    <button className="ctr-btn" type="button" disabled={filters.guests[key] === 0} onClick={() => guestStep(key, -1)}>−</button>
+                    <span className="ctr-val">{filters.guests[key]}</span>
+                    <button className="ctr-btn" type="button" onClick={() => guestStep(key, 1)}>+</button>
+                  </div>
+                </div>
+              ))}
+              <div className="g-done-row">
+                <button className="g-clear-btn" onClick={() => setFilters((f) => ({ ...f, guests: DEFAULT_FILTERS.guests }))}>Clear</button>
+                <button className="g-done-btn" onClick={closeAll}>Done</button>
+              </div>
+            </div>
+          </div>
+
+          <div className="fb-sep" />
+
+          {/* Bedrooms — no dropdown at all (Francisco's call): the stepper
+              sits directly in the bar as its own compact control, same
+              visual weight as the .ff-chip toggles (Pool, Staffed), instead
+              of hiding behind a click-to-open trigger. The "Bedrooms" label
+              stays put as a constant caption — only the number in the
+              middle changes — rather than the whole label swapping to
+              "3+ bedrooms" text, which read like a second, different label
+              fighting with the +/- buttons for attention. */}
+          <div className={`ff-beds-inline${filters.beds ? ' is-active' : ''}`}>
+            <span className="fbi-label">Bedrooms</span>
+            <button className="fbi-btn" type="button" aria-label="Fewer bedrooms" disabled={filters.beds === 0} onClick={() => bedsStep(-1)}>−</button>
+            <span className="fbi-val">
+              {filters.beds === 0 ? 'Any' : (filters.bedsMax ? `${filters.beds}-${filters.bedsMax}` : filters.beds)}
+            </span>
+            <button className="fbi-btn" type="button" aria-label="More bedrooms" disabled={filters.beds === maxBedrooms} onClick={() => bedsStep(1)}>+</button>
+          </div>
+
+          <div className="fb-sep" />
+
+          {/* Nightly rate */}
+          <div className={`ff ff-price${filters.price ? ' is-active' : ''}${openPanel === 'price' ? ' is-open' : ''}`}>
+            <button className="ff-trigger" onClick={() => toggle('price')}>
+              <span className="ff-val">
+                {{ '': 'Nightly Rate', '0-1000': 'Up to $1,000', '1001-2500': '$1,001 – $2,500', '2501-5000': '$2,501 – $5,000', '5001-8000': '$5,001 – $8,000', '8001+': '$8,001+' }[filters.price]}
+              </span>
+              <span className="ff-dot" />
+              <svg className="ff-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div className="ff-panel">
+              {[
+                ['', 'Any price'],
+                ['0-1000', 'Up to $1,000 / night'],
+                ['1001-2500', '$1,001 – $2,500 / night'],
+                ['2501-5000', '$2,501 – $5,000 / night'],
+                ['5001-8000', '$5,001 – $8,000 / night'],
+                ['8001+', '$8,001+ / night'],
+              ].map(([v, l]) => (
+                <div key={v} className={`ff-opt${filters.price === v ? ' is-sel' : ''}`} onClick={() => { setFilters((f) => ({ ...f, price: v })); closeAll() }}>{l}</div>
+              ))}
+            </div>
+          </div>
+
+          <div className="fb-sep" />
+
+          {/* Pool and Staffed chips were removed from the inline bar
+              (Francisco's call — too crowded with Destination, Guests,
+              Bedrooms, Nightly Rate, Favorites and All Filters all in one
+              row already). Both filters still live in the "All Filters"
+              drawer's Amenities section below, which is no longer
+              mobile-only now that it's the only way to reach them on any
+              screen size. */}
+
+          {/* Guests' Favorites (featured) chip stays — the highest-
+              commission properties, worth a permanent one-tap pill rather
+              than being buried in All Filters like Pool/Staffed now are. */}
+          <button className={`ff-chip ff-chip-favorite${filters.featured ? ' is-active' : ''}`} onClick={() => setFilters((f) => ({ ...f, featured: !f.featured }))}>
+            <svg viewBox="0 0 24 24" strokeLinejoin="round"><polygon points="12 3 14.8 8.7 21 9.6 16.5 13.9 17.6 20 12 17 6.4 20 7.5 13.9 3 9.6 9.2 8.7"/></svg>
+            Favorites
+          </button>
+
+          {/* More Filters */}
+          <button className={`mf-btn${drawerFilterCount > 0 ? ' is-active' : ''}`} onClick={() => setDrawerOpen(true)}>
+            <svg viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+            All Filters
+            {drawerFilterCount > 0 && <span className="mf-badge">{drawerFilterCount}</span>}
+          </button>
+
+          {/* Sort used to live here, as the bar's trailing control — moved
+              out entirely (both mobile and desktop now, per Francisco
+              2026-08-10) onto the results row next to "Showing N
+              properties" instead (search "Sort — now lives here" below).
+              It reorders what's already showing rather than narrowing it,
+              so grouping it with the real filters read as "one more
+              filter," which it isn't. */}
+
+          {hasActiveFilters && (
+            <button className="fb-clear visible" onClick={clearAll}>
+              <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              Clear
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* MORE FILTERS DRAWER */}
+      <div className={`mf-overlay${drawerOpen ? ' open' : ''}`} onClick={() => setDrawerOpen(false)} />
+      <div className={`mf-drawer${drawerOpen ? ' open' : ''}`}>
+        <div className="mf-header">
+          <span className="mf-title">Filters</span>
+          <button className="mf-close" onClick={() => setDrawerOpen(false)} aria-label="Close filters">
+            <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div className="mf-body">
+          {/* Bedrooms / Nightly Rate — mobile-only (hidden on desktop via
+              CSS, .mf-mobile-only), reusing the exact same filters.beds/
+              price state as their inline desktop-only counterparts in the
+              top bar. On a phone, showing all the top-bar controls inline
+              made the filter bar taller than the first property card;
+              moving these into the drawer (which already exists and
+              already works well as a full-height panel) keeps only
+              Destination, Guests, Filters and Sort visible up front. */}
+          {/* Bedrooms + Nightly Rate share one row (Francisco's call — best
+              use of the drawer's width, instead of two full-width rows for
+              two fairly compact controls). Splitting the row in half also
+              naturally fixes the Nightly Rate dropdown reading as "very
+              wide" — its trigger now only spans one column, matching
+              Bedrooms' width, and just the open panel is allowed to grow
+              wider than that column (see .mf-dd-wrap below) since a 2-line
+              price label squeezed into a half-width column would wrap
+              awkwardly otherwise. */}
+          <div className="mf-section mf-mobile-only mf-section-row">
+            <div className="mf-section-col">
+              <div className="mf-section-title">Bedrooms</div>
+              <div className="mf-stepper">
+                <button className="fbi-btn" type="button" aria-label="Fewer bedrooms" disabled={filters.beds === 0} onClick={() => bedsStep(-1)}>−</button>
+                <span className="fbi-val">
+                  {filters.beds === 0 ? 'Any' : (filters.bedsMax ? `${filters.beds}-${filters.bedsMax}` : filters.beds)}
+                </span>
+                <button className="fbi-btn" type="button" aria-label="More bedrooms" disabled={filters.beds === maxBedrooms} onClick={() => bedsStep(1)}>+</button>
+              </div>
+            </div>
+
+            {/* A real dropdown, not pills (Francisco's call) — six price
+                bands read more naturally as one menu than as a row of
+                buttons that wrap across multiple lines. Built from the
+                site's own dropdown parts (.ct-dd-trigger/.ct-dd-panel/
+                .ct-dd-opt, the same ones the Contact page's Bedrooms/Budget
+                fields already use) rather than a native <select> — a native
+                select's open menu is rendered by the OS, not the browser,
+                so it can't be restyled at all and always looks like a plain
+                system control dropped into an otherwise fully custom
+                design. This version matches every other dropdown on the
+                site instead. */}
+            <div className="mf-section-col">
+              <div className="mf-section-title">Nightly Rate</div>
+              <div className="mf-dd-wrap">
+                <button className={`ct-dd-trigger${mfPriceOpen ? ' is-open' : ''}`} type="button" onClick={() => setMfPriceOpen((o) => !o)}>
+                  <span className="ct-dd-val">
+                    {{ '': 'Any', '0-1000': 'Up to $1,000', '1001-2500': '$1,001 – $2,500', '2501-5000': '$2,501 – $5,000', '5001-8000': '$5,001 – $8,000', '8001+': '$8,001+' }[filters.price]}
+                  </span>
+                  <svg className="ff-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9" /></svg>
+                </button>
+                {mfPriceOpen && (
+                  <div className="ct-dd-panel">
+                    {[
+                      ['', 'Any'],
+                      ['0-1000', 'Up to $1,000'],
+                      ['1001-2500', '$1,001 – $2,500'],
+                      ['2501-5000', '$2,501 – $5,000'],
+                      ['5001-8000', '$5,001 – $8,000'],
+                      ['8001+', '$8,001+'],
+                    ].map(([v, l]) => (
+                      <div key={v} className={`ct-dd-opt${filters.price === v ? ' is-sel' : ''}`} onClick={() => { setFilters((f) => ({ ...f, price: v })); setMfPriceOpen(false) }}>
+                        {l}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Amenities — NOT mobile-only. Pool and Staffed used to have
+              their own inline chips in the desktop bar; those were removed
+              (Francisco's call, too crowded alongside Destination, Guests,
+              Bedrooms, Nightly Rate and Favorites) so this drawer section
+              is now the only place to reach them, on every screen size. */}
+          <div className="mf-section">
+            <div className="mf-section-title">Amenities</div>
+            <label className="mf-check">
+              <input type="checkbox" checked={filters.pool} onChange={() => setFilters((f) => ({ ...f, pool: !f.pool }))} />
+              <span>Private pool</span>
+            </label>
+            <label className="mf-check">
+              <input type="checkbox" checked={filters.staff} onChange={() => setFilters((f) => ({ ...f, staff: !f.staff }))} />
+              <span>Fully staffed</span>
+            </label>
+          </div>
+
+          <div className="mf-section">
+            <div className="mf-section-title">Property Type</div>
+            <div className="mf-type-chips">
+              {/* "All" clears the whole group back to "any type" — every
+                  other pill toggles independently, so more than one can be
+                  active at once (e.g. Villa + Estate, but not Condo). */}
+              <button className={`mf-type-chip${filters.type.length === 0 ? ' is-sel' : ''}`} onClick={() => setFilters((f) => ({ ...f, type: [] }))}>
+                All
+              </button>
+              {[['villa', 'Villa'], ['condo', 'Condo'], ['estate', 'Estate']].map(([v, l]) => (
+                <button
+                  key={v}
+                  className={`mf-type-chip${filters.type.includes(v) ? ' is-sel' : ''}`}
+                  onClick={() => setFilters((f) => ({ ...f, type: f.type.includes(v) ? f.type.filter((x) => x !== v) : [...f.type, v] }))}
+                >
+                  {l}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="mf-section">
+            <div className="mf-section-title">Location</div>
+            <div className="mf-coll-chips">
+              <button className={`mf-coll-chip${filters.locationType.length === 0 ? ' is-sel' : ''}`} onClick={() => setFilters((f) => ({ ...f, locationType: [] }))}>
+                All
+              </button>
+              {[['oceanfront', 'Oceanfront'], ['beachfront', 'Beachfront'], ['golf-course', 'Golf Course'], ['hillside', 'Hillside']].map(([v, l]) => (
+                <button
+                  key={v}
+                  className={`mf-coll-chip${filters.locationType.includes(v) ? ' is-sel' : ''}`}
+                  onClick={() => setFilters((f) => ({ ...f, locationType: f.locationType.includes(v) ? f.locationType.filter((x) => x !== v) : [...f.locationType, v] }))}
+                >
+                  {l}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="mf-section">
+            <div className="mf-section-title">Views</div>
+            {[['ocean-view', 'Ocean View'], ['golf-course-view', 'Golf Course View']].map(([v, l]) => (
+              <label className="mf-check" key={v}>
+                <input type="checkbox" checked={filters.views.includes(v)} onChange={() => toggleView(v)} />
+                <span>{l}</span>
+              </label>
+            ))}
+          </div>
+
+          <div className="mf-section">
+            <div className="mf-section-title">Collections</div>
+            <div className="mf-coll-chips">
+              <button className={`mf-coll-chip${filters.collection.length === 0 ? ' is-sel' : ''}`} onClick={() => setFilters((f) => ({ ...f, collection: [] }))}>
+                All
+              </button>
+              {Object.entries(COLL_NAMES).map(([v, l]) => (
+                <button
+                  key={v}
+                  className={`mf-coll-chip${filters.collection.includes(v) ? ' is-sel' : ''}`}
+                  onClick={() => setFilters((f) => ({ ...f, collection: f.collection.includes(v) ? f.collection.filter((x) => x !== v) : [...f.collection, v] }))}
+                >
+                  {l}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="mf-section">
+            <div className="mf-section-title">Community</div>
+            {/* One self-contained accordion row per destination, instead of
+                a single dropdown mixing every destination's communities
+                together (or requiring the top Destination filter to be set
+                first). A destination with no communities at all — Puerto
+                Vallarta today — is simply skipped ("if it applies"), and
+                this scales cleanly as more destinations get added later:
+                each new one just adds its own row, never a bigger combined
+                list. */}
+            <div className="mf-comm-dests">
+              {(['punta-mita', 'punta-de-mita', 'puerto-vallarta'] as const).map((destKey) => {
+                const comms = Array.from(communitiesByDest[destKey] ?? []).sort((a, b) =>
+                  communityLabelFromSlug(a).localeCompare(communityLabelFromSlug(b))
+                )
+                if (comms.length === 0) return null
+                const isOpen = openCommGroup === destKey
+                return (
+                  <div className={`mf-comm-dest${isOpen ? ' is-open' : ''}`} key={destKey}>
+                    <button
+                      type="button"
+                      className="mf-comm-dest-trigger"
+                      onClick={() => setOpenCommGroup(isOpen ? null : destKey)}
+                      aria-expanded={isOpen}
+                    >
+                      <span>{DEST_LABELS[destKey]}</span>
+                      <svg className="mf-comm-chev" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    {isOpen && (
+                      <div className="mf-comm-dest-list">
+                        {comms.map((c) => (
+                          <div
+                            key={c}
+                            className={`mf-comm-opt${filters.community.includes(c) ? ' is-sel' : ''}`}
+                            onClick={() => setFilters((f) => ({ ...f, community: f.community.includes(c) ? f.community.filter((x) => x !== c) : [...f.community, c] }))}
+                          >
+                            {communityLabelFromSlug(c)}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+        <div className="mf-footer">
+          <button className="mf-clear-btn" onClick={() => setFilters((f) => ({ ...f, type: [], locationType: [], views: [], collection: [], community: [] }))}>Clear</button>
+          <button className="mf-apply-btn" onClick={() => setDrawerOpen(false)}>Show results</button>
+        </div>
+      </div>
+
+      {/* RESULTS BAR */}
+      <div className="results-bar">
+        <span className="results-count">
+          Showing <strong>{filtered.length}</strong> properties
+        </span>
+        {activeChips.length > 0 && (
+          <div className="active-chips">
+            {activeChips.map((chip, i) => (
+              <button key={i} className="active-chip" onClick={chip.clear}>
+                {chip.label}
+                <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            ))}
+          </div>
+        )}
+        {/* Sort — now lives here at every width (desktop included, per
+            Francisco 2026-08-10), next to the count instead of inside the
+            filter bar above: it reorders what's already showing rather
+            than narrowing it, so it reads more like "here's what you
+            have and how it's ordered" paired with the count than like
+            one more filter. Reuses .ff/.ff-trigger/.ff-panel/.ff-opt for
+            visual consistency with the real filters above, but with its
+            own open state (sortMenuOpen) — this row has no shared
+            positioning/outside-click logic to piggyback on the way the
+            filter bar's openPanel does. */}
+        <div className={`ff ff-sort${sortMenuOpen ? ' is-open' : ''}`} ref={sortMenuRef}>
+          <button className="ff-trigger" onClick={() => setSortMenuOpen((o) => !o)}>
+            <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" fill="none" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="14" y2="12"/><line x1="3" y1="18" x2="8" y2="18"/></svg>
+            <span className="ff-val">
+              {{ popular: 'Popular', 'price-asc': 'Price ↑', 'price-desc': 'Price ↓', 'beds-desc': 'Bedrooms' }[filters.sort]}
+            </span>
+            <svg className="ff-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div className="ff-panel">
+            {[['popular', 'Most popular'], ['price-asc', 'Price: Low to high'], ['price-desc', 'Price: High to low'], ['beds-desc', 'Most bedrooms']].map(([v, l]) => (
+              <div key={v} className={`ff-opt${filters.sort === v ? ' is-sel' : ''}`} onClick={() => { setFilters((f) => ({ ...f, sort: v })); setSortMenuOpen(false) }}>{l}</div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* GRID */}
+      <section className="properties-section">
+        {filtered.length === 0 ? (
+          <div className="no-results visible">
+            <div className="no-results-icon">🔍</div>
+            <p className="no-results-title">No properties match your filters</p>
+            <p className="no-results-sub">Try adjusting your search, or let us help you find the perfect villa.</p>
+            <div className="no-results-actions">
+              <button className="nr-btn-clear" onClick={clearAll}>Clear all filters</button>
+              <a className="nr-btn-wa" href="https://wa.me/523313619889?text=Hi%2C%20I%27m%20looking%20for%20a%20rental%20in%20Punta%20Mita%20and%20need%20some%20help" target="_blank" rel="noopener">
+                <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                Chat with us
+              </a>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="prop-grid">
+              {visible.map((p) => <PropertyCard key={p._id} property={p} activeCollection={filters.collection[0] || undefined} resultsQuery={resultsQuery || undefined} />)}
+            </div>
+            {visibleCount < filtered.length && (
+              <div className="load-more-wrap" style={{ display: 'block' }} ref={loadMoreSentinelRef}>
+                <button className="load-more-btn" onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}>
+                  Show more properties
+                </button>
+              </div>
+            )}
+          </>
+        )}
+      </section>
+
+      {/* HELP CTA */}
+      <section className="help-cta">
+        <div className="help-cta-text">
+          <h2>Can&rsquo;t find exactly what you&rsquo;re looking for?</h2>
+          <p>We manage more properties than are listed here, and we know every home personally. Tell us what you need and we&rsquo;ll match you with the right rental.</p>
+        </div>
+        <div className="help-cta-btns">
+          <a className="help-btn help-btn-primary" href="https://wa.me/523313619889?text=Hi%2C%20I%27m%20looking%20for%20a%20rental%20in%20Punta%20Mita%20and%20need%20some%20help" target="_blank" rel="noopener">WhatsApp us</a>
+          <a className="help-btn help-btn-secondary" href="mailto:rentals@mexicanreserve.com">Email us</a>
+        </div>
+      </section>
+
+      {/* FLOATING FILTERS BUTTON */}
+      <button className={`fl-filters-btn${flVisible ? ' visible' : ''}`} onClick={() => setDrawerOpen(true)}>
+        <svg viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+        All Filters
+        {drawerFilterCount > 0 && <span className="fl-badge">{drawerFilterCount}</span>}
+      </button>
+    </>
+  )
+}
