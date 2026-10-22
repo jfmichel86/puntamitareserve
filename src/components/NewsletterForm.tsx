@@ -3,7 +3,9 @@
 import { useState } from 'react'
 import Link from 'next/link'
 
-const CONTACT_EMAIL = 'rentals@mexicanreserve.com'
+// Welcome Offer signups go to their own address (welcome@, an alias of the
+// main inbox) so they're kept separate from rental inquiries at rentals@.
+const CONTACT_EMAIL = 'welcome@mexicanreserve.com'
 
 // Same submission approach as ContactForm.tsx: this site has no email-service
 // backend wired up yet, so both forms simply open the visitor's email client

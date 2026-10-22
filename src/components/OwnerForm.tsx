@@ -5,9 +5,12 @@ import Link from 'next/link'
 
 const CONTACT_EMAIL = 'rentals@mexicanreserve.com'
 
-type PanelOpen = 'location' | 'beds' | null
+type PanelOpen = 'location' | 'beds' | 'role' | null
 
 const LOCATION_OPTS = ['Punta Mita', 'Punta de Mita Area', 'Puerto Vallarta', 'Somewhere else in Mexico']
+// Who's reaching out — the page is for owners AND the people/companies who
+// represent them (Francisco, 2026-10-18).
+const ROLE_OPTS = ['Property owner', 'House manager', 'Property management agency', 'Other']
 const BEDS_OPTS = ['1–2 bedrooms', '3–4 bedrooms', '5–6 bedrooms', '7+ bedrooms']
 
 export default function OwnerForm() {
@@ -19,6 +22,7 @@ export default function OwnerForm() {
   const [openPanel, setOpenPanel] = useState<PanelOpen>(null)
   const [location, setLocation] = useState('')
   const [beds, setBeds] = useState('')
+  const [role, setRole] = useState('')
   const [locationErr, setLocationErr] = useState(false)
 
   const [submitErr, setSubmitErr] = useState(false)
@@ -26,8 +30,9 @@ export default function OwnerForm() {
   const closeAll = () => setOpenPanel(null)
   const toggle = (p: Exclude<PanelOpen, null>) => setOpenPanel((cur) => (cur === p ? null : p))
 
-  const ddPick = (group: 'location' | 'beds', val: string) => {
+  const ddPick = (group: 'location' | 'beds' | 'role', val: string) => {
     if (group === 'location') { setLocation(val); setLocationErr(false) }
+    else if (group === 'role') setRole(val)
     else setBeds(val)
     closeAll()
   }
@@ -41,8 +46,8 @@ export default function OwnerForm() {
     setSubmitErr(false)
 
     const subj = `Property Partnership Inquiry — ${name.trim()}`
-    const body = 'Hi,\n\nI\'d like to talk about listing my property with Mexican Reserve.\n\n'
-      + `— CONTACT —\nName:   ${name.trim()}\nEmail:  ${email.trim()}\n${phone.trim() ? `Phone:  ${phone.trim()}\n` : ''}`
+    const body = 'Hi,\n\nI\'d like to talk about listing property with Mexican Reserve.\n\n'
+      + `— CONTACT —\nName:   ${name.trim()}\n${role ? `I am a: ${role}\n` : ''}Email:  ${email.trim()}\n${phone.trim() ? `Phone:  ${phone.trim()}\n` : ''}`
       + `\n— PROPERTY —\nLocation:  ${location}\n${beds ? `Bedrooms:  ${beds}\n` : ''}`
       + (message.trim() ? `\n— NOTES —\n${message.trim()}\n` : '')
       + '\nThank you!'
@@ -52,14 +57,16 @@ export default function OwnerForm() {
 
   return (
     <div className="ct-form-card" onClick={(e) => { if (e.target === e.currentTarget) closeAll() }}>
-      <h2 className="ct-form-title">Tell us about your property</h2>
+      <h2 className="ct-form-title">Tell us about your property or portfolio</h2>
       <p className="ct-trust-line">Personal response &nbsp;·&nbsp; Within 24 hours &nbsp;·&nbsp; No commitment</p>
 
       <div className="ct-sec-hd first">
         <span className="ct-sec-n">01</span>
         <h3 className="ct-sec-t">About you</h3>
       </div>
-      <div className="ct-row ct-row-3">
+      {/* 2 × 2 grid (Name, Email / Phone, I am a) instead of 3 fields + a
+          lone half-width dropdown on its own row — tidier (2026-10-21). */}
+      <div className="ct-row ct-row-2">
         <div className="ct-field">
           <label htmlFor="o-name">Name</label>
           <input className="ct-input" type="text" id="o-name" placeholder="Jane Smith" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} />
@@ -68,9 +75,25 @@ export default function OwnerForm() {
           <label htmlFor="o-email">Email</label>
           <input className="ct-input" type="email" id="o-email" placeholder="jane@example.com" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
         </div>
+      </div>
+      <div className="ct-row ct-row-2" style={{ alignItems: 'start' }}>
         <div className="ct-field">
           <label htmlFor="o-phone">WhatsApp / Phone <span className="opt">(optional)</span></label>
           <input className="ct-input" type="tel" id="o-phone" placeholder="+1 555 000 0000" autoComplete="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
+        </div>
+        <div className="ct-field">
+          <label>I am a <span className="opt">(optional)</span></label>
+          <button className={`ct-dd-trigger${openPanel === 'role' ? ' is-open' : ''}`} type="button" onClick={() => toggle('role')}>
+            <span className={`ct-dd-val${role ? '' : ' ph'}`}>{role || 'Select…'}</span>
+            <svg className="ff-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9" /></svg>
+          </button>
+          {openPanel === 'role' && (
+            <div className="ct-dd-panel">
+              {ROLE_OPTS.map((opt) => (
+                <div key={opt} className={`ct-dd-opt${role === opt ? ' is-sel' : ''}`} onClick={() => ddPick('role', opt)}>{opt}</div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -115,8 +138,8 @@ export default function OwnerForm() {
         <h3 className="ct-sec-t">Anything else?</h3>
       </div>
       <div className="ct-field">
-        <label htmlFor="o-message">Optional note <span className="opt">(current management, availability, anything we should know)</span></label>
-        <textarea className="ct-input" id="o-message" placeholder="Tell us about your property and what you're looking for." value={message} onChange={(e) => setMessage(e.target.value)} />
+        <label htmlFor="o-message">Optional note <span className="opt">(how many properties, where they&rsquo;re listed today, anything we should know)</span></label>
+        <textarea className="ct-input" id="o-message" placeholder="Tell us about your property or portfolio." value={message} onChange={(e) => setMessage(e.target.value)} />
       </div>
 
       <div className="ct-submit-row">

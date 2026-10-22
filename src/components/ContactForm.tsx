@@ -13,11 +13,11 @@ type DateMode = 'calendar' | 'flexible'
 const BEDS_OPTS = ['2 bedrooms', '3 bedrooms', '4 bedrooms', '5 bedrooms', '6+ bedrooms']
 
 const BUDGET_OPTS: [string, string][] = [
-  ['Under $1,000 / night', 'Up to $1,000 / night'],
-  ['$1,001 – $2,500 / night', '$1,001 – $2,500 / night'],
-  ['$2,501 – $5,000 / night', '$2,501 – $5,000 / night'],
-  ['$5,001 – $8,000 / night', '$5,001 – $8,000 / night'],
-  ['$8,001+ / night', '$8,001+ / night'],
+  ['Under $1,000 USD / night', 'Up to $1,000 USD / night'],
+  ['$1,001 – $2,500 USD / night', '$1,001 – $2,500 USD / night'],
+  ['$2,501 – $5,000 USD / night', '$2,501 – $5,000 USD / night'],
+  ['$5,001 – $8,000 USD / night', '$5,001 – $8,000 USD / night'],
+  ['$8,001+ USD / night', '$8,001+ USD / night'],
   ['Flexible budget', 'Flexible'],
 ]
 

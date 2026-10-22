@@ -5,7 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { urlFor } from '@/lib/sanity'
 import {
-  Property, startingRate, totalGuests, formatPrice,
+  Property, startingRate, totalGuests, formatPrice, locationDisplay,
   communityLabel, collectionBadge, locationBadge, allPhotos, dealBadgeLabel,
   LAST_SEARCH_STORAGE_KEY,
 } from '@/lib/utils'
@@ -140,12 +140,39 @@ export default function PropertyCard({ property: p, activeCollection, resultsQue
       </div>
 
       <div className="prop-body">
-        <div className="prop-type">{communityLabel(p)}</div>
-        <div className="prop-name-row">
-          <div className="prop-name">{p.title}</div>
-          {rate ? (
-            <div className="prop-price">From <strong>{formatPrice(rate)}</strong> <span>/ night</span></div>
-          ) : null}
+        {/* Top of the card: community + name on the left, price block on
+            the right, divided by a thin line (Francisco, 2026-10-17). The
+            price block sits beside BOTH the community label and the name —
+            not just the name — so the card barely grows taller, and the
+            name always stays on one line. */}
+        <div className="prop-head">
+          <div className="prop-head-text">
+            {/* Community when there is one; otherwise the destination (Puerto
+                Vallarta villas have no community by design). Always shows
+                something, so every card's name sits at the same height. */}
+            <div className="prop-type">{communityLabel(p) || locationDisplay(p) || '\u00A0'}</div>
+            <div className="prop-name" title={p.title}>{p.title}</div>
+          </div>
+          {/* No price on file (or the owner chose "price on request" in
+              Sanity) → "Please Inquire", same wording as the villa page's
+              booking panel, so a card never just shows nothing. */}
+          {rate && !p.priceOnRequest ? (
+            <div className="prop-price">
+              <span className="prop-price-from">From</span>
+              <strong>{formatPrice(rate)}</strong>
+              <span className="prop-price-per">USD / night</span>
+            </div>
+          ) : (
+            /* Same 3-line rhythm and bold number style as a priced card —
+               "PLEASE / Inquire / for rates" mirrors "FROM / $1,100 /
+               USD / night". Bold "Please Inquire" on a single line was
+               twice as wide as a price and cut off long villa names. */
+            <div className="prop-price prop-price--inquire">
+              <span className="prop-price-from">Please</span>
+              <strong>Inquire</strong>
+              <span className="prop-price-per">for rates</span>
+            </div>
+          )}
         </div>
         <div className="prop-amenities">
           <span className="prop-amenity">{BED_SVG}{p.bedrooms} bedroom{p.bedrooms !== 1 ? 's' : ''}</span>

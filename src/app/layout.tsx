@@ -22,6 +22,20 @@ const cormorant = Cormorant_Garamond({
   display: 'swap',
 })
 
+// Real semi-bold (600) of the same serif, loaded ONLY for prices on the
+// property cards (Francisco's "bold, compact" price style, 2026-10-17).
+// Kept as its own font variable on purpose: adding 600 to the main
+// Cormorant above would also change every existing weight-600 text on the
+// site — including the RESERVE logo — which currently renders with the
+// browser's own synthesized bold.
+const cormorantPrice = Cormorant_Garamond({
+  subsets: ['latin'],
+  weight: ['600'],
+  style: ['normal'],
+  variable: '--font-cormorant-price',
+  display: 'swap',
+})
+
 const inter = Inter({
   subsets: ['latin'],
   weight: ['300', '400', '500'],
@@ -72,7 +86,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   preconnect('https://cdn.sanity.io')
 
   return (
-    <html lang="en" className={`${cormorant.variable} ${inter.variable}`}>
+    <html lang="en" className={`${cormorant.variable} ${cormorantPrice.variable} ${inter.variable}`}>
       <body>
         <SplashScreen />
         <ScrollReveal />

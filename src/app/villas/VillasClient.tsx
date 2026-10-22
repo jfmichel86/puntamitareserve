@@ -543,11 +543,11 @@ export default function VillasClient({ properties }: { properties: Property[] })
             <div className="ff-panel">
               {[
                 ['', 'Any price'],
-                ['0-1000', 'Up to $1,000 / night'],
-                ['1001-2500', '$1,001 – $2,500 / night'],
-                ['2501-5000', '$2,501 – $5,000 / night'],
-                ['5001-8000', '$5,001 – $8,000 / night'],
-                ['8001+', '$8,001+ / night'],
+                ['0-1000', 'Up to $1,000 USD / night'],
+                ['1001-2500', '$1,001 – $2,500 USD / night'],
+                ['2501-5000', '$2,501 – $5,000 USD / night'],
+                ['5001-8000', '$5,001 – $8,000 USD / night'],
+                ['8001+', '$8,001+ USD / night'],
               ].map(([v, l]) => (
                 <div key={v} className={`ff-opt${filters.price === v ? ' is-sel' : ''}`} onClick={() => { setFilters((f) => ({ ...f, price: v })); closeAll() }}>{l}</div>
               ))}
@@ -647,7 +647,7 @@ export default function VillasClient({ properties }: { properties: Property[] })
                 design. This version matches every other dropdown on the
                 site instead. */}
             <div className="mf-section-col">
-              <div className="mf-section-title">Nightly Rate</div>
+              <div className="mf-section-title">Nightly Rate (USD)</div>
               <div className="mf-dd-wrap">
                 <button className={`ct-dd-trigger${mfPriceOpen ? ' is-open' : ''}`} type="button" onClick={() => setMfPriceOpen((o) => !o)}>
                   <span className="ct-dd-val">
@@ -888,7 +888,7 @@ export default function VillasClient({ properties }: { properties: Property[] })
       <section className="help-cta">
         <div className="help-cta-text">
           <h2>Can&rsquo;t find exactly what you&rsquo;re looking for?</h2>
-          <p>We manage more properties than are listed here, and we know every home personally. Tell us what you need and we&rsquo;ll match you with the right rental.</p>
+          <p>We work with more properties than are listed here, and we know every home personally. Tell us what you need and we&rsquo;ll match you with the right rental.</p>
         </div>
         <div className="help-cta-btns">
           <a className="help-btn help-btn-primary" href="https://wa.me/523313619889?text=Hi%2C%20I%27m%20looking%20for%20a%20rental%20in%20Punta%20Mita%20and%20need%20some%20help" target="_blank" rel="noopener">WhatsApp us</a>

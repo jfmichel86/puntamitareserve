@@ -13,7 +13,7 @@ export default function MobileCtaBar({ minRate }: { minRate: number | null }) {
         <span className="mobile-cta-from">Starting from</span>
         <div className="mobile-cta-amount">
           <strong>{minRate ? formatPrice(minRate) : '—'}</strong>
-          <span>/ night</span>
+          <span>USD / night</span>
         </div>
       </div>
       <button className="mobile-cta-btn" type="button" onClick={scrollToInquiry}>Check Availability</button>

@@ -490,7 +490,7 @@ export default function SavedClient({ properties }: { properties: Property[] }) 
       // actually being compared when this button was clicked.
       const rate = rateForSeasonOrFallback(p, selectedSeason)
       body += `• ${p.title} — ${p.bedrooms} ${p.bedrooms === 1 ? 'bedroom' : 'bedrooms'}`
-      if (rate) body += `, from ${formatPrice(rate)}/night`
+      if (rate) body += `, from ${formatPrice(rate)} USD/night`
       body += '\n'
     })
     const url = getShareUrl()
@@ -739,7 +739,7 @@ export default function SavedClient({ properties }: { properties: Property[] }) 
                     <td className="sv-cmp-lbl">Nightly rate</td>
                     {orderedProps.map((p) => {
                       const r = rateForSeasonOrFallback(p, selectedSeason)
-                      return <td className="sv-cmp-val" key={p.slug}>{r ? <span className="is-price">From <strong>{formatPrice(r)}</strong>&thinsp;/&thinsp;night</span> : no()}</td>
+                      return <td className="sv-cmp-val" key={p.slug}>{r ? <span className="is-price">From <strong>{formatPrice(r)}</strong> USD&thinsp;/&thinsp;night</span> : no()}</td>
                     })}
                   </tr>
                   <tr>

@@ -283,7 +283,7 @@ export default function Sidebar({
               <div className="iq-from">Starting from</div>
               <div className="iq-price">
                 <span className="iq-amount">{minRate ? formatPrice(minRate) : '—'}</span>
-                <span className="iq-per">/ night</span>
+                <span className="iq-per">USD / night</span>
               </div>
               {minStayNights > 0 && <div className="iq-min-stay">{minStayNights}-night minimum stay</div>}
             </>
@@ -354,7 +354,7 @@ export default function Sidebar({
           {nights > 0 && (
             <div className="iq-nights-est" style={{ display: 'block' }}>
               {nights} night{nights !== 1 ? 's' : ''}
-              {minRate ? ` · est. ${formatPrice(nights * minRate)}` : ''}
+              {minRate ? ` · est. ${formatPrice(nights * minRate)} USD` : ''}
             </div>
           )}
 

@@ -24,6 +24,10 @@ export default function FloatingActionsController() {
 
   useEffect(() => {
     document.body.classList.toggle('on-saved-page', pathname === '/saved')
+    // Owner page: the "10% off first stay" badge is a GUEST offer and the
+    // WhatsApp bubble duplicates the sidebar's own WhatsApp link — both were
+    // floating over the page (Francisco, 2026-10-21).
+    document.body.classList.toggle('on-owner-page', pathname === '/list-your-property')
   }, [pathname])
 
   useEffect(() => {

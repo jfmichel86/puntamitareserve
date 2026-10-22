@@ -29,6 +29,9 @@ button, a, [role="button"] { touch-action: manipulation; }
   --sand-dark:      #D8CEBC;
   --gold:           #C8943A;
   --gold-light:     #DBA84E;
+  /* Price color rule (Francisco, 2026-10-17): terracotta on light/white
+     backgrounds, the gold (--gold) on navy backgrounds. */
+  --price-on-light: #B4552F;
   --white:          #FEFEFE;
   --text-on-dark:   #EFF6FB;
 }
@@ -2215,11 +2218,18 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
   font-family: var(--font-inter), sans-serif; font-size: 11px; font-weight: 500;
   letter-spacing: .15em; text-transform: uppercase; color: var(--ocean); margin-bottom: 7px;
 }
-.prop-name-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+/* Fixed minimum height = the priced block's height, so a "Please Inquire"
+   card (shorter block) keeps its name at exactly the same height as its
+   priced neighbors in the grid. */
+.prop-head { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; min-height: 47px; }
+.prop-head-text { flex: 1; min-width: 0; }
+/* Always one line (Francisco, 2026-10-17). The longest name on the site
+   today (PH Condo Vista Encanto) fits beside the price; anything longer
+   ends in "…" instead of wrapping, with the full name on hover. */
 .prop-name {
   font-family: var(--font-cormorant), serif; font-weight: 400;
   font-size: 20px; letter-spacing: .02em; color: var(--charcoal);
-  line-height: 1.15; flex: 1; min-width: 0;
+  line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .prop-tagline {
   font-family: var(--font-inter), sans-serif; font-size: 12.5px; font-weight: 400;
@@ -2238,16 +2248,100 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
   letter-spacing: .12em; text-transform: uppercase;
   color: var(--ocean-mid); background: var(--mist-light); padding: 3px 9px; border-radius: 2px;
 }
+/* Price block — "divided block" layout with a bold, compact number
+   (Francisco's pick, 2026-10-17, from 5 style mockups): a thin line
+   separates it from the name, and three left-aligned lines inside —
+   tiny FROM, the rate, USD / night. Terracotta (#B4552F), after blue and
+   two golds didn't stand out enough; 5.1:1 contrast on white. The number
+   uses the real semi-bold cut of the serif (--font-cormorant-price, see
+   layout.tsx), not a browser-faked bold. */
 .prop-price {
-  font-family: var(--font-inter), sans-serif; font-size: 12.5px;
-  font-weight: 400; color: var(--charcoal-light);
-  white-space: nowrap; flex-shrink: 0; text-align: right;
+  display: flex; flex-direction: column; align-items: flex-start;
+  flex-shrink: 0; white-space: nowrap;
+  border-left: 1px solid #E7D9C9; padding-left: 14px;
+  /* Extra breathing room from the card's right edge (Francisco: it sat too
+     close). Still leaves the longest name on the site on one line. */
+  margin-right: 8px;
+}
+.prop-price-from {
+  font-family: var(--font-inter), sans-serif; font-size: 10px; font-weight: 500;
+  letter-spacing: .1em; text-transform: uppercase; color: #8A8E94; line-height: 1.2;
 }
 .prop-price strong {
-  font-family: var(--font-cormorant), serif; font-size: 17px; font-weight: 500;
-  color: var(--charcoal); letter-spacing: .01em;
+  font-family: var(--font-cormorant-price), var(--font-cormorant), serif;
+  /* Same size as the villa name (20px; mobile 17px), per Francisco
+     2026-10-18 — it was 28 → 25 → 23 and still read as bigger than the
+     name. The bold weight + terracotta alone make it stand out. */
+  font-size: 20px; font-weight: 600; letter-spacing: -.01em; line-height: .95;
+  color: var(--price-on-light); margin: 1px 0;
 }
-.prop-price span { font-size: 12px; letter-spacing: .04em; }
+.prop-price-per {
+  font-family: var(--font-inter), sans-serif; font-size: 11px; font-weight: 400;
+  letter-spacing: .02em; color: #8A8E94; line-height: 1.25;
+}
+/* No price: same block and same bold style — "PLEASE / Inquire / for
+   rates" (see PropertyCard.tsx), so priced and unpriced cards match. */
+.prop-price--inquire strong {
+  /* Same bold serif as the price numbers (Francisco, 2026-10-17), not
+     italic, so priced and "Please Inquire" cards read identically. */
+  font-family: var(--font-cormorant-price), var(--font-cormorant), serif;
+  font-style: normal; font-weight: 600; letter-spacing: -.01em;
+}
+
+/* Narrow cards tighten themselves (Francisco, 2026-10-17: names must stay
+   on one line at every screen size). The card measures ITS OWN width — not
+   the screen — so this works in every grid that shows it (villas listing,
+   homepage featured, destination pages, journal, wishlist, offers).
+   Measured: the longest name on the site (PH Condo Vista Encanto) was
+   getting cut off on cards narrower than ~340px, e.g. 3-column grids on
+   laptops 1100–1210px wide. */
+.prop-card { container-type: inline-size; }
+@container (max-width: 345px) {
+  .prop-body { padding-left: 16px; padding-right: 16px; }
+  .prop-head { gap: 10px; }
+  .prop-name { font-size: 18.5px; letter-spacing: .01em; }
+  .prop-price strong { font-size: 18.5px; }
+  .prop-price { padding-left: 10px; margin-right: 2px; }
+}
+/* Very narrow cards (journal "related villas" ≈210px, homepage featured on
+   ~960–1050px screens): no room for the price beside the name, so the
+   price moves onto ONE line under the name — "FROM $1,100 USD / night" —
+   instead of the name being cut off. Divider line dropped here. */
+@container (max-width: 295px) {
+  .prop-body { padding-left: 14px; padding-right: 14px; }
+  .prop-head { flex-direction: column; align-items: flex-start; gap: 6px; min-height: 0; }
+  .prop-head-text { width: 100%; }
+  .prop-name { font-size: 17px; letter-spacing: 0; }
+  .prop-price {
+    flex-direction: row; align-items: baseline; gap: 5px;
+    border-left: 0; padding-left: 0; margin-right: 0;
+  }
+  .prop-price strong { font-size: 17px; margin: 0; }
+  .prop-amenities { gap: 10px; }
+}
+
+/* .properties-grid (homepage featured, destination/landing pages, journal)
+   now steps 3 → 2 → 1 columns at the same widths as the villas page grid
+   (Francisco, 2026-10-17). It used to jump straight from 3 to 1 at 960px,
+   squeezing three cards to ~277px just above that. */
+@media (max-width: 1100px) { .properties-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 720px)  { .properties-grid { grid-template-columns: 1fr; } }
+/* Journal "related villas" sit inside the narrow ~670px article column —
+   three across made ~210px thumbnails, so two across on every screen. */
+.journal-related-wrap .properties-grid { grid-template-columns: repeat(2, 1fr); }
+@media (max-width: 560px) { .journal-related-wrap .properties-grid { grid-template-columns: 1fr; } }
+
+/* Prices: full-height ("lining") numbers instead of Cormorant's default
+   book-style ones, which made "$5,000" read almost like "$5,OOO"
+   (Francisco, 2026-10-17). Every place a price or rate is shown sitewide
+   — cards, the villa booking panel, mobile price bar, rates table,
+   wishlist comparison, destination/community price ranges. Only the
+   numbers change; letters look exactly the same. */
+.prop-price, .iq-amount, .iq-nights-est, .mobile-cta-amount,
+.rates-table, .rate-tier, .sv-cmp-val, .is-price,
+.comm-cmp-val, .dest-split-card-price-main {
+  font-variant-numeric: lining-nums;
+}
 
 /* ── No Results ───────────────────────────────────────────── */
 .no-results { display: none; text-align: center; padding: 80px 20px; grid-column: 1/-1; }
@@ -2651,7 +2745,13 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
 /* ── Footer ───────────────────────────────────────────────── */
 footer { background: var(--deep-ocean); padding: 56px 64px 56px; }
 .footer-top {
-  display: grid; grid-template-columns: 1.3fr .85fr .85fr .85fr 1.1fr;
+  /* The four link/contact columns are all the SAME width, so the space from
+     one column to the next is identical (Francisco, 2026-10-21 — content-
+     sized columns made the gap after "Company" look much bigger). At 13px
+     the widest item in any column is ~183px (measured), so 185px minimum
+     keeps every link on one line; this layout only applies ≥1241px wide,
+     where each column is ≥190px. */
+  display: grid; grid-template-columns: minmax(0, 1.25fr) repeat(4, minmax(185px, 1fr));
   gap: 40px; padding-bottom: 56px;
   border-bottom: 1px solid rgba(255,255,255,.07); margin-bottom: 36px;
 }
@@ -2660,10 +2760,11 @@ footer { background: var(--deep-ocean); padding: 56px 64px 56px; }
    header everywhere it's used. */
 .ft-brand-row { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
 .ft-tagline {
-  font-family: var(--font-inter), sans-serif; font-size: 13px; font-weight: 400;
-  color: rgba(239,246,251,.72); line-height: 1.78; max-width: 260px;
+  font-family: var(--font-cormorant), serif; font-style: italic; font-size: 18px; font-weight: 400;
+  color: rgba(239,246,251,.85); line-height: 1.4; max-width: 250px; letter-spacing: .01em;
+  text-wrap: balance; /* even lines, no single orphan word */
 }
-.ft-social { display: flex; gap: 9px; margin-top: 28px; }
+.ft-social { display: flex; align-items: center; gap: 12px; margin-top: 24px; }
 .ft-social a {
   width: 35px; height: 35px; border: 1px solid rgba(255,255,255,.09);
   border-radius: 2px; display: flex; align-items: center; justify-content: center;
@@ -2672,13 +2773,32 @@ footer { background: var(--deep-ocean); padding: 56px 64px 56px; }
 .ft-social a:hover { border-color: var(--gold); background: rgba(200,148,58,.09); }
 .ft-social svg { width: 14px; height: 14px; stroke: rgba(239,246,251,.45); fill: none; stroke-width: 1.5; }
 .ft-social a:hover svg { stroke: var(--gold); }
+/* "Follow us" text beside the icon — overrides the square-box rule above,
+   which targets every link inside .ft-social. */
+.ft-social a.ft-social-label {
+  width: auto; height: auto; border: 0; background: none;
+  font-family: var(--font-inter), sans-serif; font-size: 11px; font-weight: 500;
+  letter-spacing: .14em; text-transform: uppercase; text-decoration: none;
+  color: rgba(239,246,251,.72); transition: color .2s;
+}
+.ft-social a.ft-social-label:hover { color: var(--gold); background: none; }
 .ft-col-title {
   font-family: var(--font-inter), sans-serif; font-size: 10.5px; letter-spacing: .24em;
-  text-transform: uppercase; color: rgba(239,246,251,.72); margin-bottom: 22px;
+  text-transform: uppercase; color: rgba(239,246,251,.72); margin-bottom: 20px;
 }
-.ft-links { list-style: none; display: flex; flex-direction: column; gap: 13px; }
+/* Short gold rule under each column title — borrowed from the Beyond
+   Traveling footer; echoes the gold rule under the Mexican Reserve logo. */
+.ft-col-title::after { content: ''; display: block; width: 22px; height: 1px; background: var(--gold); opacity: .7; margin-top: 12px; }
+.ft-nobreak { white-space: nowrap; }
+.ft-ext-icon { width: 11px; height: 11px; stroke: currentColor; fill: none; stroke-width: 1.8; margin-left: 5px; vertical-align: 1px; opacity: .7; }
+.ft-links { list-style: none; display: flex; flex-direction: column; gap: 12px; }
+/* Same text size on the list item as on the link inside it — otherwise
+   the item is sized for the page's larger default text and each link sits
+   ~3px lower than the Contact column's email next to it. */
+.ft-links li { font-size: 13px; }
 .ft-links a {
-  font-family: var(--font-inter), sans-serif; font-size: 14px; font-weight: 400;
+  white-space: nowrap;
+  font-family: var(--font-inter), sans-serif; font-size: 13px; font-weight: 400;
   color: rgba(239,246,251,.72); text-decoration: none;
   transition: color .2s; letter-spacing: .02em;
 }
@@ -2688,7 +2808,7 @@ footer { background: var(--deep-ocean); padding: 56px 64px 56px; }
    tracked like the nav dropdown), so the nav's wide letter-spacing would
    look inconsistent here and push the line to wrap. Tighter tracking + a
    hair smaller keeps "Punta Mita — Inside the Gates" on one line. */
-.ft-links .nav-dest-suffix { font-size: 12.5px; letter-spacing: normal; opacity: .85; } /* .85, not the nav's .7 — on top of the footer's already-dimmed link color, .7 made it too faint to read */
+.ft-links .nav-dest-suffix { font-size: 12px; letter-spacing: normal; opacity: .85; } /* .85, not the nav's .7 — on top of the footer's already-dimmed link color, .7 made it too faint to read */
 .ft-links a.ft-nowrap { white-space: nowrap; }
 .ft-contact-item { margin-bottom: 16px; }
 .ft-contact-lbl {
@@ -2696,13 +2816,13 @@ footer { background: var(--deep-ocean); padding: 56px 64px 56px; }
   text-transform: uppercase; color: rgba(239,246,251,.72); margin-bottom: 3px;
 }
 .ft-contact-val {
-  font-family: var(--font-inter), sans-serif; font-size: 14px; font-weight: 400;
+  font-family: var(--font-inter), sans-serif; font-size: 13px; font-weight: 400;
   color: rgba(239,246,251,.72); text-decoration: none;
   transition: color .2s; display: block;
 }
 .ft-contact-val:hover { color: var(--text-on-dark); }
 .ft-cta-txt {
-  font-family: var(--font-inter), sans-serif; font-size: 13px; font-weight: 400;
+  font-family: var(--font-inter), sans-serif; font-size: 12.5px; font-weight: 400;
   color: rgba(239,246,251,.72); line-height: 1.65; margin-bottom: 16px;
 }
 .ft-btn {
@@ -2714,9 +2834,15 @@ footer { background: var(--deep-ocean); padding: 56px 64px 56px; }
 .ft-btn:hover { background: var(--gold-light); }
 .footer-bottom { display: flex; align-items: center; justify-content: space-between; }
 .ft-copy {
-  font-family: var(--font-inter), sans-serif; font-size: 12.5px; font-weight: 400;
-  color: rgba(239,246,251,.72); letter-spacing: .04em;
+  font-family: var(--font-inter), sans-serif; font-size: 12px; font-weight: 400;
+  color: rgba(239,246,251,.72); letter-spacing: .04em; text-wrap: balance;
 }
+.ft-legal { display: flex; flex-wrap: wrap; gap: 8px 28px; }
+.ft-legal a {
+  font-family: var(--font-inter), sans-serif; font-size: 12px; font-weight: 400;
+  color: rgba(239,246,251,.72); letter-spacing: .04em; text-decoration: none; transition: color .2s;
+}
+.ft-legal a:hover { color: var(--text-on-dark); }
 
 /* ── WhatsApp Float ───────────────────────────────────────── */
 .wa {
@@ -2767,6 +2893,7 @@ body.nav-drawer-open .wa, body.nav-drawer-open .offer-badge { display: none; }
    first wishlist card's photo). */
 body.footer-in-view .wa, body.footer-in-view .offer-badge,
 body.on-saved-page .wa, body.on-saved-page .offer-badge { display: none; }
+body.on-owner-page .wa, body.on-owner-page .offer-badge { display: none; }
 
 /* ── Responsive ───────────────────────────────────────────── */
 @media (max-width: 1100px) { .prop-grid { grid-template-columns: repeat(2,1fr); } }
@@ -2783,6 +2910,16 @@ body.on-saved-page .wa, body.on-saved-page .offer-badge { display: none; }
   .filter-bar { overflow: visible; }
   .fb-inner { flex-wrap: wrap; height: auto; padding: 10px 40px; row-gap: 8px; }
   .fb-sep { display: none; }
+}
+/* 961–1240px: five columns don't fit side by side, so the brand block
+   gets its own centered row (same treatment as ≤960px) and the four link
+   columns spread across the row below. */
+@media (min-width: 961px) and (max-width: 1240px) {
+  .footer-top { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 40px 32px; }
+  .footer-top > div:first-child { grid-column: 1 / -1; padding-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,.07); margin-bottom: 4px; text-align: center; }
+  .ft-brand-row { flex-direction: column; gap: 10px; }
+  .ft-brand-row, .ft-social { justify-content: center; }
+  .ft-tagline { max-width: 420px; margin: 0 auto; }
 }
 @media (max-width: 960px) {
   .nav, .nav--scrolled { padding-left: 40px; padding-right: 40px; }
@@ -2919,7 +3056,7 @@ body.on-saved-page .wa, body.on-saved-page .offer-badge { display: none; }
   .properties-section { padding: 20px 24px 80px; } /* extra bottom for floating btn */
   .prop-grid { grid-template-columns: 1fr; gap: 20px; }
   .prop-name { font-size: 17px; }
-  .prop-price strong { font-size: 15px; }
+  .prop-price strong { font-size: 17px; }
   .help-cta { padding: 40px 24px; }
   .help-cta-btns { flex-direction: column; width: 100%; }
   .help-btn { justify-content: center; }
@@ -2934,6 +3071,18 @@ body.on-saved-page .wa, body.on-saved-page .offer-badge { display: none; }
      matches the 960px breakpoint just above it. */
   .footer-top { grid-template-columns: 1fr 1fr; gap: 32px 24px; }
   .footer-bottom { flex-direction: column; gap: 16px; text-align: center; }
+  .ft-legal { justify-content: center; gap: 8px 20px; }
+  /* Let the 2 narrow columns actually shrink to the phone's width — before,
+     the long email address forced the grid wider than the screen and the
+     page's overflow-x:hidden silently cut it (and "Property management")
+     off at the right edge. Now long items wrap instead. */
+  .footer-top > div { min-width: 0; }
+  .ft-contact-val { overflow-wrap: anywhere; }
+  /* Contact spans both columns on phones, so the email fits on one line. */
+  .footer-top > div:last-child { grid-column: 1 / -1; }
+  /* "Punta Mita — Inside the Gates" may wrap here instead of running into
+     the neighboring column. */
+  .ft-links a, .ft-links a.ft-nowrap { white-space: normal; }
   .fl-filters-btn { padding: 12px 22px; font-size: 12px; bottom: 20px; }
 }
 
@@ -3404,7 +3553,7 @@ body.an-visible { --sidebar-top: 140px; }
 .mobile-cta-price { display: flex; flex-direction: column; }
 .mobile-cta-from { font-family: var(--font-inter), sans-serif; font-size: 10.5px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; color: var(--charcoal-light); }
 .mobile-cta-amount { display: flex; align-items: baseline; gap: 5px; }
-.mobile-cta-amount strong { font-family: var(--font-cormorant), serif; font-size: 26px; font-weight: 400; color: var(--deep-ocean); line-height: 1; }
+.mobile-cta-amount strong { font-family: var(--font-cormorant), serif; font-size: 26px; font-weight: 400; color: var(--price-on-light); line-height: 1; }
 .mobile-cta-amount span { font-family: var(--font-inter), sans-serif; font-size: 12.5px; font-weight: 400; color: var(--charcoal-light); }
 .mobile-cta-btn {
   flex: 1; display: flex; align-items: center; justify-content: center;
@@ -3635,14 +3784,38 @@ body.an-visible { --sidebar-top: 140px; }
 .ct-concierge-name { font-family: var(--font-inter), sans-serif; font-size: 14px; font-weight: 500; color: var(--deep-ocean); margin: 0; }
 .ct-concierge-role { font-family: var(--font-inter), sans-serif; font-size: 12.5px; font-weight: 400; color: var(--charcoal-light); margin: 3px 0 0; }
 .ct-sidebar-body { font-family: var(--font-inter), sans-serif; font-size: 13.5px; font-weight: 400; color: var(--charcoal-light); line-height: 1.85; margin: 0 0 28px; }
+/* Several paragraphs in a row (List Your Property sidebar) read as one
+   block with tighter spacing between them; the gap after the last one is
+   unchanged. */
+.ct-sidebar-body:has(+ .ct-sidebar-body) { margin-bottom: 14px; }
+.ct-sidebar-body:has(+ .ct-points) { margin-bottom: 18px; }
+/* Short scannable points (List Your Property sidebar). */
+.ct-points { list-style: none; margin: 0 0 32px; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.ct-points li {
+  position: relative; padding-left: 18px;
+  font-family: var(--font-inter), sans-serif; font-size: 13px; line-height: 1.6; color: var(--charcoal-light);
+}
+.ct-points li::before { content: ''; position: absolute; left: 0; top: .62em; width: 8px; height: 1px; background: var(--gold); }
 .ct-quick-label { font-family: var(--font-inter), sans-serif; font-size: 11px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; color: var(--gold); margin: 0 0 14px; }
 .ct-quick-link { display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; padding: 12px 0; border-bottom: 1px solid var(--sand); transition: gap .2s; }
-.ct-quick-link:last-child { border-bottom: none; }
+.ct-quick-link:last-of-type { border-bottom: none; }
+/* Beyond Traveling pointer at the bottom of the List Your Property sidebar —
+   a quiet sand-colored note, clearly secondary to the listing form. */
+.ct-sister { margin-top: 32px; padding: 20px 22px; background: var(--sand); border-left: 2px solid var(--gold); border-radius: 2px; }
+.ct-sister-eyebrow { font-family: var(--font-inter), sans-serif; font-size: 11px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; color: var(--deep-ocean); margin: 0 0 8px; }
+.ct-sister-body { font-family: var(--font-inter), sans-serif; font-size: 13px; line-height: 1.7; color: var(--charcoal-light); margin: 0 0 12px; }
+.ct-sister-body strong { font-weight: 500; color: var(--charcoal); }
+.ct-sister-link { white-space: nowrap; display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-inter), sans-serif; font-size: 11.5px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--deep-ocean); text-decoration: none; transition: gap .2s, color .2s; }
+.ct-sister-link:hover { gap: 12px; color: var(--price-on-light); }
+.ct-sister-link svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 1.8; }
 .ct-quick-link:hover { gap: 16px; }
 .ct-quick-icon { width: 36px; height: 36px; border-radius: 50%; background: var(--mist-light); flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
 .ct-quick-icon svg { width: 16px; height: 16px; stroke: var(--deep-ocean); fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
-.ct-quick-icon.wa { background: rgba(27,94,59,.1); }
-.ct-quick-icon.wa svg { stroke: #1B5E3B; }
+/* Renamed from ".ct-quick-icon.wa" — the bare ".wa" class is ALSO the
+   floating WhatsApp bubble (position: fixed, bottom-right), so this little
+   icon was being yanked out of the sidebar and pinned to the screen corner. */
+.ct-quick-icon--wa { background: rgba(27,94,59,.1); }
+.ct-quick-icon--wa svg { stroke: #1B5E3B; }
 .ct-quick-text-label { font-family: var(--font-inter), sans-serif; font-size: 12.5px; font-weight: 500; color: var(--charcoal); display: block; }
 .ct-quick-text-val { font-family: var(--font-inter), sans-serif; font-size: 12.5px; font-weight: 400; color: var(--charcoal-light); display: block; margin-top: 1px; }
 
@@ -3955,7 +4128,7 @@ textarea.ct-input { resize: vertical; min-height: 88px; line-height: 1.65; }
 }
 .sv-cmp-val { text-align: center; padding: 16px 12px; font-size: 14px; font-weight: 400; color: var(--charcoal); border-top: 1px solid rgba(30,58,80,.07); }
 .sv-cmp-val .is-price { font-weight: 400; color: var(--deep-ocean); }
-.sv-cmp-val .is-price strong { color: var(--gold); }
+.sv-cmp-val .is-price strong { color: var(--price-on-light); }
 .sv-cmp-val .is-yes { color: var(--gold); font-size: 17px; }
 .sv-cmp-val .is-no { color: rgba(30,58,80,.75); }
 /* Season tabs — sits as its own row directly above Nightly Rate, so the

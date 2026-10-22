@@ -444,8 +444,9 @@ export function destinationPriceRange(properties: RateSource[]): { min: number; 
  *  the caller pairs this with its own "(Depending on the season)" note. */
 export function formatPriceRange(range: { min: number; max: number } | null): string | null {
   if (!range) return null
-  if (range.min === range.max) return `From ${formatPrice(range.min)} / night`
-  return `From ${formatPrice(range.min)} to ${formatPrice(range.max)} / night`
+  // "USD" spelled out — in Mexico a bare "$" usually means pesos.
+  if (range.min === range.max) return `From ${formatPrice(range.min)} USD / night`
+  return `From ${formatPrice(range.min)} to ${formatPrice(range.max)} USD / night`
 }
 
 /** Format price as $1,800. Guards against a missing rate (a season entered in
