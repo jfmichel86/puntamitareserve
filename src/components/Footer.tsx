@@ -80,7 +80,7 @@ export default function Footer() {
               an address conventionally sits) — this column was twice as
               tall as the others. */}
           <p className="ft-cta-txt">Not sure where to start? We&rsquo;re happy to help.</p>
-          <a href="https://wa.me/523313619889" className="ft-btn" target="_blank" rel="noopener">WhatsApp us</a>
+          <a href="https://wa.me/523224341968" className="ft-btn" target="_blank" rel="noopener">WhatsApp us</a>
         </div>
       </div>
       <div className="footer-bottom">

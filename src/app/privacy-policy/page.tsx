@@ -16,7 +16,7 @@ export default function PrivacyPolicyPage() {
       </section>
 
       <div className="legal-wrap">
-        <p className="legal-updated">Last updated July 2026</p>
+        <p className="legal-updated">Last updated October 2026</p>
 
         <p className="legal-intro">
           Mexican Reserve (&ldquo;we,&rdquo; &ldquo;us&rdquo;) respects your privacy. This policy explains
@@ -40,9 +40,10 @@ export default function PrivacyPolicyPage() {
           <span className="sec-label">02</span>
           <h2 className="sec-title">How Our Forms Work</h2>
           <p className="legal-body-text">
-            Our contact and newsletter forms open your own email application with a message addressed to us — they
-            do not submit your information to a database on our server. Your details reach us the same way any
-            email would, and are handled by our reservations team the same way we handle any other correspondence.
+            Our contact and property-listing forms open your own email application with a message addressed to us.
+            Your details reach us the same way any email would, and are handled by our team the same way we handle
+            any other correspondence. Our newsletter sign-up works differently: when you subscribe, your email
+            address is saved directly with Brevo, the email service we use to send our welcome offer and newsletter.
           </p>
         </div>
 
@@ -73,17 +74,23 @@ export default function PrivacyPolicyPage() {
           <h2 className="sec-title">Sharing Your Information</h2>
           <p className="legal-body-text">
             We share booking details with the property owner or property manager of the villa you&rsquo;re
-            reserving, solely to arrange and confirm your stay. We do not share your information with advertisers or
-            data brokers, and we do not sell it to third parties.
+            reserving, solely to arrange and confirm your stay. We also rely on a few trusted service providers to run
+            our business: Brevo (newsletter and email delivery), Google Workspace (business email), and Vercel
+            (website hosting). They process your information only on our behalf and under their own security and
+            privacy commitments, and their servers may be located outside Mexico. We do not share your information
+            with advertisers or data brokers, and we do not sell it to third parties.
           </p>
         </div>
 
         <div className="detail-section">
           <span className="sec-label">06</span>
-          <h2 className="sec-title">Cookies &amp; Analytics</h2>
+          <h2 className="sec-title">Cookies, Analytics &amp; Email Tracking</h2>
           <p className="legal-body-text">
-            This site does not currently use advertising or tracking cookies. If we introduce analytics or marketing
-            tools in the future, we will update this policy to describe what&rsquo;s collected and how to opt out.
+            This site does not currently use advertising or tracking cookies. Our newsletter emails, sent through
+            Brevo, include standard measurement that tells us whether an email was opened and which links were
+            clicked, so we can send content that is relevant to you. If we introduce analytics or marketing tools on
+            the website in the future, we will update this policy to describe what&rsquo;s collected and how to opt
+            out.
           </p>
         </div>
 

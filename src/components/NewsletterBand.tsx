@@ -7,7 +7,7 @@ export default function NewsletterBand() {
     <section id="newsletter-offer" className="newsletter-band">
       <div className="newsletter-eyebrow">Welcome Offer</div>
       <h2 className="newsletter-headline">10% off your first stay</h2>
-      <p className="newsletter-sub">Subscribe for first access to new villas and a 10% welcome rate on select properties. Excludes peak weeks.</p>
+      <p className="newsletter-sub">Join our list for first access to new villas, special offers and open dates for holidays and peak weeks, plus 10% off your first stay at select villas (peak weeks excluded).</p>
       <NewsletterForm />
     </section>
   )

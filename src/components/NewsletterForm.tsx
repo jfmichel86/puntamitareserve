@@ -3,34 +3,54 @@
 import { useState } from 'react'
 import Link from 'next/link'
 
-// Welcome Offer signups go to their own address (welcome@, an alias of the
-// main inbox) so they're kept separate from rental inquiries at rentals@.
+// Fallback address shown only if saving the signup fails (welcome@ is an
+// alias of the main inbox, kept separate from rental inquiries).
 const CONTACT_EMAIL = 'welcome@mexicanreserve.com'
 
-// Same submission approach as ContactForm.tsx: this site has no email-service
-// backend wired up yet, so both forms simply open the visitor's email client
-// with the details pre-filled, addressed to us. When a real newsletter tool
-// (Mailchimp, etc.) gets connected, only this one function needs to change.
+type Status = 'idle' | 'sending' | 'done' | 'error' | 'invalid'
+
+// Saves the signup straight to Brevo (via /api/subscribe), which then sends
+// the welcome email automatically. No email app opens for the visitor.
 export default function NewsletterForm() {
   const [email, setEmail] = useState('')
   // Honeypot: a field real visitors never see or fill in, but simple spam
-  // bots that blindly fill every input on a page will. If it comes back
-  // non-empty, we quietly drop the submission instead of opening the email
-  // client — no CAPTCHA, no extra step for real people.
+  // bots that blindly fill every input on a page will. The server quietly
+  // ignores any submission where it comes back non-empty.
   const [hp, setHp] = useState('')
+  const [status, setStatus] = useState<Status>('idle')
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (hp.trim()) return
-    if (!email.trim()) return
-    const subject = 'Welcome offer — please add me'
-    const body = `Hi,\n\nPlease add me to your mailing list (new villas + welcome offer).\n\nEmail: ${email.trim()}\n\nThank you!`
-    window.location.href = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
-    setEmail('')
+    if (!email.trim() || status === 'sending') return
+    setStatus('sending')
+    try {
+      const res = await fetch('/api/subscribe', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ email: email.trim(), company: hp }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (res.ok && data.ok) { setStatus('done'); setEmail(''); return }
+      setStatus(data.error === 'invalid_email' ? 'invalid' : 'error')
+    } catch {
+      setStatus('error')
+    }
+  }
+
+  if (status === 'done') {
+    return (
+      <div className="newsletter-done" role="status">
+        <p className="newsletter-done-title">Welcome to Mexican Reserve.</p>
+        <p className="newsletter-done-text">
+          Your welcome offer is on its way. Please check your inbox, and your promotions or spam folder
+          just in case.
+        </p>
+      </div>
+    )
   }
 
   return (
-    <form className="newsletter-form" onSubmit={handleSubmit}>
+    <form className="newsletter-form" onSubmit={handleSubmit} noValidate={false}>
       <div className="newsletter-row">
         <input
           id="nl-email"
@@ -38,11 +58,15 @@ export default function NewsletterForm() {
           required
           placeholder="Your email address"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={(e) => { setEmail(e.target.value); if (status === 'invalid' || status === 'error') setStatus('idle') }}
           className="newsletter-input"
           aria-label="Email address"
+          aria-invalid={status === 'invalid'}
+          aria-describedby={status === 'invalid' || status === 'error' ? 'nl-msg' : undefined}
         />
-        <button type="submit" className="newsletter-btn">Claim offer</button>
+        <button type="submit" className="newsletter-btn" disabled={status === 'sending'}>
+          {status === 'sending' ? 'Sending…' : 'Claim offer'}
+        </button>
       </div>
 
       <div className="hp-field" aria-hidden="true">
@@ -58,10 +82,21 @@ export default function NewsletterForm() {
         />
       </div>
 
+      {status === 'invalid' && (
+        <p id="nl-msg" className="newsletter-msg" role="alert">Please check your email address and try again.</p>
+      )}
+      {status === 'error' && (
+        <p id="nl-msg" className="newsletter-msg" role="alert">
+          Something went wrong on our side. Please try again, or write to us at{' '}
+          <a href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('Welcome offer')}`}>{CONTACT_EMAIL}</a>.
+        </p>
+      )}
+
       <label className="newsletter-consent">
         <input type="checkbox" required />
         <span>
-          I agree to the <Link href="/privacy-policy" target="_blank">Privacy Policy</Link> and{' '}
+          Yes, send me emails about new villas and offers. I agree to the{' '}
+          <Link href="/privacy-policy" target="_blank">Privacy Policy</Link> and{' '}
           <Link href="/welcome-offer-terms" target="_blank">Welcome Offer Terms</Link>.
         </span>
       </label>

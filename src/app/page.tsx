@@ -29,7 +29,7 @@ const localBusinessSchema = {
   name: 'Mexican Reserve',
   description: 'Mexican Reserve curates Mexico’s finest luxury rentals, beginning in Punta Mita — private estates, oceanfront villas and condos inside the gates. Book directly with local experts.',
   url: 'https://www.mexicanreserve.com',
-  telephone: '+523313619889',
+  telephone: '+523224341968',
   email: 'rentals@mexicanreserve.com',
   address: { '@type': 'PostalAddress', addressLocality: 'Punta de Mita', addressRegion: 'Nayarit', addressCountry: 'MX' },
   geo: { '@type': 'GeoCoordinates', latitude: '20.7729', longitude: '-105.5395' },
