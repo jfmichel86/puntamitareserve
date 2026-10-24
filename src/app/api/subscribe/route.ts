@@ -13,8 +13,16 @@ const WELCOME_LIST_ID = Number(process.env.BREVO_WELCOME_LIST_ID || 3)
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
+async function createContact(apiKey: string, payload: Record<string, unknown>) {
+  return fetch(BREVO_URL, {
+    method: 'POST',
+    headers: { 'api-key': apiKey, 'content-type': 'application/json', accept: 'application/json' },
+    body: JSON.stringify(payload),
+  })
+}
+
 export async function POST(request: Request) {
-  let body: { email?: unknown; company?: unknown }
+  let body: { email?: unknown; firstName?: unknown; lastName?: unknown; company?: unknown }
   try {
     body = await request.json()
   } catch {
@@ -32,28 +40,50 @@ export async function POST(request: Request) {
     return Response.json({ ok: false, error: 'invalid_email' }, { status: 400 })
   }
 
+  // Saved to Brevo's built-in FIRSTNAME / LASTNAME contact fields, so emails
+  // can greet subscribers by name ({{ contact.FIRSTNAME }} in Brevo).
+  const clean = (v: unknown) => (typeof v === 'string' ? v.trim().replace(/\s+/g, ' ').slice(0, 60) : '')
+  const nameAttrs: Record<string, string> = {}
+  const firstName = clean(body.firstName)
+  const lastName = clean(body.lastName)
+  if (firstName) nameAttrs.FIRSTNAME = firstName
+  if (lastName) nameAttrs.LASTNAME = lastName
+
   const apiKey = process.env.BREVO_API_KEY
   if (!apiKey) {
     console.error('[subscribe] BREVO_API_KEY is not set')
     return Response.json({ ok: false, error: 'not_configured' }, { status: 500 })
   }
 
+  // updateEnabled: someone already in Brevo (e.g. a past guest) is simply
+  // added to the list instead of causing an error.
+  const base = { email, listIds: [WELCOME_LIST_ID], updateEnabled: true }
+
   try {
-    const res = await fetch(BREVO_URL, {
-      method: 'POST',
-      headers: { 'api-key': apiKey, 'content-type': 'application/json', accept: 'application/json' },
-      // updateEnabled: someone already in Brevo (e.g. a past guest) is
-      // simply added to the list instead of causing an error.
-      body: JSON.stringify({ email, listIds: [WELCOME_LIST_ID], updateEnabled: true }),
-    })
-    // 201 = new contact, 204 = existing contact updated — both are success.
-    if (res.status === 201 || res.status === 204) {
-      return Response.json({ ok: true })
+    // Try with the name fields first. If Brevo rejects them for any reason,
+    // retry with just the email so the visitor is still subscribed and gets
+    // their welcome email.
+    const attempts: Record<string, unknown>[] = [{ ...base, attributes: nameAttrs }, base]
+
+    let lastStatus = 0
+    let lastDetail = ''
+    for (const payload of attempts) {
+      const res = await createContact(apiKey, payload)
+      // 201 = new contact, 204 = existing contact updated — both are success.
+      if (res.status === 201 || res.status === 204) {
+        if (payload !== attempts[0]) console.warn('[subscribe] saved with fewer fields after:', lastStatus, lastDetail)
+        return Response.json({ ok: true })
+      }
+      lastStatus = res.status
+      lastDetail = await res.text()
+      // A bad email address won't be fixed by dropping fields.
+      if (res.status === 400 && /email/i.test(lastDetail) && !/attribute/i.test(lastDetail)) {
+        return Response.json({ ok: false, error: 'invalid_email' }, { status: 400 })
+      }
+      if (res.status !== 400) break
     }
-    const detail = await res.text()
-    console.error('[subscribe] Brevo error', res.status, detail)
-    const badEmail = res.status === 400 && /email/i.test(detail)
-    return Response.json({ ok: false, error: badEmail ? 'invalid_email' : 'upstream' }, { status: badEmail ? 400 : 502 })
+    console.error('[subscribe] Brevo error', lastStatus, lastDetail)
+    return Response.json({ ok: false, error: 'upstream' }, { status: 502 })
   } catch (err) {
     console.error('[subscribe] network error', err)
     return Response.json({ ok: false, error: 'upstream' }, { status: 502 })

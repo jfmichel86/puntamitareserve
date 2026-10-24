@@ -2709,7 +2709,10 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
   color: var(--charcoal); line-height: 1.75;
 }
 .newsletter-form { max-width: 520px; margin: 0 auto; }
-.newsletter-row { display: flex; gap: 10px; }
+/* Full-width email under the two name fields. */
+.newsletter-email { display: block; width: 100%; }
+/* First / last name side by side above the email row (same field style). */
+.newsletter-names { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
 .newsletter-input {
   flex: 1; min-width: 0; background: var(--white); border: 1px solid rgba(30,58,80,.18);
   border-radius: 3px; padding: 15px 16px; font-family: var(--font-inter), sans-serif;
@@ -2744,6 +2747,10 @@ section { padding: clamp(40px, 9vh, 108px) 64px; }
 /* Signup states: inline error under the field, and the thank-you message
    that replaces the form once the email is saved in Brevo. */
 .newsletter-btn:disabled { opacity: .7; cursor: default; }
+/* "Claim offer" as the final, full-width step after the consent checkbox. */
+.newsletter-btn--block { display: block; width: 100%; padding: 17px 0; margin-top: 20px; }
+.newsletter-input[aria-invalid="true"] { border-color: #b4552f; }
+.newsletter-consent input[aria-invalid="true"] { outline: 2px solid #b4552f; outline-offset: 2px; }
 .newsletter-msg {
   margin-top: 10px; text-align: left;
   font-family: var(--font-inter), sans-serif; font-size: 13px; line-height: 1.6; color: #8a2f1f;
@@ -3078,7 +3085,6 @@ body.on-owner-page .wa, body.on-owner-page .offer-badge { display: none; }
   .help-btn { justify-content: center; }
   .newsletter-band { padding: 44px 24px; }
   .newsletter-headline { font-size: 26px; }
-  .newsletter-row { flex-direction: column; }
   .newsletter-btn { width: 100%; padding: 14px 0; }
   footer { padding: 36px 24px 36px; }
   /* Was 1 column here — each group (Properties/Company/Destinations) is
