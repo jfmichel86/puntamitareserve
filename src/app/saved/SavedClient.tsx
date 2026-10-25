@@ -9,6 +9,7 @@ import PropertyCard from '@/components/PropertyCard'
 import { Property, rateForSeason, formatPrice } from '@/lib/utils'
 
 const CONTACT_EMAIL = 'rentals@mexicanreserve.com'
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 // Canonical order for the comparison table's season picker — matches the
 // 6 seasons pre-loaded on every property in Sanity. Any custom season name
@@ -311,12 +312,27 @@ export default function SavedClient({ properties }: { properties: Property[] }) 
   const [flexErr, setFlexErr] = useState(false)
   const [guests, setGuests] = useState({ adults: 0, children: 0, infants: 0 })
   const [guestErr, setGuestErr] = useState(false)
+  // "Your details" — the website now sends the inquiry itself (via
+  // /api/inquiry → Brevo) instead of opening the visitor's email app, so it
+  // needs to know who to reply to.
+  const [inqFirst, setInqFirst] = useState('')
+  const [inqLast, setInqLast] = useState('')
+  const [inqEmail, setInqEmail] = useState('')
+  const [inqPhone, setInqPhone] = useState('')
+  const [inqHp, setInqHp] = useState('')
+  const [detailErr, setDetailErr] = useState<'' | 'name' | 'email'>('')
+  const [inqStatus, setInqStatus] = useState<'idle' | 'sending' | 'done' | 'error'>('idle')
+  const [sentInfo, setSentInfo] = useState<{ name: string; email: string; count: number } | null>(null)
 
   const openInqModal = () => {
     if (orderedProps.length === 0) return
     setInqOpen(true)
   }
-  const closeInqModal = () => setInqOpen(false)
+  const closeInqModal = () => {
+    setInqOpen(false)
+    // After a sent inquiry, reopening shows the form again (details kept).
+    setInqStatus((st) => (st === 'done' || st === 'error' ? 'idle' : st))
+  }
 
   useEffect(() => {
     document.body.style.overflow = inqOpen ? 'hidden' : ''
@@ -450,7 +466,8 @@ export default function SavedClient({ properties }: { properties: Property[] }) 
     return tiles
   }
 
-  const handleInqSubmit = () => {
+  const handleInqSubmit = async () => {
+    if (inqStatus === 'sending') return
     let valid = true
     if (mode === 'flexible') {
       setCalErr(false)
@@ -461,6 +478,12 @@ export default function SavedClient({ properties }: { properties: Property[] }) 
     }
     const total = guests.adults + guests.children + guests.infants
     if (total === 0) { setGuestErr(true); valid = false } else setGuestErr(false)
+    const fn = inqFirst.trim()
+    const ln = inqLast.trim()
+    const em = inqEmail.trim()
+    if (!fn || !ln) { setDetailErr('name'); valid = false }
+    else if (!EMAIL_RE.test(em)) { setDetailErr('email'); valid = false }
+    else setDetailErr('')
     if (!valid) return
 
     let dateStr: string
@@ -481,24 +504,38 @@ export default function SavedClient({ properties }: { properties: Property[] }) 
     if (guests.infants) gParts.push(`${guests.infants} ${guests.infants === 1 ? 'infant' : 'infants'}`)
     const guestStr = gParts.join(' and ')
 
-    const n = orderedProps.length
-    const subject = `Property Wishlist Inquiry — ${n} ${n === 1 ? 'property' : 'properties'}`
-    let body = `Hi,\n\nI'm interested in the following properties for these dates ${dateStr} and would love to receive more information on availability and pricing (rates below reflect ${selectedSeason}). We are ${guestStr}:\n\n`
-    orderedProps.forEach((p) => {
-      // Quotes whichever season is selected in the comparison table above,
-      // not always the Low Season floor — so the email matches what was
-      // actually being compared when this button was clicked.
-      const rate = rateForSeasonOrFallback(p, selectedSeason)
-      body += `• ${p.title} — ${p.bedrooms} ${p.bedrooms === 1 ? 'bedroom' : 'bedrooms'}`
-      if (rate) body += `, from ${formatPrice(rate)} USD/night`
-      body += '\n'
-    })
-    const url = getShareUrl()
-    if (url) body += `\nWishlist link: ${url}\n`
-    body += "\nPlease let us know what's available for our dates. Thank you!"
-
-    closeInqModal()
-    window.location.href = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+    setInqStatus('sending')
+    try {
+      const res = await fetch('/api/inquiry', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          firstName: fn, lastName: ln, email: em, phone: inqPhone.trim(),
+          dates: dateStr, guests: guestStr, season: selectedSeason,
+          // Quotes whichever season is selected in the comparison table, so
+          // the email matches what was being compared when this was sent.
+          properties: orderedProps.map((p) => ({
+            title: p.title, slug: p.slug, bedrooms: p.bedrooms,
+            rate: rateForSeasonOrFallback(p, selectedSeason),
+          })),
+          company: inqHp,
+        }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (res.ok && data.ok) {
+        setSentInfo({ name: fn, email: em, count: orderedProps.length })
+        setInqStatus('done')
+        document.getElementById('inq-modal')?.scrollTo(0, 0)
+      } else if (data.error === 'invalid_email') {
+        setDetailErr('email'); setInqStatus('idle')
+      } else if (data.error === 'missing_name') {
+        setDetailErr('name'); setInqStatus('idle')
+      } else {
+        setInqStatus('error')
+      }
+    } catch {
+      setInqStatus('error')
+    }
   }
 
   return (
@@ -806,6 +843,18 @@ export default function SavedClient({ properties }: { properties: Property[] }) 
           <div className="inq-backdrop" onClick={closeInqModal} />
           <div className="inq-dialog">
             <button className="inq-close" type="button" onClick={closeInqModal} aria-label="Close">&#x2715;</button>
+            {inqStatus === 'done' && sentInfo ? (
+              <div className="inq-done" role="status">
+                <svg className="inq-done-icon" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="22.5" /><polyline points="15 24.5 21.5 31 33 18" /></svg>
+                <span className="inq-eyebrow">Inquiry sent</span>
+                <h3 className="inq-title inq-done-title">Thank you, {sentInfo.name}.</h3>
+                <p className="inq-done-text">
+                  {`Your inquiry for ${sentInfo.count === 1 ? '1 villa' : `${sentInfo.count} villas`} is with our team`}, and we&rsquo;ll be in touch within 24&nbsp;hours. We confirm availability and rates directly with each villa&rsquo;s owner, so some answers can take a little longer. We&rsquo;ll keep you updated as they come in.
+                </p>
+                <p className="inq-done-note">A confirmation is on its way to {sentInfo.email}.</p>
+                <button className="inq-done-btn" type="button" onClick={closeInqModal}>Back to your wishlist</button>
+              </div>
+            ) : (<>
             <span className="inq-eyebrow">Inquiry</span>
             <h3 className="inq-title">Tell us about your trip</h3>
 
@@ -885,12 +934,55 @@ export default function SavedClient({ properties }: { properties: Property[] }) 
             </div>
             {guestErr && <p className="inq-flex-err" style={{ margin: '12px 0 0', textAlign: 'left' }}>Please add at least one guest.</p>}
 
+            <hr className="inq-divider" />
+
+            <div className="inq-sec-hd">
+              <span className="inq-sec-label">Your details</span>
+            </div>
+            <div className="inq-details">
+              <input
+                className="inq-input" type="text" placeholder="First name" aria-label="First name"
+                autoComplete="given-name" maxLength={60} value={inqFirst}
+                aria-invalid={detailErr === 'name' && !inqFirst.trim() ? true : undefined}
+                onChange={(e) => { setInqFirst(e.target.value); if (detailErr === 'name') setDetailErr('') }}
+              />
+              <input
+                className="inq-input" type="text" placeholder="Last name" aria-label="Last name"
+                autoComplete="family-name" maxLength={60} value={inqLast}
+                aria-invalid={detailErr === 'name' && !inqLast.trim() ? true : undefined}
+                onChange={(e) => { setInqLast(e.target.value); if (detailErr === 'name') setDetailErr('') }}
+              />
+              <input
+                className="inq-input inq-input--full" type="email" placeholder="Email address" aria-label="Email address"
+                autoComplete="email" inputMode="email" maxLength={254} value={inqEmail}
+                aria-invalid={detailErr === 'email' ? true : undefined}
+                onChange={(e) => { setInqEmail(e.target.value); if (detailErr === 'email') setDetailErr('') }}
+              />
+              <input
+                className="inq-input inq-input--full" type="tel" placeholder="WhatsApp / phone (optional)" aria-label="WhatsApp or phone, optional"
+                autoComplete="tel" inputMode="tel" maxLength={40} value={inqPhone}
+                onChange={(e) => setInqPhone(e.target.value)}
+              />
+              <div className="hp-field" aria-hidden="true">
+                <label htmlFor="inq-company">Company</label>
+                <input id="inq-company" type="text" name="company" tabIndex={-1} autoComplete="off" value={inqHp} onChange={(e) => setInqHp(e.target.value)} />
+              </div>
+            </div>
+            {detailErr === 'name' && <p className="inq-flex-err inq-err-left" role="alert">Please enter your first and last name.</p>}
+            {detailErr === 'email' && <p className="inq-flex-err inq-err-left" role="alert">Please enter a valid email address.</p>}
+            {inqStatus === 'error' && (
+              <p className="inq-flex-err inq-err-left" role="alert">
+                We couldn&rsquo;t send your inquiry just now. Please try again, or email us at <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.
+              </p>
+            )}
+
             <div className="inq-actions">
-              <button className="sv-btn sv-btn-primary inq-submit" type="button" onClick={handleInqSubmit}>
+              <button className="sv-btn sv-btn-primary inq-submit" type="button" onClick={handleInqSubmit} disabled={inqStatus === 'sending'}>
                 <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>
-                Send inquiry
+                {inqStatus === 'sending' ? 'Sending…' : 'Send inquiry'}
               </button>
             </div>
+            </>)}
           </div>
         </div>,
         document.body
